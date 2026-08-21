@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads user prompt with chat frame, native terminal scrolling & editing shortcuts
+// ReadInlinePrompt reads user prompt with chat frame, mouse click navigation & smooth scrolling
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -20,10 +20,16 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if err != nil {
 		return readPipedLine()
 	}
-	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
+	defer func() {
+		DisableMouseTracking()
+		_ = term.Restore(int(os.Stdin.Fd()), oldState)
+	}()
+
+	EnableMouseTracking()
 
 	var input []rune
 	cursorPos, selectedIdx := 0, 0
+	promptRow := 0
 	renderedBefore := false
 	branch := GetGitBranchOrFolder(s.WorkspaceDir)
 
@@ -60,7 +66,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		backLines := 2 + dropdownCount
 		targetCol := promptLen + len([]rune(string(input[:cursorPos])))
-		fmt.Printf("\r\033[%dA\033[%dC", backLines, targetCol)
+		fmt.Printf("\r\033[%dA\033[%dC\033[6n", backLines, targetCol)
 	}
 
 	RegisterCopyCallback(func() { render() })
@@ -77,16 +83,52 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		}
 
 		ResetBrainrotActivity(func() { render() })
+		rawStr := string(buf[:n])
 
-		// 1. Cmd+Backspace / Ctrl+U (Delete to start of line)
-		if buf[0] == 21 || (n == 2 && buf[0] == 27 && (buf[1] == 127 || buf[1] == 8)) || (n >= 4 && strings.Contains(string(buf[:n]), "3;2~")) {
+		// 1. DSR Cursor Position Response (\033[row;colR)
+		if r, _, ok := ParseCursorPosition(rawStr); ok {
+			promptRow = r
+			continue
+		}
+
+		// 2. Mouse Click & Scrolling
+		if ev, ok := ParseMouseEvent(rawStr); ok {
+			if ev.IsScrollUp {
+				ScrollTerminal(true, 3)
+				continue
+			}
+			if ev.IsScrollDown {
+				ScrollTerminal(false, 3)
+				continue
+			}
+			if ev.IsPress && ev.Button == 0 {
+				if promptRow > 0 && ev.Y != promptRow {
+					continue // Clicked outside prompt line, do not move cursor
+				}
+				target := ev.X - promptLen - 1
+				if target < 0 {
+					target = 0
+				}
+				if target > len(input) {
+					target = len(input)
+				}
+				cursorPos = target
+				selectedIdx = 0
+				render()
+				continue
+			}
+			continue
+		}
+
+		// 3. Cmd+Backspace / Ctrl+U (Delete to start of line)
+		if buf[0] == 21 || (n == 2 && buf[0] == 27 && (buf[1] == 127 || buf[1] == 8)) || (n >= 4 && strings.Contains(rawStr, "3;2~")) {
 			input, cursorPos = DeleteToStart(input, cursorPos)
 			selectedIdx = 0
 			render()
 			continue
 		}
 
-		// 2. Option+Backspace / Ctrl+W (Delete word backwards)
+		// 4. Option+Backspace / Ctrl+W (Delete word backwards)
 		if buf[0] == 23 || (n == 2 && buf[0] == 27 && buf[1] == 'd') {
 			input, cursorPos = DeleteWordBackward(input, cursorPos)
 			selectedIdx = 0
@@ -94,14 +136,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 3. Shift+Tab (Permission cycle)
+		// 5. Shift+Tab (Permission cycle)
 		if (n == 3 && buf[0] == 27 && buf[1] == 91 && buf[2] == 90) || (n == 2 && buf[0] == 27 && buf[1] == 9) {
 			cyclePermissionMode(s)
 			render()
 			continue
 		}
 
-		// 4. Arrow Keys & Navigation
+		// 6. Arrow Keys & Navigation
 		if n >= 3 && buf[0] == 27 && buf[1] == 91 {
 			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
@@ -135,18 +177,18 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 					render()
 				}
 				continue
-			case 'H': // Home / Cmd+Left
+			case 'H':
 				cursorPos = 0
 				render()
 				continue
-			case 'F': // End / Cmd+Right
+			case 'F':
 				cursorPos = len(input)
 				render()
 				continue
 			}
 		}
 
-		// 5. Option+Left / Option+Right (Word jump)
+		// 7. Option+Left / Option+Right (Word jump)
 		if n == 2 && buf[0] == 27 && buf[1] == 'b' {
 			cursorPos = MoveWordBackward(input, cursorPos)
 			render()
@@ -158,7 +200,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 6. Ctrl+A (Line start / Monitor) & Ctrl+E (Line end)
+		// 8. Ctrl+A (Line start / Monitor) & Ctrl+E (Line end)
 		if n == 1 && buf[0] == 1 {
 			if len(input) == 0 {
 				oldState = openSubagentMonitor(s, oldState)
@@ -175,14 +217,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 7. Ctrl+C / Ctrl+D (Exit)
+		// 9. Ctrl+C / Ctrl+D (Exit)
 		if n == 1 && (buf[0] == 3 || buf[0] == 4) {
 			fmt.Print("\033[1A\r\033[J")
 			PrintRizzGoodbye(s)
 			return "", false
 		}
 
-		// 8. Enter & Tab Autocomplete
+		// 10. Enter & Tab Autocomplete
 		if n == 1 && (buf[0] == 13 || buf[0] == 10) {
 			newIn, newPos, handled, continueLoop := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, false)
 			if handled {
@@ -209,14 +251,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 9. Escape
+		// 11. Escape
 		if n == 1 && buf[0] == 27 {
 			input, cursorPos, selectedIdx = nil, 0, 0
 			render()
 			continue
 		}
 
-		// 10. Parse sequential characters & multi-byte UTF-8
+		// 12. Parse sequential characters & multi-byte UTF-8
 		i := 0
 		for i < n {
 			b := buf[i]
