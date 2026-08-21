@@ -83,14 +83,14 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 		case config.PermissionModeBypass:
 			label := BoldYellow("⏵⏵ bypass permissions on")
 			if isBrainrot {
-				label = BoldYellow("🔥 full bypass (let him cook with max rizz)")
+				label = BoldYellow("⏵⏵ full bypass (let him cook with max rizz)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeAuto:
 			label := BoldCyan("⏵ auto-approve on")
 			if isBrainrot {
-				label = BoldCyan("⚡ auto-cooking on fr fr (zero cap)")
+				label = BoldCyan("⏵ auto-cooking on fr fr (zero cap)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))

@@ -44,7 +44,10 @@ func GetContextLimit(model string, prov string) int {
 
 // GetContextUsage calculates real token breakdown by inspecting active prompt components
 func (s *Session) GetContextUsage() ContextUsage {
-	limit := GetContextLimit(s.Config.Model, string(s.Config.Provider))
+	limit := s.Config.GetContextWindowTokens()
+	if limit <= 0 {
+		limit = GetContextLimit(s.Config.Model, string(s.Config.Provider))
+	}
 
 	// 1. Exact System Prompt Tokens (Identity, Env info, Rules, Guidelines)
 	var sysBuilder strings.Builder

@@ -60,6 +60,7 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "question_timeout", Label: "Question auto-continue timeout", Type: SettingTypeChoice, DefaultVal: "never", Choices: []string{"never", "30s", "1m", "5m"}},
 		{Key: "show_last_response_editor", Label: "Show last response in external editor", Type: SettingTypeBool, DefaultVal: "false"},
 		{Key: "show_branch_name", Label: "Show current branch name", Type: SettingTypeBool, DefaultVal: "true"},
+		{Key: "context_window", Label: "Context window size", Type: SettingTypeChoice, DefaultVal: "200K", Choices: []string{"200K", "300K", "500K", "1M"}},
 		{Key: "model", Label: "Model", Type: SettingTypeModel, DefaultVal: "gemini-3.7-flash-high"},
 		{Key: "auto_connect_ide", Label: "Auto-connect to IDE (external terminal)", Type: SettingTypeBool, DefaultVal: "false"},
 		{Key: "chrome_default", Label: "Claude in Chrome enabled by default", Type: SettingTypeBool, DefaultVal: "false"},

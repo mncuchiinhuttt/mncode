@@ -88,7 +88,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 	case "/config", "/settings", "/cfg":
 		HandleConfigCommand(parts, s)
 	case "/context", "/ctx":
-		ShowContextUsage(s)
+		HandleContextCommand(parts, s)
 	case "/compact", "/compress":
 		HandleCompactCommand(s)
 	case "/usage", "/tokens", "/cost", "/stats":

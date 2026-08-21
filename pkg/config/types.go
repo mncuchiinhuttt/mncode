@@ -1,5 +1,7 @@
 package config
 
+import "strings"
+
 // ProviderType represents the LLM provider
 type ProviderType string
 
@@ -38,9 +40,41 @@ type Config struct {
 	CodingLevel     int            `json:"codingLevel"`
 	Effort          string         `json:"effort"`
 	Workflow        string         `json:"workflow"`
+	ContextWindow   string         `json:"contextWindow,omitempty"`
 	ThinkingLang    string            `json:"thinkingLang"`
 	ResponseLang    string            `json:"responseLang"`
 	Settings        map[string]string `json:"settings,omitempty"`
+}
+
+func (c *Config) GetContextWindowTokens() int {
+	cw := strings.ToLower(c.ContextWindow)
+	if cw == "" {
+		cw = strings.ToLower(c.GetSetting("context_window", "200k"))
+	}
+	switch cw {
+	case "300k", "300000":
+		return 300000
+	case "500k", "500000":
+		return 500000
+	case "1m", "1000k", "1000000":
+		return 1000000
+	default:
+		return 200000
+	}
+}
+
+func (c *Config) GetContextWindowLabel() string {
+	tokens := c.GetContextWindowTokens()
+	switch tokens {
+	case 300000:
+		return "300K"
+	case 500000:
+		return "500K"
+	case 1000000:
+		return "1M"
+	default:
+		return "200K"
+	}
 }
 
 func (c *Config) GetSetting(key, def string) string {

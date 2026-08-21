@@ -4,11 +4,45 @@ import (
 	"context"
 	"fmt"
 	"mncode/pkg/agent"
+	"mncode/pkg/config"
 	"os"
 	"strings"
 
 	"golang.org/x/term"
 )
+
+// HandleContextCommand handles /context slash command variations
+func HandleContextCommand(parts []string, s *agent.Session) {
+	if len(parts) == 1 {
+		ShowContextUsage(s)
+		return
+	}
+
+	arg := strings.ToLower(parts[1])
+	switch arg {
+	case "window", "size", "slider":
+		if len(parts) > 2 {
+			setContextWindowDirect(s, parts[2])
+		} else {
+			OpenInteractiveContextWindowSlider(s)
+		}
+	case "200k", "300k", "500k", "1m":
+		setContextWindowDirect(s, arg)
+	case "compact", "compress":
+		HandleCompactCommand(s)
+	default:
+		ShowContextUsage(s)
+	}
+}
+
+func setContextWindowDirect(s *agent.Session, val string) {
+	lower := strings.ToLower(val)
+	s.Config.ContextWindow = lower
+	s.Config.SetSetting("context_window", lower)
+	_ = config.SaveConfig(s.Config)
+	fmt.Printf("\n%s Context Window Size set to: %s (%d tokens)\n\n",
+		BoldGreen("[Context]"), BoldCyan(s.Config.GetContextWindowLabel()), s.Config.GetContextWindowTokens())
+}
 
 // ShowContextUsage renders visual context window utilization as an interactive overlay
 func ShowContextUsage(s *agent.Session) {
@@ -69,7 +103,7 @@ func ShowContextUsage(s *agent.Session) {
 
 		rightLines := make([]string, 10)
 		rightLines[0] = Bold(usage.DisplayName)
-		rightLines[1] = GrayText(usage.Model)
+		rightLines[1] = GrayText(fmt.Sprintf("%s · %s Window", usage.Model, s.Config.GetContextWindowLabel()))
 		rightLines[2] = fmt.Sprintf("%s/%s tokens (%.0f%%)",
 			formatTokens(usage.TotalUsed), formatTokens(usage.Limit), usage.PercentUsed)
 		rightLines[3] = ""
@@ -87,7 +121,7 @@ func ShowContextUsage(s *agent.Session) {
 
 		var lines []string
 		lines = append(lines, "")
-		lines = append(lines, fmt.Sprintf("  %s  %s  %s", BoldCyan("⎿"), Bold("Context Window Usage"), GrayText("(Esc/q to exit, c to compact)")))
+		lines = append(lines, fmt.Sprintf("  %s  %s  %s", BoldCyan("⎿"), Bold("Context Window Usage"), GrayText("(Esc/q exit · w window size · c compact)")))
 		lines = append(lines, "")
 
 		for r := 0; r < 10; r++ {
@@ -107,8 +141,8 @@ func ShowContextUsage(s *agent.Session) {
 		lines = append(lines, fmt.Sprintf("                           %s Autocompact buffer: %s tokens (%.1f%%)",
 			BoldYellow("⛝"), formatTokens(usage.AutoCompactBuffer), bufPct))
 		lines = append(lines, "")
-		lines = append(lines, fmt.Sprintf("     Auto-compact window: %s tokens · %d tools · %d skills",
-			formatTokens(usage.Limit), usage.ToolCount, usage.SkillsCount))
+		lines = append(lines, fmt.Sprintf("     Window Size: %s tokens · %d tools · %d skills · %s",
+			BoldCyan(formatTokens(usage.Limit)), usage.ToolCount, usage.SkillsCount, GrayText("Press 'w' to change size")))
 		lines = append(lines, "")
 
 		if lastLinesCount > 0 {
@@ -136,10 +170,18 @@ func ShowContextUsage(s *agent.Session) {
 
 		b := buf[0]
 		switch b {
-		case 3, 27, 'q', 'Q': // Esc, q, Ctrl+C -> Clean exit
+		case 3, 27, 'q', 'Q', 13, 10:
 			if lastLinesCount > 0 {
 				fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
 			}
+			return
+
+		case 'w', 'W': // Change window size
+			if lastLinesCount > 0 {
+				fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
+			}
+			_ = term.Restore(int(os.Stdin.Fd()), oldState)
+			OpenInteractiveContextWindowSlider(s)
 			return
 
 		case 'c', 'C': // Compact history
@@ -155,8 +197,8 @@ func ShowContextUsage(s *agent.Session) {
 
 func renderContextUsageStatic(s *agent.Session) {
 	usage := s.GetContextUsage()
-	fmt.Printf("\nContext Usage: %s/%s tokens (%.1f%%)\n",
-		formatTokens(usage.TotalUsed), formatTokens(usage.Limit), usage.PercentUsed)
+	fmt.Printf("\nContext Usage: %s/%s tokens (%.1f%%) · Window: %s\n",
+		formatTokens(usage.TotalUsed), formatTokens(usage.Limit), usage.PercentUsed, s.Config.GetContextWindowLabel())
 }
 
 // HandleCompactCommand triggers conversation history compression
