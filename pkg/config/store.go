@@ -1,0 +1,102 @@
+package config
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+)
+
+// GetConfigFilePath returns the path to ~/.mncode/config.json
+func GetConfigFilePath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(home, ".mncode")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "config.json"), nil
+}
+
+// SaveConfig persists the current configuration to ~/.mncode/config.json
+func SaveConfig(cfg *Config) error {
+	filePath, err := GetConfigFilePath()
+	if err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filePath, data, 0644)
+}
+
+// LoadUserConfig loads saved settings from ~/.mncode/config.json on top of existing config
+func LoadUserConfig(cfg *Config) error {
+	filePath, err := GetConfigFilePath()
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil // file doesn't exist yet, silently ignore
+	}
+
+	var saved Config
+	if err := json.Unmarshal(data, &saved); err != nil {
+		return err
+	}
+
+	if saved.Model != "" {
+		cfg.Model = saved.Model
+	}
+	if saved.Provider != "" {
+		cfg.Provider = saved.Provider
+	}
+	if saved.APIKey != "" {
+		cfg.APIKey = saved.APIKey
+	}
+	if saved.BaseURL != "" {
+		cfg.BaseURL = saved.BaseURL
+	}
+	if saved.ThinkingBudget > 0 {
+		cfg.ThinkingBudget = saved.ThinkingBudget
+	}
+	if saved.MaxTokens > 0 {
+		cfg.MaxTokens = saved.MaxTokens
+	}
+	if saved.Temperature > 0 {
+		cfg.Temperature = saved.Temperature
+	}
+	if saved.Effort != "" {
+		cfg.Effort = saved.Effort
+	}
+	if saved.Workflow != "" {
+		cfg.Workflow = saved.Workflow
+	}
+	if saved.ThinkingLang != "" {
+		cfg.ThinkingLang = saved.ThinkingLang
+	}
+	if saved.ResponseLang != "" {
+		cfg.ResponseLang = saved.ResponseLang
+	}
+	if saved.PermissionMode != "" {
+		cfg.PermissionMode = saved.PermissionMode
+	} else if saved.AutoApprove {
+		cfg.PermissionMode = PermissionModeAuto
+	} else {
+		cfg.PermissionMode = PermissionModeAsk
+	}
+	if cfg.PermissionMode == PermissionModeBypass || cfg.PermissionMode == PermissionModeAuto {
+		cfg.AutoApprove = true
+	} else {
+		cfg.AutoApprove = false
+	}
+	cfg.Verbose = saved.Verbose
+	if saved.Settings != nil {
+		cfg.Settings = saved.Settings
+	}
+
+	return nil
+}
