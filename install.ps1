@@ -47,8 +47,15 @@ try {
 
     # 3. Fallback: Download pre-built release binary from GitHub Releases
     if (!$Built) {
-        $ReleaseUrl = "https://github.com/$Repo/releases/latest/download/mncode-windows-amd64.exe"
-        Write-Host "Downloading pre-built binary from GitHub Releases..." -ForegroundColor Cyan
+        $Tag = "v0.1.0-beta"
+        try {
+            $ReleaseData = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases" -UseBasicParsing
+            if ($ReleaseData -and $ReleaseData.Count -gt 0) {
+                $Tag = $ReleaseData[0].tag_name
+            }
+        } catch {}
+        $ReleaseUrl = "https://github.com/$Repo/releases/download/$Tag/mncode-windows-amd64.exe"
+        Write-Host "Downloading pre-built $Tag binary from GitHub Releases..." -ForegroundColor Cyan
         Invoke-WebRequest -Uri $ReleaseUrl -OutFile $TempFile -UseBasicParsing
     }
 

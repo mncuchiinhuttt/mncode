@@ -80,8 +80,12 @@ fi
 
 # Fallback: Download pre-built release binary from GitHub
 if [ ! -f "$TMP_FILE" ]; then
-  RELEASE_URL="https://github.com/${REPO}/releases/latest/download/${BINARY_NAME}-${OS}-${ARCH}"
-  echo -e "${CYAN}Downloading pre-built binary from GitHub Releases...${RESET}"
+  TAG="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" 2>/dev/null | grep -m1 '"tag_name":' | cut -d'"' -f4 || true)"
+  if [ -z "$TAG" ]; then
+    TAG="v0.1.0-beta"
+  fi
+  RELEASE_URL="https://github.com/${REPO}/releases/download/${TAG}/${BINARY_NAME}-${OS}-${ARCH}"
+  echo -e "${CYAN}Downloading pre-built ${TAG} binary from GitHub Releases...${RESET}"
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL "$RELEASE_URL" -o "$TMP_FILE" || true
   elif command -v wget >/dev/null 2>&1; then
