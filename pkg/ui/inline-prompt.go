@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads user prompt with chat frame, mouse click navigation & macOS shortcuts
+// ReadInlinePrompt reads user prompt with chat frame, native terminal scrolling & editing shortcuts
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -20,13 +20,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if err != nil {
 		return readPipedLine()
 	}
-	defer func() {
-		fmt.Print("\033[?1000l\033[?1006l") // Disable mouse click tracking
-		_ = term.Restore(int(os.Stdin.Fd()), oldState)
-	}()
-
-	// Enable SGR mouse click tracking
-	fmt.Print("\033[?1000h\033[?1006h")
+	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
 
 	var input []rune
 	cursorPos, selectedIdx := 0, 0
@@ -84,38 +78,30 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		ResetBrainrotActivity(func() { render() })
 
-		// 1. Mouse Click Navigation
-		if targetCol, ok := ParseMouseClick(buf[:n], promptLen, len(input)); ok {
-			cursorPos = targetCol
-			selectedIdx = 0
-			render()
-			continue
-		}
-
-		// 2. Cmd+Backspace / Ctrl+U (Delete to start of line)
-		if buf[0] == 21 || (n == 2 && buf[0] == 27 && buf[1] == 127) || (n >= 4 && strings.Contains(string(buf[:n]), "3;2~")) {
+		// 1. Cmd+Backspace / Ctrl+U (Delete to start of line)
+		if buf[0] == 21 || (n == 2 && buf[0] == 27 && (buf[1] == 127 || buf[1] == 8)) || (n >= 4 && strings.Contains(string(buf[:n]), "3;2~")) {
 			input, cursorPos = DeleteToStart(input, cursorPos)
 			selectedIdx = 0
 			render()
 			continue
 		}
 
-		// 3. Option+Backspace / Ctrl+W (Delete word backwards)
-		if buf[0] == 23 || (n == 2 && buf[0] == 27 && buf[1] == 8) {
+		// 2. Option+Backspace / Ctrl+W (Delete word backwards)
+		if buf[0] == 23 || (n == 2 && buf[0] == 27 && buf[1] == 'd') {
 			input, cursorPos = DeleteWordBackward(input, cursorPos)
 			selectedIdx = 0
 			render()
 			continue
 		}
 
-		// 4. Shift+Tab (Permission cycle)
+		// 3. Shift+Tab (Permission cycle)
 		if (n == 3 && buf[0] == 27 && buf[1] == 91 && buf[2] == 90) || (n == 2 && buf[0] == 27 && buf[1] == 9) {
 			cyclePermissionMode(s)
 			render()
 			continue
 		}
 
-		// 5. Arrow Keys & Navigation
+		// 4. Arrow Keys & Navigation
 		if n >= 3 && buf[0] == 27 && buf[1] == 91 {
 			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
@@ -149,18 +135,18 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 					render()
 				}
 				continue
-			case 'H':
+			case 'H': // Home / Cmd+Left
 				cursorPos = 0
 				render()
 				continue
-			case 'F':
+			case 'F': // End / Cmd+Right
 				cursorPos = len(input)
 				render()
 				continue
 			}
 		}
 
-		// 6. Option+Left / Option+Right (Word jump)
+		// 5. Option+Left / Option+Right (Word jump)
 		if n == 2 && buf[0] == 27 && buf[1] == 'b' {
 			cursorPos = MoveWordBackward(input, cursorPos)
 			render()
@@ -172,7 +158,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 7. Ctrl+A (Line start / Monitor) & Ctrl+E (Line end)
+		// 6. Ctrl+A (Line start / Monitor) & Ctrl+E (Line end)
 		if n == 1 && buf[0] == 1 {
 			if len(input) == 0 {
 				oldState = openSubagentMonitor(s, oldState)
@@ -189,14 +175,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 8. Ctrl+C / Ctrl+D (Exit)
+		// 7. Ctrl+C / Ctrl+D (Exit)
 		if n == 1 && (buf[0] == 3 || buf[0] == 4) {
 			fmt.Print("\033[1A\r\033[J")
 			PrintRizzGoodbye(s)
 			return "", false
 		}
 
-		// 9. Enter & Tab Autocomplete
+		// 8. Enter & Tab Autocomplete
 		if n == 1 && (buf[0] == 13 || buf[0] == 10) {
 			newIn, newPos, handled, continueLoop := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, false)
 			if handled {
@@ -223,14 +209,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 10. Escape
+		// 9. Escape
 		if n == 1 && buf[0] == 27 {
 			input, cursorPos, selectedIdx = nil, 0, 0
 			render()
 			continue
 		}
 
-		// 11. Parse sequential characters & multi-byte UTF-8
+		// 10. Parse sequential characters & multi-byte UTF-8
 		i := 0
 		for i < n {
 			b := buf[i]

@@ -2,52 +2,8 @@ package ui
 
 import (
 	"mncode/pkg/agent"
-	"strconv"
 	"strings"
 )
-
-// ParseMouseClick returns target character index if a mouse click event is received
-func ParseMouseClick(buf []byte, promptLen int, inputLen int) (int, bool) {
-	str := string(buf)
-	if !strings.HasPrefix(str, "\033[<") {
-		return 0, false
-	}
-
-	body := strings.TrimPrefix(str, "\033[<")
-	if len(body) == 0 {
-		return 0, false
-	}
-
-	lastChar := body[len(body)-1]
-	if lastChar != 'M' { // Only handle press
-		return 0, true
-	}
-
-	body = body[:len(body)-1]
-	parts := strings.Split(body, ";")
-	if len(parts) < 3 {
-		return 0, false
-	}
-
-	btn, err := strconv.Atoi(parts[0])
-	if err != nil || btn != 0 {
-		return 0, true
-	}
-
-	x, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return 0, false
-	}
-
-	col := x - promptLen - 1
-	if col < 0 {
-		col = 0
-	}
-	if col > inputLen {
-		col = inputLen
-	}
-	return col, true
-}
 
 // DeleteToStart deletes from cursorPos to 0 (Cmd+Backspace / Ctrl+U)
 func DeleteToStart(input []rune, cursorPos int) ([]rune, int) {
