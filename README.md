@@ -39,11 +39,19 @@
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Build
+## 🚀 Cài đặt nhanh (1-Line Installer)
+
+Cài đặt trực tiếp lên macOS hoặc Linux qua một câu lệnh duy nhất:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.sh | bash
+```
+
+Hoặc build thủ công từ mã nguồn:
 
 ```bash
 # Clone hoặc vào thư mục dự án
-cd /Users/vominhlong/mncode
+cd mncode
 
 # Tải dependencies & Build binary
 go build -o bin/mncode ./cmd/mncode
