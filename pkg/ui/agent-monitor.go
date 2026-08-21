@@ -49,11 +49,7 @@ func OpenSubagentMonitorView(s *agent.Session) {
 		}
 
 		topHeader := fmt.Sprintf("%s %s %s %s %s",
-			BoldCyan("╭──"),
-			BoldCyan(titleLeft),
-			GrayText(strings.Repeat("─", midDashes)),
-			BoldYellow(titleRight),
-			BoldCyan("──╮"))
+			BoldCyan("╭──"), BoldCyan(titleLeft), GrayText(strings.Repeat("─", midDashes)), BoldYellow(titleRight), BoldCyan("──╮"))
 		lines = append(lines, topHeader)
 
 		var list []*agent.SubagentRecord
@@ -76,10 +72,7 @@ func OpenSubagentMonitorView(s *agent.Session) {
 					if roleText == "" || roleText == name {
 						roleText = strings.TrimSpace(strings.Split(ag.Description, "\n")[0])
 					}
-					if len([]rune(roleText)) > 45 {
-						roleText = string([]rune(roleText)[:42]) + "…"
-					}
-					lines = append(lines, fmt.Sprintf("    • %-22s %s", BoldCyan(name), GrayText(roleText)))
+					lines = append(lines, fmt.Sprintf("    • %-22s %s", BoldCyan(name), GrayText(truncateText(roleText, 45))))
 				}
 			} else {
 				lines = append(lines, "    • planner, researcher, scout, tester, debugger, code-reviewer")
@@ -107,7 +100,7 @@ func OpenSubagentMonitorView(s *agent.Session) {
 				dot := BoldGreen("●")
 				tag := BoldGreen("[COMPLETED]")
 				if ag.Status == "running" {
-					dot = BoldYellow("●")
+					dot = BoldYellow("◯")
 					tag = BoldYellow("[RUNNING]")
 				} else if ag.Status == "error" {
 					dot = BoldRed("✕")

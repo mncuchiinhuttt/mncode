@@ -5,9 +5,10 @@ import (
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
 	"strings"
+	"time"
 )
 
-func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx int, width int, isProMax bool, branch string) ([]string, int, string, int) {
+func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx int, width int, isProMax bool, branch string) ([]string, int, int, string, int) {
 	if s.Config.GetSetting("show_branch_name", "true") == "false" {
 		branch = ""
 	}
@@ -56,8 +57,16 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 	}
 
 	agentHint := "← for agents"
-	if s.Subagents != nil && len(s.Subagents.List()) > 0 {
-		agentHint = fmt.Sprintf("← for agents (%d)", len(s.Subagents.List()))
+	activeCount := 0
+	if s.Subagents != nil {
+		activeCount = s.Subagents.ActiveCount()
+		if activeCount == 1 {
+			agentHint = "← 1 agent"
+		} else if activeCount > 1 {
+			agentHint = fmt.Sprintf("← %d agents", activeCount)
+		} else if len(s.Subagents.List()) > 0 {
+			agentHint = fmt.Sprintf("← for agents (%d)", len(s.Subagents.List()))
+		}
 	}
 
 	copyToast := GetActiveCopyToast()
@@ -116,7 +125,62 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 	}
 
 	lines = append(lines, bottomBorder, footer)
-	return lines, dropdownCount, promptPrefix, promptLen
+
+	// Claude-styled live subagents list underneath the footer
+	subagentCount := 0
+	if s.Subagents != nil && len(s.Subagents.List()) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, fmt.Sprintf("  %s %s", BoldCyan("●"), Bold("main")))
+		subagentCount += 2
+
+		for _, sub := range s.Subagents.List() {
+			circle := BoldCyan("◯")
+			if sub.Status == "completed" {
+				circle = BoldGreen("✓")
+			} else if sub.Status == "error" {
+				circle = BoldRed("✗")
+			}
+
+			elapsed := time.Since(sub.StartTime)
+			if !sub.EndTime.IsZero() {
+				elapsed = sub.Duration
+			}
+			mins := int(elapsed.Minutes())
+			secs := int(elapsed.Seconds()) % 60
+			timeStr := fmt.Sprintf("%ds", secs)
+			if mins > 0 {
+				timeStr = fmt.Sprintf("%dm %ds", mins, secs)
+			}
+
+			tokensStr := ""
+			if sub.Tokens > 0 {
+				tokensStr = fmt.Sprintf(" · ↓ %s tokens", formatTokens(sub.Tokens))
+			} else if len(sub.ToolCalls) > 0 {
+				tokensStr = fmt.Sprintf(" · %d tool calls", len(sub.ToolCalls))
+			}
+
+			metaStr := fmt.Sprintf("%s%s", GrayText(timeStr), GrayText(tokensStr))
+			activity := sub.CurrentActivity
+			if activity == "" {
+				activity = sub.Prompt
+			}
+			if len([]rune(activity)) > 42 {
+				activity = string([]rune(activity)[:41]) + "…"
+			}
+
+			gap := width - len(sub.Name) - len([]rune(activity)) - len([]rune(timeStr+tokensStr)) - 10
+			if gap < 2 {
+				gap = 2
+			}
+
+			agentLine := fmt.Sprintf("  %s %s  %s%s%s",
+				circle, Bold(sub.Name), GrayText(activity), strings.Repeat(" ", gap), metaStr)
+			lines = append(lines, agentLine)
+			subagentCount++
+		}
+	}
+
+	return lines, dropdownCount, subagentCount, promptPrefix, promptLen
 }
 
 func truncateText(s string, maxLen int) string {

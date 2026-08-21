@@ -6,18 +6,20 @@ import (
 )
 
 type SubagentRecord struct {
-	ID        string
-	Name      string
-	Role      string
-	Prompt    string
-	Status    string // "running", "completed", "error"
-	StartTime time.Time
-	EndTime   time.Time
-	Duration  time.Duration
-	Turns     int
-	ToolCalls []string
-	Result    string
-	Logs      []string
+	ID              string
+	Name            string
+	Role            string
+	Prompt          string
+	CurrentActivity string
+	Tokens          int
+	Status          string // "running", "completed", "error"
+	StartTime       time.Time
+	EndTime         time.Time
+	Duration        time.Duration
+	Turns           int
+	ToolCalls       []string
+	Result          string
+	Logs            []string
 }
 
 type SubagentRegistry struct {
@@ -66,6 +68,20 @@ func (r *SubagentRegistry) AddLog(id, logLine string) {
 	for _, rec := range r.records {
 		if rec.ID == id {
 			rec.Logs = append(rec.Logs, logLine)
+			break
+		}
+	}
+}
+
+func (r *SubagentRegistry) SetActivity(id, activity string, tokens int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, rec := range r.records {
+		if rec.ID == id {
+			rec.CurrentActivity = activity
+			if tokens > 0 {
+				rec.Tokens = tokens
+			}
 			break
 		}
 	}

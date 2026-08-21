@@ -39,7 +39,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			width = 80
 		}
 
-		lines, dropdownCount, _, promptLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
+		lines, dropdownCount, subagentCount, _, promptLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
 		if renderedBefore {
 			fmt.Print("\033[1A\r\033[J")
 		}
@@ -53,7 +53,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			}
 		}
 
-		backLines := 2 + dropdownCount
+		backLines := 2 + dropdownCount + subagentCount
 		targetCol := promptLen + len([]rune(string(input[:cursorPos])))
 		fmt.Printf("\r\033[%dA\033[%dC", backLines, targetCol)
 	}
