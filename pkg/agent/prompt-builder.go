@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"mncode/pkg/config"
 	"runtime"
 	"strings"
 	"time"
@@ -91,7 +92,7 @@ func (s *Session) BuildSystemPrompt() string {
 	}
 
 	// Inject Plan Mode Restrictions
-	if strings.EqualFold(s.Config.Workflow, "plan") {
+	if s.Config.PermissionMode == config.PermissionModePlan || strings.EqualFold(s.Config.Workflow, "plan") {
 		sb.WriteString("<plan_mode>\n")
 		sb.WriteString("[STRICT PLAN MODE ACTIVE]\n")
 		sb.WriteString("You are in STRICT PLAN MODE. Your objective is exclusively to explore, research, and write structured implementation plans.\n")

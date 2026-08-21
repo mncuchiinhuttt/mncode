@@ -72,6 +72,9 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 		footer = fmt.Sprintf("  %s\033[1;38;5;218m[RIZZ IDLE]\033[0m \033[38;5;225m%s\033[0m", proBadge, idleRizz)
 	} else {
 		switch s.Config.PermissionMode {
+		case config.PermissionModePlan:
+			footer = fmt.Sprintf("  %s%s%s", proBadge, BoldPastelPink("📝 plan mode on (read-only)"),
+				GrayText(fmt.Sprintf(" (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeBypass:
 			footer = fmt.Sprintf("  %s%s%s", proBadge, BoldYellow("⏵⏵ bypass permissions on"),
 				GrayText(fmt.Sprintf(" (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))

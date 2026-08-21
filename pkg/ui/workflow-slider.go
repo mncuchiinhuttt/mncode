@@ -28,25 +28,20 @@ var workflowOptions = []WorkflowOption{
 		Description: "Adaptive orchestration (automatically spawns subagents when complexity requires)",
 	},
 	{
-		ID:          "plan",
-		Label:       "plan",
-		Description: "Strict Plan Mode (Read-only codebase + write plans to ./plans/ only)",
-	},
-	{
 		ID:          "plan-first",
 		Label:       "plan-first",
 		Description: "Mandatory structured planning in ./plans/ before any code modifications",
 	},
 	{
-		ID:          "ultracode",
-		Label:       "ultracode",
-		Description: "Full 5-phase pipeline: Scout -> Plan -> Code -> Test -> Code Review",
+		ID:          "ultra-workflow",
+		Label:       "ultra workflow",
+		Description: "Full Multi-Phase Plan & Subagent Pipeline with 2-Pane Split Monitor",
 	},
 }
 
 var (
-	workflowCenters = []int{6, 18, 32, 48, 66}
-	workflowStarts  = []int{4, 16, 30, 44, 62}
+	workflowCenters = []int{7, 24, 43, 64}
+	workflowStarts  = []int{5, 23, 39, 58}
 )
 
 // OpenInteractiveWorkflowSlider opens the Claude Code styled Workflow spectrum slider
@@ -63,9 +58,9 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 	}
 	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
 
-	currentIdx := 1 // default to auto
+	currentIdx := 1
 	for i, opt := range workflowOptions {
-		if strings.EqualFold(s.Config.Workflow, opt.ID) {
+		if strings.EqualFold(s.Config.Workflow, opt.ID) || (opt.ID == "ultra-workflow" && strings.EqualFold(s.Config.Workflow, "ultracode")) {
 			currentIdx = i
 			break
 		}
@@ -93,7 +88,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 		for i := 0; i < trackLen; i++ {
 			if i == targetCenter {
 				trackSb.WriteString(BoldPastelPink("▲"))
-			} else if i == 56 {
+			} else if i == 52 {
 				trackSb.WriteString(GrayText("┆"))
 			} else {
 				trackSb.WriteString(GrayText("─"))
@@ -124,7 +119,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 			Bold("Mode:       "), BoldPastelPink(strings.ToUpper(opt.Label))))
 		lines = append(lines, fmt.Sprintf("   %s %s", GrayText("Description:"), opt.Description))
 		lines = append(lines, "")
-		lines = append(lines, GrayText("   ←/→ to adjust · 1-5 to select · Enter to confirm · Esc to cancel"))
+		lines = append(lines, GrayText("   ←/→ to adjust · 1-4 to select · Enter to confirm · Esc to cancel"))
 
 		if lastLinesCount > 0 {
 			fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
@@ -151,13 +146,13 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 
 		if n == 3 && buf[0] == 27 && buf[1] == 91 {
 			switch buf[2] {
-			case 'D', 'A': // Left or Up
+			case 'D', 'A':
 				if currentIdx > 0 {
 					currentIdx--
 					render()
 				}
 				continue
-			case 'C', 'B': // Right or Down
+			case 'C', 'B':
 				if currentIdx < len(workflowOptions)-1 {
 					currentIdx++
 					render()
@@ -185,7 +180,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 			fmt.Printf("Workflow Mode set to: %s\r\n\r\n", BoldGreen(strings.ToUpper(chosen.Label)))
 			return
 
-		case '1', '2', '3', '4', '5':
+		case '1', '2', '3', '4':
 			idx := int(b - '1')
 			if idx >= 0 && idx < len(workflowOptions) {
 				currentIdx = idx

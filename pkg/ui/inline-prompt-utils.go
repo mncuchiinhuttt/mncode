@@ -20,6 +20,9 @@ func cyclePermissionMode(s *agent.Session) {
 		s.Config.PermissionMode = config.PermissionModeBypass
 		s.Config.AutoApprove = true
 	case config.PermissionModeBypass:
+		s.Config.PermissionMode = config.PermissionModePlan
+		s.Config.AutoApprove = true
+	case config.PermissionModePlan:
 		s.Config.PermissionMode = config.PermissionModeAsk
 		s.Config.AutoApprove = false
 	}
@@ -38,7 +41,7 @@ func readPipedLine() (string, bool) {
 func openSubagentMonitor(s *agent.Session, oldState *term.State) *term.State {
 	fmt.Print("\033[1A\r\033[J")
 	_ = term.Restore(int(os.Stdin.Fd()), oldState)
-	OpenSubagentMonitorView(s)
+	OpenUltraWorkflowMonitorView(s)
 	newState, _ := term.MakeRaw(int(os.Stdin.Fd()))
 	return newState
 }

@@ -18,6 +18,7 @@ const (
 	PermissionModeAsk    PermissionMode = "ask"
 	PermissionModeAuto   PermissionMode = "auto"
 	PermissionModeBypass PermissionMode = "bypass"
+	PermissionModePlan   PermissionMode = "plan"
 )
 
 // Config represents the application configuration

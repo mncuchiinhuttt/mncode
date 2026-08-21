@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"mncode/pkg/config"
 	"mncode/pkg/provider"
 )
 
@@ -112,7 +113,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 
 func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) provider.ToolResult {
 	// Strict Plan Mode enforcement: block code editing tools
-	if strings.EqualFold(s.Config.Workflow, "plan") {
+	if s.Config.PermissionMode == config.PermissionModePlan || strings.EqualFold(s.Config.Workflow, "plan") {
 		if tc.Name == "edit_file_content" || tc.Name == "replace_file_content" {
 			errStr := "Plan Mode Block: Code editing is disabled in Plan Mode. You may only research and write plans in ./plans/."
 			if s.UI != nil {

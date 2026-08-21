@@ -64,18 +64,20 @@ func HandlePlanCommand(parts []string, s *agent.Session) {
 }
 
 func togglePlanMode(s *agent.Session) {
-	if strings.EqualFold(s.Config.Workflow, "plan") {
-		s.Config.Workflow = "auto"
+	if s.Config.PermissionMode == config.PermissionModePlan {
+		s.Config.PermissionMode = config.PermissionModeAsk
+		s.Config.AutoApprove = false
 		_ = config.SaveConfig(s.Config)
-		fmt.Printf("\n%s Plan Mode DISABLED. Workflow reset to %s.\n\n",
-			BoldCyan("[Workflow]"), BoldGreen("AUTO"))
+		fmt.Printf("\n%s Plan Mode DISABLED. Switched back to %s permissions.\n\n",
+			BoldCyan("[Plan Mode]"), BoldGreen("ASK"))
 	} else {
-		s.Config.Workflow = "plan"
+		s.Config.PermissionMode = config.PermissionModePlan
+		s.Config.AutoApprove = true
 		_ = config.SaveConfig(s.Config)
 		fmt.Printf("\n%s Strict Plan Mode ENABLED! 📝\n", BoldPastelPink("[Plan Mode]"))
-		fmt.Println("  • Code modifications are blocked in this session.")
-		fmt.Println("  • Agent is restricted to research and writing plans to ./plans/.")
-		fmt.Println("  • Type '/plan mode' or '/workflow' to switch back.")
+		fmt.Println("  • Code modifications outside ./plans/ are blocked.")
+		fmt.Println("  • Agent will explore and generate plans into ./plans/.")
+		fmt.Println("  • Press 'Shift+Tab' or type '/plan mode' to switch back.")
 		fmt.Println()
 	}
 }
