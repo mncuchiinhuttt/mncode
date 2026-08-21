@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"mncode/pkg/agent"
@@ -13,7 +14,7 @@ import (
 	"golang.org/x/term"
 )
 
-// HandleMCPCommand dispatches /mcp subcommands (list, add, remove, restart)
+// HandleMCPCommand manages pre-configured GitHub & Notion MCP servers
 func HandleMCPCommand(parts []string, s *agent.Session) {
 	if s.MCP == nil {
 		s.MCP = mcp.NewManager(s.WorkspaceDir)
@@ -24,56 +25,61 @@ func HandleMCPCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	switch parts[1] {
-	case "add":
-		if len(parts) < 4 {
-			fmt.Printf("\n%s Usage: /mcp add <name> <command> [args...]\n", BoldCyan("💡"))
-			fmt.Println("  Examples:")
-			fmt.Println("    /mcp add github npx -y @modelcontextprotocol/server-github")
-			fmt.Println("    /mcp add notion npx -y @modelcontextprotocol/server-notion")
-			fmt.Println("    /mcp add postgres npx -y @modelcontextprotocol/server-postgres postgresql://localhost/mydb")
-			fmt.Println()
-			return
+	sub := strings.ToLower(parts[1])
+	switch sub {
+	case "github", "gh":
+		token := ""
+		if len(parts) > 2 {
+			token = strings.TrimSpace(parts[2])
+		} else {
+			token = promptForToken("Enter GitHub Personal Access Token (ghp_...): ")
 		}
-		name := parts[2]
-		cmd := parts[3]
-		var args []string
-		if len(parts) > 4 {
-			args = parts[4:]
+		if token == "" {
+			fmt.Printf("\n%s GitHub token cannot be empty.\n\n", BoldRed("[Error]"))
+			return
 		}
 		cfg := mcp.ServerConfig{
-			Command: cmd,
-			Args:    args,
+			Command: "npx",
+			Args:    []string{"-y", "@modelcontextprotocol/server-github"},
+			Env:     map[string]string{"GITHUB_PERSONAL_ACCESS_TOKEN": token},
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
+		configureAndConnectMCP(s, "github", cfg)
 
-		fmt.Printf("\n%s Connecting to MCP server '%s' (%s %s)...\n", BoldCyan("🔌 [MCP]"), name, cmd, strings.Join(args, " "))
-		if err := s.MCP.AddServer(ctx, name, cfg); err != nil {
-			fmt.Printf("%s Failed to add MCP server: %v\n\n", BoldRed("[Error]"), err)
+	case "notion":
+		token := ""
+		if len(parts) > 2 {
+			token = strings.TrimSpace(parts[2])
+		} else {
+			token = promptForToken("Enter Notion Integration Secret (secret_...): ")
+		}
+		if token == "" {
+			fmt.Printf("\n%s Notion token cannot be empty.\n\n", BoldRed("[Error]"))
 			return
 		}
-
-		added := tools.RegisterMCPTools(s.Tools, s.MCP, ctx)
-		fmt.Printf("%s Successfully connected! %s active MCP tools registered.\n\n", BoldGreen("✓"), Bold(fmt.Sprintf("%d", added)))
+		cfg := mcp.ServerConfig{
+			Command: "npx",
+			Args:    []string{"-y", "@modelcontextprotocol/server-notion"},
+			Env:     map[string]string{"NOTION_API_KEY": token},
+		}
+		configureAndConnectMCP(s, "notion", cfg)
 
 	case "remove", "rm", "delete":
 		if len(parts) < 3 {
-			fmt.Printf("\n%s Usage: /mcp remove <name>\n\n", BoldCyan("💡"))
+			fmt.Printf("\n%s Usage: /mcp remove <github|notion>\n\n", BoldCyan("💡"))
 			return
 		}
-		name := parts[2]
+		name := strings.ToLower(parts[2])
 		if err := s.MCP.RemoveServer(name); err != nil {
-			fmt.Printf("%s Failed to remove MCP server: %v\n\n", BoldRed("[Error]"), err)
+			fmt.Printf("%s Failed to remove '%s': %v\n\n", BoldRed("[Error]"), name, err)
 			return
 		}
-		fmt.Printf("\n%s MCP server '%s' removed.\n\n", BoldGreen("✓"), name)
+		fmt.Printf("\n%s MCP server '%s' disconnected and removed.\n\n", BoldGreen("✓"), name)
 
 	case "restart", "reload":
 		ctx := context.Background()
 		s.MCP.Close()
 		s.MCP.LoadConfig()
-		fmt.Printf("\n%s Restarting all MCP servers...\n", BoldCyan("🔌 [MCP]"))
+		fmt.Printf("\n%s Restarting MCP servers...\n", BoldCyan("🔌 [MCP]"))
 		s.MCP.StartAll(ctx)
 		count := tools.RegisterMCPTools(s.Tools, s.MCP, ctx)
 		fmt.Printf("%s MCP reloaded. %d tools active.\n\n", BoldGreen("✓"), count)
@@ -83,11 +89,40 @@ func HandleMCPCommand(parts []string, s *agent.Session) {
 	}
 }
 
+func configureAndConnectMCP(s *agent.Session, name string, cfg mcp.ServerConfig) {
+	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	defer cancel()
+
+	fmt.Printf("\n%s Connecting to %s MCP server (npx @modelcontextprotocol/server-%s)...\n",
+		BoldCyan("🔌 [MCP]"), Bold(name), name)
+
+	if err := s.MCP.AddServer(ctx, name, cfg); err != nil {
+		fmt.Printf("%s Connection failed: %v\n", BoldRed("[Error]"), err)
+		fmt.Printf("Make sure Node.js (npx) is installed and the token is valid.\n\n")
+		return
+	}
+
+	added := tools.RegisterMCPTools(s.Tools, s.MCP, ctx)
+	fmt.Printf("%s %s MCP connected successfully! %s tools loaded.\n\n",
+		BoldGreen("✓"), Bold(name), BoldGreen(fmt.Sprintf("%d", added)))
+}
+
+func promptForToken(promptStr string) string {
+	fmt.Print(BoldCyan(promptStr))
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	return strings.TrimSpace(line)
+}
+
 func showMCPStatus(s *agent.Session) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	statuses := s.MCP.GetStatus(ctx)
+	statusMap := make(map[string]mcp.ServerStatus)
+	for _, st := range statuses {
+		statusMap[st.Name] = st
+	}
 
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || width < 60 {
@@ -105,34 +140,45 @@ func showMCPStatus(s *agent.Session) {
 	fmt.Println(topBorder)
 	printMCPRow("", cardWidth)
 
-	if len(statuses) == 0 {
-		printMCPRow(GrayText("  No MCP servers configured yet."), cardWidth)
-		printMCPRow(fmt.Sprintf("  Run %s to connect GitHub, Notion, etc.", BoldCyan("/mcp add <name> <command>")), cardWidth)
-	} else {
-		for _, st := range statuses {
-			statusBadge := BoldGreen("🟢 Connected")
-			if !st.Connected {
-				statusBadge = BoldRed("🔴 " + st.Error)
+	// 1. GitHub MCP
+	gh, ghConfigured := statusMap["github"]
+	if ghConfigured && gh.Connected {
+		printMCPRow(fmt.Sprintf("  🐙 %-14s %s (%d tools)", BoldCyan("GitHub MCP"), BoldGreen("🟢 Connected"), len(gh.Tools)), cardWidth)
+		if len(gh.Tools) > 0 {
+			var names []string
+			for _, t := range gh.Tools {
+				names = append(names, t.Name)
 			}
-			cmdStr := fmt.Sprintf("%s %s", st.Command, strings.Join(st.Args, " "))
-			printMCPRow(fmt.Sprintf("  • %-18s %s", BoldCyan(st.Name), statusBadge), cardWidth)
-			printMCPRow(fmt.Sprintf("    %s %s", GrayText("Command:"), GrayText(truncateText(cmdStr, cardWidth-20))), cardWidth)
-
-			if len(st.Tools) > 0 {
-				var toolNames []string
-				for _, t := range st.Tools {
-					toolNames = append(toolNames, t.Name)
-				}
-				toolSummary := strings.Join(toolNames, ", ")
-				printMCPRow(fmt.Sprintf("    %s %s (%d tools)", GrayText("Tools:  "),
-					Bold(truncateText(toolSummary, cardWidth-25)), len(st.Tools)), cardWidth)
-			}
-			printMCPRow("", cardWidth)
+			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
 		}
+	} else if ghConfigured {
+		printMCPRow(fmt.Sprintf("  🐙 %-14s %s", BoldCyan("GitHub MCP"), BoldRed("🔴 "+gh.Error)), cardWidth)
+	} else {
+		printMCPRow(fmt.Sprintf("  🐙 %-14s %s · Run: %s", BoldCyan("GitHub MCP"), GrayText("⚪ Not Configured"), BoldCyan("/mcp github <token>")), cardWidth)
 	}
 
+	printMCPRow("", cardWidth)
+
+	// 2. Notion MCP
+	notion, notionConfigured := statusMap["notion"]
+	if notionConfigured && notion.Connected {
+		printMCPRow(fmt.Sprintf("  📝 %-14s %s (%d tools)", BoldCyan("Notion MCP"), BoldGreen("🟢 Connected"), len(notion.Tools)), cardWidth)
+		if len(notion.Tools) > 0 {
+			var names []string
+			for _, t := range notion.Tools {
+				names = append(names, t.Name)
+			}
+			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
+		}
+	} else if notionConfigured {
+		printMCPRow(fmt.Sprintf("  📝 %-14s %s", BoldCyan("Notion MCP"), BoldRed("🔴 "+notion.Error)), cardWidth)
+	} else {
+		printMCPRow(fmt.Sprintf("  📝 %-14s %s · Run: %s", BoldCyan("Notion MCP"), GrayText("⚪ Not Configured"), BoldCyan("/mcp notion <token>")), cardWidth)
+	}
+
+	printMCPRow("", cardWidth)
 	printMCPRow(fmt.Sprintf("  %s %s", GrayText("Config:"), GrayText(s.MCP.ConfigPath)), cardWidth)
-	printMCPRow(GrayText("╰"+strings.Repeat("─", cardWidth-2)+"╯"), cardWidth)
+	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()
 }
 
@@ -141,10 +187,6 @@ func printMCPRow(content string, boxWidth int) {
 	pad := boxWidth - 4 - vLen
 	if pad < 0 {
 		pad = 0
-	}
-	if content != "" && strings.HasPrefix(content, "╰") {
-		fmt.Println(content)
-		return
 	}
 	fmt.Printf("%s %s%s %s\n",
 		GrayText("│"),
