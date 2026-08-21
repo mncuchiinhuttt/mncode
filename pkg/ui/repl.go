@@ -23,6 +23,7 @@ func RunREPL(s *agent.Session) {
 
 	StartBackgroundVersionCheck()
 
+	turnIndex := 0
 	for {
 		input, ok := ReadInlinePrompt(s)
 		if !ok {
@@ -43,6 +44,7 @@ func RunREPL(s *agent.Session) {
 			continue
 		}
 
+		turnIndex++
 		ctx := context.Background()
 		fmt.Println()
 		err := s.ProcessUserInput(ctx, trimmed)
@@ -50,6 +52,8 @@ func RunREPL(s *agent.Session) {
 			fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
 		}
 		fmt.Println()
+
+		CheckAndPrintPeriodicRecap(s, turnIndex)
 	}
 }
 

@@ -62,11 +62,14 @@ func buildPromptLines(s *agent.Session, input []rune, selectedIdx int, width int
 
 	copyToast := GetActiveCopyToast()
 	updateNotice := GetCachedUpdateNotice()
+	idleRizz := GetActiveIdleRizz()
 	if copyToast != "" {
 		footer = fmt.Sprintf("  %s%s%s", proBadge, copyToast,
 			GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s", agentHint)))
 	} else if updateNotice != "" {
 		footer = fmt.Sprintf("  %s%s", proBadge, updateNotice)
+	} else if idleRizz != "" {
+		footer = fmt.Sprintf("  %s\033[1;38;5;218m[RIZZ IDLE]\033[0m \033[38;5;225m%s\033[0m", proBadge, idleRizz)
 	} else {
 		switch s.Config.PermissionMode {
 		case config.PermissionModeBypass:

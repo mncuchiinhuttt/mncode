@@ -57,6 +57,9 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	}
 
 	RegisterCopyCallback(func() { render() })
+	stopIdleWatcher := StartBrainrotIdleWatcher(s, func() { render() })
+	defer stopIdleWatcher()
+
 	render()
 
 	buf := make([]byte, 64)
@@ -65,6 +68,8 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		if err != nil || n == 0 {
 			break
 		}
+
+		ResetBrainrotActivity(func() { render() })
 
 		matching := getMatchingSlashOptions(s, string(input))
 
