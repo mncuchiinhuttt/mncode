@@ -74,9 +74,9 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 		isBrainrot := s.Config.GetSetting("brainrot_mode", "false") == "true"
 		switch s.Config.PermissionMode {
 		case config.PermissionModePlan:
-			label := BoldPastelPink("📝 plan mode on (read-only)")
+			label := BoldPastelPink("⏵⏵ plan mode on (read-only)")
 			if isBrainrot {
-				label = BoldPastelPink("📝 plan mode (only big brain plans fr fr)")
+				label = BoldPastelPink("⏵⏵ plan mode (only big brain plans fr fr)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))

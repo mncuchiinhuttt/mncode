@@ -74,7 +74,7 @@ func togglePlanMode(s *agent.Session) {
 		s.Config.PermissionMode = config.PermissionModePlan
 		s.Config.AutoApprove = true
 		_ = config.SaveConfig(s.Config)
-		fmt.Printf("\n%s Strict Plan Mode ENABLED! 📝\n", BoldPastelPink("[Plan Mode]"))
+		fmt.Printf("\n%s Strict Plan Mode ENABLED! (Read-only)\n", BoldPastelPink("[Plan Mode]"))
 		fmt.Println("  • Code modifications outside ./plans/ are blocked.")
 		fmt.Println("  • Agent will explore and generate plans into ./plans/.")
 		fmt.Println("  • Press 'Shift+Tab' or type '/plan mode' to switch back.")
