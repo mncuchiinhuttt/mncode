@@ -46,7 +46,7 @@ func GetActiveDropdownItems(s *agent.Session, input []rune, cursorPos int) ([]Dr
 			items = append(items, DropdownItem{
 				Primary:   o.Command,
 				Secondary: o.Description,
-				Icon:      "/",
+				Icon:      "",
 			})
 		}
 		return items, "slash", 0
@@ -113,12 +113,17 @@ func RenderDropdownLines(items []DropdownItem, selectedIdx int, width int) ([]st
 		}
 		secStr := truncateText(item.Secondary, maxDescLen)
 
+		prefixIcon := ""
+		if item.Icon != "" {
+			prefixIcon = item.Icon + " "
+		}
+
 		if i == selectedIdx {
-			lines = append(lines, fmt.Sprintf("  \033[1;36m> %s %s\033[0m \033[90m%s\033[0m",
-				item.Icon, primaryStr, secStr))
+			lines = append(lines, fmt.Sprintf("  \033[1;36m> %s%s\033[0m \033[90m%s\033[0m",
+				prefixIcon, primaryStr, secStr))
 		} else {
-			lines = append(lines, fmt.Sprintf("    %s \033[36m%s\033[0m \033[2m%s\033[0m",
-				item.Icon, primaryStr, secStr))
+			lines = append(lines, fmt.Sprintf("    %s\033[36m%s\033[0m \033[2m%s\033[0m",
+				prefixIcon, primaryStr, secStr))
 		}
 	}
 
