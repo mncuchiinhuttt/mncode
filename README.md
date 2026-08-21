@@ -48,13 +48,19 @@
 
 ## 🚀 Quick Install
 
-Install `mncode` globally on macOS or Linux with a single command:
+### macOS & Linux (Terminal)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.sh | bash
 ```
 
-### Build from Source
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.ps1 | iex
+```
+
+### Build from Source (All Platforms)
 
 ```bash
 git clone https://github.com/mncuchiinhuttt/mncode.git
