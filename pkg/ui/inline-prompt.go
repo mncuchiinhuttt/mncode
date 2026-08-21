@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads user prompt with chat frame, full UTF-8 & Vietnamese IME support
+// ReadInlinePrompt reads user prompt with chat frame, mouse click navigation & macOS shortcuts
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -20,7 +20,13 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if err != nil {
 		return readPipedLine()
 	}
-	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
+	defer func() {
+		fmt.Print("\033[?1000l\033[?1006l") // Disable mouse click tracking
+		_ = term.Restore(int(os.Stdin.Fd()), oldState)
+	}()
+
+	// Enable SGR mouse click tracking
+	fmt.Print("\033[?1000h\033[?1006h")
 
 	var input []rune
 	cursorPos, selectedIdx := 0, 0
@@ -31,13 +37,19 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		strings.EqualFold(s.Config.Effort, "pro max") ||
 		strings.EqualFold(s.Config.Effort, "promax")
 
+	promptLen := 2
+	if isProMax {
+		promptLen = 3
+	}
+
 	render := func() {
 		width, _, err := term.GetSize(int(os.Stdout.Fd()))
 		if err != nil || width < 40 {
 			width = 80
 		}
 
-		lines, dropdownCount, _, promptLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
+		lines, dropdownCount, _, pLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
+		promptLen = pLen
 
 		if renderedBefore {
 			fmt.Print("\033[1A\r\033[J")
@@ -72,14 +84,38 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		ResetBrainrotActivity(func() { render() })
 
-		// Shift+Tab permission cycle
+		// 1. Mouse Click Navigation
+		if targetCol, ok := ParseMouseClick(buf[:n], promptLen, len(input)); ok {
+			cursorPos = targetCol
+			selectedIdx = 0
+			render()
+			continue
+		}
+
+		// 2. Cmd+Backspace / Ctrl+U (Delete to start of line)
+		if buf[0] == 21 || (n == 2 && buf[0] == 27 && buf[1] == 127) || (n >= 4 && strings.Contains(string(buf[:n]), "3;2~")) {
+			input, cursorPos = DeleteToStart(input, cursorPos)
+			selectedIdx = 0
+			render()
+			continue
+		}
+
+		// 3. Option+Backspace / Ctrl+W (Delete word backwards)
+		if buf[0] == 23 || (n == 2 && buf[0] == 27 && buf[1] == 8) {
+			input, cursorPos = DeleteWordBackward(input, cursorPos)
+			selectedIdx = 0
+			render()
+			continue
+		}
+
+		// 4. Shift+Tab (Permission cycle)
 		if (n == 3 && buf[0] == 27 && buf[1] == 91 && buf[2] == 90) || (n == 2 && buf[0] == 27 && buf[1] == 9) {
 			cyclePermissionMode(s)
 			render()
 			continue
 		}
 
-		// Escape sequences (Arrows)
+		// 5. Arrow Keys & Navigation
 		if n >= 3 && buf[0] == 27 && buf[1] == 91 {
 			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
@@ -113,47 +149,61 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 					render()
 				}
 				continue
+			case 'H':
+				cursorPos = 0
+				render()
+				continue
+			case 'F':
+				cursorPos = len(input)
+				render()
+				continue
 			}
 		}
 
-		// Ctrl+A
-		if n == 1 && buf[0] == 1 {
-			oldState = openSubagentMonitor(s, oldState)
-			renderedBefore = false
+		// 6. Option+Left / Option+Right (Word jump)
+		if n == 2 && buf[0] == 27 && buf[1] == 'b' {
+			cursorPos = MoveWordBackward(input, cursorPos)
+			render()
+			continue
+		}
+		if n == 2 && buf[0] == 27 && buf[1] == 'f' {
+			cursorPos = MoveWordForward(input, cursorPos)
 			render()
 			continue
 		}
 
-		// Ctrl+C / Ctrl+D
+		// 7. Ctrl+A (Line start / Monitor) & Ctrl+E (Line end)
+		if n == 1 && buf[0] == 1 {
+			if len(input) == 0 {
+				oldState = openSubagentMonitor(s, oldState)
+				renderedBefore = false
+			} else {
+				cursorPos = 0
+			}
+			render()
+			continue
+		}
+		if n == 1 && buf[0] == 5 {
+			cursorPos = len(input)
+			render()
+			continue
+		}
+
+		// 8. Ctrl+C / Ctrl+D (Exit)
 		if n == 1 && (buf[0] == 3 || buf[0] == 4) {
 			fmt.Print("\033[1A\r\033[J")
 			PrintRizzGoodbye(s)
 			return "", false
 		}
 
-		// Enter
+		// 9. Enter & Tab Autocomplete
 		if n == 1 && (buf[0] == 13 || buf[0] == 10) {
-			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
-			if len(items) > 0 && selectedIdx < len(items) {
-				chosen := items[selectedIdx]
-				if cat == "at" {
-					prefix := string(input[:atIdx])
-					suffix := string(input[cursorPos:])
-					newStr := prefix + chosen.Primary + " " + suffix
-					input = []rune(newStr)
-					cursorPos = atIdx + len([]rune(chosen.Primary)) + 1
-					selectedIdx = 0
+			newIn, newPos, handled, continueLoop := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, false)
+			if handled {
+				input, cursorPos, selectedIdx = newIn, newPos, 0
+				if continueLoop {
 					render()
 					continue
-				} else if cat == "slash" {
-					if strings.HasPrefix(chosen.Primary, "/ck:") || chosen.Primary == "/btw" || chosen.Primary == "/model" {
-						input = []rune(chosen.Primary + " ")
-						cursorPos = len(input)
-						selectedIdx = 0
-						render()
-						continue
-					}
-					input = []rune(chosen.Primary)
 				}
 			}
 			promptSymbol := BoldCyan("❯")
@@ -164,38 +214,23 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			return string(input), true
 		}
 
-		// Tab
 		if n == 1 && buf[0] == 9 {
-			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
-			if len(items) > 0 && selectedIdx < len(items) {
-				chosen := items[selectedIdx]
-				if cat == "at" {
-					prefix := string(input[:atIdx])
-					suffix := string(input[cursorPos:])
-					newStr := prefix + chosen.Primary + " " + suffix
-					input = []rune(newStr)
-					cursorPos = atIdx + len([]rune(chosen.Primary)) + 1
-					selectedIdx = 0
-					render()
-				} else if cat == "slash" {
-					input = []rune(chosen.Primary + " ")
-					cursorPos = len(input)
-					selectedIdx = 0
-					render()
-				}
+			newIn, newPos, handled, _ := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, true)
+			if handled {
+				input, cursorPos, selectedIdx = newIn, newPos, 0
+				render()
 			}
 			continue
 		}
 
-		// Single Escape
+		// 10. Escape
 		if n == 1 && buf[0] == 27 {
-			input = nil
-			cursorPos = 0
+			input, cursorPos, selectedIdx = nil, 0, 0
 			render()
 			continue
 		}
 
-		// Parse sequential characters (Multi-byte UTF-8, Vietnamese IME & mixed backspaces)
+		// 11. Parse sequential characters & multi-byte UTF-8
 		i := 0
 		for i < n {
 			b := buf[i]
