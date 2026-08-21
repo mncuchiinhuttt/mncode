@@ -71,19 +71,36 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 	} else if idleRizz != "" {
 		footer = fmt.Sprintf("  %s\033[1;38;5;218m[RIZZ IDLE]\033[0m \033[38;5;225m%s\033[0m", proBadge, idleRizz)
 	} else {
+		isBrainrot := s.Config.GetSetting("brainrot_mode", "false") == "true"
 		switch s.Config.PermissionMode {
 		case config.PermissionModePlan:
-			footer = fmt.Sprintf("  %s%s%s", proBadge, BoldPastelPink("📝 plan mode on (read-only)"),
-				GrayText(fmt.Sprintf(" (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
+			label := BoldPastelPink("📝 plan mode on (read-only)")
+			if isBrainrot {
+				label = BoldPastelPink("📝 plan mode (only big brain plans fr fr)")
+			}
+			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
+				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeBypass:
-			footer = fmt.Sprintf("  %s%s%s", proBadge, BoldYellow("⏵⏵ bypass permissions on"),
-				GrayText(fmt.Sprintf(" (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
+			label := BoldYellow("⏵⏵ bypass permissions on")
+			if isBrainrot {
+				label = BoldYellow("🔥 full bypass (let him cook with max rizz)")
+			}
+			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
+				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeAuto:
-			footer = fmt.Sprintf("  %s%s%s", proBadge, BoldCyan("⏵ auto-approve on"),
-				GrayText(fmt.Sprintf(" (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
+			label := BoldCyan("⏵ auto-approve on")
+			if isBrainrot {
+				label = BoldCyan("⚡ auto-cooking on fr fr (zero cap)")
+			}
+			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
+				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		default:
-			footer = fmt.Sprintf("  %s%s", proBadge,
-				GrayText(fmt.Sprintf("ask permissions (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
+			label := GrayText("ask permissions")
+			if isBrainrot {
+				label = GrayText("asking permissions (don't get caught in 4k)")
+			}
+			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
+				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		}
 	}
 

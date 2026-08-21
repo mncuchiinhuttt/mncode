@@ -8,11 +8,14 @@ import (
 
 var (
 	brainrotExitMessages = []string{
-		"Aura +1000 for cooking today. Stay sigma, king 🗿👑",
+		"Aura +10000 for cooking today. Stay sigma, king 🗿👑",
 		"Logging off with maximum rizz. No bugs survived today fr fr 🔥",
 		"Mewing streak preserved. See you next commit, chief 🤫🧏",
 		"We cooked and we ate. Catch you on the next push boss ✌️🍳",
 		"Aura levels maxed out. Terminal safely disengaged 🚀⚡",
+		"Nghỉ ngơi thôi ní ơi, nay cook căng quá aura tăng chóng mặt fr fr 🗿🔥",
+		"Đã push code mượt như bơ, không một chút cap. See ya king! 👑✌️",
+		"Skibidi toilet cũng phải nể độ 10x dev của ní hôm nay 🧠✨",
 	}
 
 	standardExitMessages = []string{
