@@ -26,10 +26,9 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	renderedBefore := false
 	branch := GetGitBranchOrFolder(s.WorkspaceDir)
 
-	isProMax := strings.Contains(strings.ToLower(s.Config.Effort), "pro") ||
-		strings.Contains(strings.ToLower(s.Config.Effort), "max") ||
-		s.Config.ThinkingBudget >= 64000 ||
-		s.Config.Workflow == "ultracode"
+	isProMax := s.Config.Workflow == "ultracode" ||
+		strings.EqualFold(s.Config.Effort, "pro max") ||
+		strings.EqualFold(s.Config.Effort, "promax")
 
 	render := func() {
 		width, _, err := term.GetSize(int(os.Stdout.Fd()))

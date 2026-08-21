@@ -49,8 +49,7 @@ func HandleEffortCommand(parts []string, s *agent.Session) {
 			} else if num <= 32768 {
 				s.Config.Effort = "xhigh"
 			} else {
-				s.Config.Effort = "pro max"
-				s.Config.Workflow = "ultracode"
+				s.Config.Effort = "max"
 			}
 		} else {
 			fmt.Printf("Unknown effort '%s'. Use: low, medium, high, xhigh, max, pro max, or token count.\n", arg)
@@ -61,7 +60,7 @@ func HandleEffortCommand(parts []string, s *agent.Session) {
 	_ = config.SaveConfig(s.Config)
 	RenderStickyHeader(s)
 
-	if s.Config.Effort == "pro max" || s.Config.Effort == "max" {
+	if s.Config.Effort == "pro max" || s.Config.Workflow == "ultracode" {
 		triggerProMaxActivationAnimation()
 	} else {
 		fmt.Printf("Thinking Effort set to: %s (Workflow: %s)\n",

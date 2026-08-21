@@ -200,7 +200,7 @@ func OpenInteractiveEffortSlider(s *agent.Session) {
 			if lastLinesCount > 0 {
 				fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
 			}
-			if chosen.ID == "pro max" || chosen.ID == "max" {
+			if chosen.ID == "pro max" {
 				triggerProMaxActivationAnimation()
 			} else {
 				fmt.Printf("Thinking Effort set to: %s (Workflow: %s)\r\n\r\n",

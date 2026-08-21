@@ -38,10 +38,9 @@ func PrintHeaderCard(s *agent.Session) {
 	}
 	cardWidth := width - 2
 
-	isProMax := strings.Contains(strings.ToLower(s.Config.Effort), "pro") ||
-		strings.Contains(strings.ToLower(s.Config.Effort), "max") ||
-		s.Config.ThinkingBudget >= 64000 ||
-		s.Config.Workflow == "ultracode"
+	isProMax := s.Config.Workflow == "ultracode" ||
+		strings.EqualFold(s.Config.Effort, "pro max") ||
+		strings.EqualFold(s.Config.Effort, "promax")
 
 	modelName := s.Config.Model
 	if modelName == "" {
