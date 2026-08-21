@@ -5,11 +5,12 @@ import (
 	"mncode/pkg/agent"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads user prompt with chat frame, @ context autocomplete & Shift+Tab mode switcher
+// ReadInlinePrompt reads user prompt with chat frame, full UTF-8 & Vietnamese IME support
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -62,7 +63,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 	render()
 
-	buf := make([]byte, 64)
+	buf := make([]byte, 128)
 	for {
 		n, err := os.Stdin.Read(buf)
 		if err != nil || n == 0 {
@@ -71,6 +72,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		ResetBrainrotActivity(func() { render() })
 
+		// Shift+Tab permission cycle
 		if (n == 3 && buf[0] == 27 && buf[1] == 91 && buf[2] == 90) || (n == 2 && buf[0] == 27 && buf[1] == 9) {
 			cyclePermissionMode(s)
 			render()
@@ -78,7 +80,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		}
 
 		// Escape sequences (Arrows)
-		if n == 3 && buf[0] == 27 && buf[1] == 91 {
+		if n >= 3 && buf[0] == 27 && buf[1] == 91 {
 			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
 			case 'A':
@@ -114,20 +116,23 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			}
 		}
 
-		b := buf[0]
-		switch b {
-		case 1: // Ctrl+A / Left edge
+		// Ctrl+A
+		if n == 1 && buf[0] == 1 {
 			oldState = openSubagentMonitor(s, oldState)
 			renderedBefore = false
 			render()
 			continue
+		}
 
-		case 3, 4:
+		// Ctrl+C / Ctrl+D
+		if n == 1 && (buf[0] == 3 || buf[0] == 4) {
 			fmt.Print("\033[1A\r\033[J")
 			PrintRizzGoodbye(s)
 			return "", false
+		}
 
-		case 13, 10:
+		// Enter
+		if n == 1 && (buf[0] == 13 || buf[0] == 10) {
 			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
 			if len(items) > 0 && selectedIdx < len(items) {
 				chosen := items[selectedIdx]
@@ -157,8 +162,10 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			}
 			fmt.Printf("\033[1A\r\033[J%s %s\r\n", promptSymbol, highlightPromptInput(string(input)))
 			return string(input), true
+		}
 
-		case 9: // Tab autocompletion
+		// Tab
+		if n == 1 && buf[0] == 9 {
 			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
 			if len(items) > 0 && selectedIdx < len(items) {
 				chosen := items[selectedIdx]
@@ -178,33 +185,41 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 				}
 			}
 			continue
+		}
 
-		case 27:
-			if n == 1 {
-				input = nil
-				cursorPos = 0
-				render()
-			}
+		// Single Escape
+		if n == 1 && buf[0] == 27 {
+			input = nil
+			cursorPos = 0
+			render()
 			continue
+		}
 
-		case 127, 8:
-			if cursorPos > 0 {
-				input = append(input[:cursorPos-1], input[cursorPos:]...)
-				cursorPos--
-				selectedIdx = 0
-				render()
-			}
-			continue
-
-		default:
-			if b >= 32 {
-				r := rune(b)
-				input = append(input[:cursorPos], append([]rune{r}, input[cursorPos:]...)...)
-				cursorPos++
-				selectedIdx = 0
-				render()
+		// Parse sequential characters (Multi-byte UTF-8, Vietnamese IME & mixed backspaces)
+		i := 0
+		for i < n {
+			b := buf[i]
+			if b == 127 || b == 8 {
+				if cursorPos > 0 {
+					input = append(input[:cursorPos-1], input[cursorPos:]...)
+					cursorPos--
+				}
+				i++
+			} else if b >= 32 || b >= 0x80 {
+				r, size := utf8.DecodeRune(buf[i:n])
+				if r != utf8.RuneError && size > 0 {
+					input = append(input[:cursorPos], append([]rune{r}, input[cursorPos:]...)...)
+					cursorPos++
+					i += size
+				} else {
+					i++
+				}
+			} else {
+				i++
 			}
 		}
+		selectedIdx = 0
+		render()
 	}
 
 	return string(input), true
