@@ -27,6 +27,12 @@ func (s *Session) BuildSystemPrompt() string {
 	sb.WriteString(fmt.Sprintf("Workflow Mode: %s\n", s.Config.Workflow))
 	sb.WriteString("</user_information>\n\n")
 
+	// Inject Codebase Architecture Map (from /scan or workspace scan)
+	if s.CodebaseMap != nil {
+		sb.WriteString(s.CodebaseMap.FormatPromptContext())
+		sb.WriteString("\n")
+	}
+
 	// Inject Rules from .claude/rules/
 	if s.Catalog != nil && len(s.Catalog.Rules) > 0 {
 		sb.WriteString(s.Catalog.FormatRules())

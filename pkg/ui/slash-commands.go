@@ -124,6 +124,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		} else {
 			fmt.Printf("\n%s Brainrot Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
+	case "/scan":
+		HandleScanCommand(parts, s)
 	case "/recap", "/summary":
 		HandleRecapCommand(parts, s)
 	case "/update", "/upgrade":

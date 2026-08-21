@@ -33,6 +33,7 @@ func main() {
 		versionLong      = flag.Bool("version", false, "Show mncode version")
 		upgradeFlag      = flag.Bool("upgrade", false, "Update mncode to latest release")
 		updateFlag       = flag.Bool("update", false, "Update mncode to latest release")
+		scanFlag         = flag.Bool("scan", false, "Deep scan and print codebase architecture map")
 	)
 	flag.Parse()
 
@@ -43,6 +44,11 @@ func main() {
 
 	if *upgradeFlag || *updateFlag || (len(os.Args) > 1 && (os.Args[1] == "upgrade" || os.Args[1] == "update")) {
 		ui.HandleUpdateCommand(nil, nil)
+		return
+	}
+
+	if *scanFlag || (len(os.Args) > 1 && os.Args[1] == "scan") {
+		ui.HandleScanCommand(nil, &agent.Session{WorkspaceDir: *workspaceFlag})
 		return
 	}
 

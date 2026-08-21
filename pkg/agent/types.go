@@ -37,5 +37,6 @@ type Session struct {
 	}
 	History      []provider.Message
 	Subagents    *SubagentRegistry
+	CodebaseMap  *CodebaseSummary
 	UI           UIEventListener
 }
