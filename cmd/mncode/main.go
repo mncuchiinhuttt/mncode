@@ -29,8 +29,22 @@ func main() {
 		resumeFlag       = flag.Bool("resume", false, "Resume previous conversation session")
 		resumeShort      = flag.Bool("r", false, "Resume previous conversation session")
 		resumeID         = flag.String("resume-id", "", "Resume specific session ID")
+		versionFlag      = flag.Bool("v", false, "Show mncode version")
+		versionLong      = flag.Bool("version", false, "Show mncode version")
+		upgradeFlag      = flag.Bool("upgrade", false, "Update mncode to latest release")
+		updateFlag       = flag.Bool("update", false, "Update mncode to latest release")
 	)
 	flag.Parse()
+
+	if *versionFlag || *versionLong || (len(os.Args) > 1 && os.Args[1] == "version") {
+		ui.ShowVersionInfo()
+		return
+	}
+
+	if *upgradeFlag || *updateFlag || (len(os.Args) > 1 && (os.Args[1] == "upgrade" || os.Args[1] == "update")) {
+		ui.HandleUpdateCommand(nil, nil)
+		return
+	}
 
 	// 1. Load configuration
 	cfg, err := config.LoadConfig(*workspaceFlag)

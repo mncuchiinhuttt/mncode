@@ -5,7 +5,6 @@ import (
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
 	"mncode/pkg/stats"
-	"sort"
 	"strings"
 )
 
@@ -125,6 +124,10 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		} else {
 			fmt.Printf("\n%s Brainrot Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
+	case "/update", "/upgrade":
+		HandleUpdateCommand(parts, s)
+	case "/version", "/v":
+		ShowVersionInfo()
 	case "/resume", "/history":
 		HandleResumeCommand(parts, s)
 	default:
@@ -134,35 +137,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 	return true
 }
 
-func showSkills(s *agent.Session) {
-	if s.Catalog == nil || len(s.Catalog.Skills) == 0 {
-		fmt.Println("No skills loaded.")
-		return
-	}
-	var names []string
-	for name := range s.Catalog.Skills {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	fmt.Printf("\n%s (%d skills loaded):\n", BoldCyan("Claude Skills"), len(names))
-	for _, n := range names {
-		sk := s.Catalog.Skills[n]
-		fmt.Printf("  • %-24s %s\n", Bold(sk.Name), GrayText(sk.Description))
-	}
-	fmt.Println()
-}
 
-func showAgents(s *agent.Session) {
-	if s.Catalog == nil || len(s.Catalog.Agents) == 0 {
-		fmt.Println("No agents loaded.")
-		return
-	}
-	fmt.Printf("\n%s (%d agents):\n", BoldMagenta("mnCode Specialized Agents"), len(s.Catalog.Agents))
-	for name, a := range s.Catalog.Agents {
-		fmt.Printf("  • %-20s (%s)\n", Bold(name), a.Role)
-	}
-	fmt.Println()
-}
 
 func showRules(s *agent.Session) {
 	if s.Catalog == nil || len(s.Catalog.Rules) == 0 {

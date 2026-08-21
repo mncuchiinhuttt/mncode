@@ -61,9 +61,12 @@ func buildPromptLines(s *agent.Session, input []rune, selectedIdx int, width int
 	}
 
 	copyToast := GetActiveCopyToast()
+	updateNotice := GetCachedUpdateNotice()
 	if copyToast != "" {
 		footer = fmt.Sprintf("  %s%s%s", proBadge, copyToast,
 			GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s", agentHint)))
+	} else if updateNotice != "" {
+		footer = fmt.Sprintf("  %s%s", proBadge, updateNotice)
 	} else {
 		switch s.Config.PermissionMode {
 		case config.PermissionModeBypass:

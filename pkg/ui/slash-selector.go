@@ -37,7 +37,8 @@ var slashOptions = []SlashOption{
 	{Command: "/resume", Description: "Browse & resume previous conversation sessions", Category: "Session"},
 	{Command: "/history", Description: "View conversation history and past turns", Category: "Session"},
 	{Command: "/status", Description: "Show session configuration & message stats", Category: "Settings"},
-	{Command: "/clear", Description: "Clear terminal screen and conversation history", Category: "Session"},
+	{Command: "/update", Description: "Check GitHub Releases and self-update mncode to latest version", Category: "General"},
+	{Command: "/version", Description: "Show current mncode version and platform architecture", Category: "Help"},
 	{Command: "/help", Description: "Show help and command palette", Category: "Help"},
 	{Command: "/exit", Description: "Exit mncode assistant", Category: "Session"},
 }

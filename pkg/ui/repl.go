@@ -17,6 +17,8 @@ func RunREPL(s *agent.Session) {
 	stopClipboard := StartClipboardWatcher()
 	defer stopClipboard()
 
+	StartBackgroundVersionCheck()
+
 	for {
 		input, ok := ReadInlinePrompt(s)
 		if !ok {
