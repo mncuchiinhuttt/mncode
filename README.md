@@ -1,142 +1,176 @@
-# mncode (Claude Code CLI Clone in Golang)
+# mncode
 
-`mncode` là một phiên bản AI coding assistant CLI hiệu năng cao, viết hoàn toàn bằng **Golang**, tương thích với cơ chế hoạt động của **Claude Code** và tích hợp sâu với toàn bộ hệ sinh thái **ClaudeKit Engineer** cùng bộ **Claude Skills (Open Agent Skills Specification)** trong folder `.claude`.
+<p align="center">
+  <strong>High-Performance AI Coding Assistant CLI in Golang</strong><br>
+  <em>Claude Code Alternative with Multi-Account Smart Routing, ClaudeKit Skills & Autonomous Multi-Agent Orchestration</em>
+</p>
 
----
-
-## 🌟 Tính năng nổi bật
-
-1. **Multi-Account Manager & 9router-style Smart Routing**:
-   - **Đăng nhập nhiều tài khoản Codex & Antigravity** không giới hạn số lượng.
-   - **Cơ chế xoay tua (Round-robin)** và tự động cân bằng tải (Load Balancing).
-   - **Tự động Cooldown khi chạm Rate Limit (429)**: Tự động phát hiện 429 / 401 và chuyển sang tài khoản kế tiếp ngay lập tức mà không làm gián đoạn câu lệnh của người dùng!
-   - Tự động import credentials có sẵn từ `~/.gemini/` hoặc `~/.openai/`.
-   - Lưu trữ an toàn tại `~/.mncode/accounts.json`.
-2. **Tương thích toàn diện với `.claude`**:
-   - Tự động scan và nạp **60+ Claude Skills** (`.claude/skills/*/SKILL.md`) theo chuẩn Open Agent Skills Spec (YAML frontmatter + Markdown).
-   - Nạp các **ClaudeKit Specialized Subagents** (`.claude/agents/*.md`): `planner`, `researcher`, `code-reviewer`, `tester`, `debugger`, `docs-manager`, `fullstack-developer`, v.v.
-   - Nạp các **Workspace Rules** (`.claude/rules/*.md`) và `.claude/.ck.json`.
-3. **Bộ công cụ (Built-in Tools Suite) tiêu chuẩn**:
-   - `run_command` (`bash`): Thực thi lệnh shell với timeout & output streaming.
-   - `view_file`: Xem file với số dòng và slicing (`StartLine`, `EndLine`).
-   - `replace_file_content`: Sửa code chính xác theo từng đoạn chunk.
-   - `write_to_file`: Tạo hoặc ghi đè file với tự động tạo thư mục cha.
-   - `grep_search`: Tìm kiếm regex / pattern trong toàn bộ dự án.
-   - `find_by_name`: Tìm kiếm tên file / glob pattern.
-   - `list_dir`: Xem danh sách file / thư mục.
-   - `read_url_content`: Đọc nội dung web.
-   - `ask_user`: Tương tác hỏi người dùng khi cần làm rõ.
-   - `invoke_subagent`: Điều phối các subagent chuyên biệt để giải quyết task.
-4. **Multi-Provider LLM Engine**:
-   - **Anthropic Claude**: Hỗ trợ Messages API, streaming SSE, tool calling, Extended Thinking (`claude-3-7-sonnet-20250219`).
-   - **OpenRouter / OpenAI**: Hỗ trợ OpenRouter, DeepSeek, ChatGPT, Ollama.
-   - **Google Gemini / Antigravity**: Hỗ trợ Gemini 2.5 / 3 streaming & tool calling.
-4. **Giao diện Interactive Terminal REPL**:
-   - Quản lý lịch sử lệnh (History, Arrow Keys, Autocompletion).
-   - Streaming token & hiển thị khối Thinking (`[Thinking]`).
-   - Slash commands: `/skills`, `/agents`, `/rules`, `/model`, `/clear`, `/status`, `/help`, `/exit`.
-   - Cơ chế cấp quyền xác nhận trước khi chạy lệnh (Permission Guard).
+<p align="center">
+  <a href="#-quick-install"><img src="https://img.shields.io/badge/Install-1--Line%20Script-brightgreen" alt="Install Script"></a>
+  <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go" alt="Go Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
 ---
 
-## 🚀 Cài đặt nhanh (1-Line Installer)
+## ⚡️ Key Features
 
-Cài đặt trực tiếp lên macOS hoặc Linux qua một câu lệnh duy nhất:
+- **Blazing-Fast Golang Core**: Single static binary with near-instant startup (< 20ms) and minimal memory footprint — no heavy Node.js runtime or Python virtualenv required.
+- **Multi-Account Smart Routing & Failover**:
+  - Connect unlimited **Antigravity (Gemini)** and **Codex (OpenAI)** accounts simultaneously.
+  - Automatic round-robin load balancing and instant cooldown rotation on rate limits (`429`) or auth errors (`401`).
+  - Auto-import existing credentials from `~/.gemini/` and `~/.openai/`.
+- **Full ClaudeKit & Open Agent Skills Support**:
+  - Automatically discovers and executes 60+ Claude Skills from `.claude/skills/*/SKILL.md` (Open Agent Skills Specification).
+  - Built-in multi-agent delegation: `planner`, `researcher`, `scout`, `tester`, `debugger`, `code-reviewer`, `fullstack-developer`, `docs-manager`.
+  - Enforces workspace rules (`.claude/rules/*.md`) and project conventions.
+- **Full-Featured Tool Calling Suite**:
+  - `run_command`: Shell command execution with real-time output streaming.
+  - `view_file` & `replace_file_content`: Precise line-slice inspection and atomic chunk replacement.
+  - `write_to_file`: Atomic file creation with auto-parent directory generation.
+  - `grep_search` & `find_by_name`: Ripgrep-speed pattern searching and glob matching.
+  - `list_dir` & `read_url_content`: Directory exploration and web content extraction.
+  - `ask_user`: Interactive clarifying questions.
+  - `invoke_subagent`: Autonomous subagent lifecycle coordination.
+- **Multi-Provider LLM Engine**:
+  - **Anthropic Claude**: Claude 3.7 Sonnet with Extended Thinking budget control.
+  - **Google Gemini / Antigravity**: Gemini 2.5 Flash/Pro and Gemini 3.0.
+  - **OpenRouter & OpenAI**: GPT-4o, o3-mini, DeepSeek R1/V3, and Ollama local models.
+- **Modern Interactive Terminal REPL**:
+  - Clean full-width header card and status bar.
+  - Live slash command autocomplete with relevance-ranked search.
+  - Ephemeral side questions (`/btw <question>`) that answer inquiries without polluting main task history.
+  - Session persistence and interactive restore (`/resume`).
+  - Native mouse text selection with non-disruptive copy toast notifications (`✓ Copied X characters`).
+  - Dedicated Brainrot / Gen-Z 10x Developer Persona toggle (`/brainrot`).
+
+---
+
+## 🚀 Quick Install
+
+Install `mncode` globally on macOS or Linux with a single command:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.sh | bash
 ```
 
-Hoặc build thủ công từ mã nguồn:
+### Build from Source
 
 ```bash
-# Clone hoặc vào thư mục dự án
+git clone https://github.com/mncuchiinhuttt/mncode.git
 cd mncode
-
-# Tải dependencies & Build binary
 go build -o bin/mncode ./cmd/mncode
 ```
 
 ---
 
-## 🔑 Cấu hình API Key
+## 🔑 Configuration & Authentication
 
-Tạo file `.env` tại thư mục root hoặc cấu hình biến môi trường:
+### 1. Interactive Multi-Account Login
+
+```bash
+# Add Antigravity (Gemini) OAuth account
+mncode /login antigravity
+
+# Add Codex (OpenAI) account
+mncode /login codex
+
+# Auto-import credentials from local directories
+mncode /account import
+```
+
+### 2. Environment Variables (Optional)
+
+Create a `.env` file in your workspace or set system environment variables:
 
 ```env
-# Dùng Anthropic Claude (Khuyên dùng)
+# Anthropic Claude
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ANTHROPIC_MODEL=claude-3-7-sonnet-20250219
 
-# Hoặc dùng OpenRouter
+# Google Gemini
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-3.7-flash-high
+
+# OpenRouter
 OPENROUTER_API_KEY=your_openrouter_api_key
 OPENROUTER_MODEL=anthropic/claude-3.7-sonnet
-
-# Hoặc dùng Google Gemini
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-pro
 ```
 
 ---
 
-## 💻 Cách sử dụng
+## 💻 Usage
 
-### 1. Khởi động Interactive REPL:
+### Interactive Mode (Default)
 ```bash
-./bin/mncode
+mncode
 ```
 
-### 2. Tự động duyệt lệnh (Auto-approve mode):
+### Resume Previous Session
 ```bash
-./bin/mncode -y
+mncode --resume
+# or
+mncode -r
 ```
 
-### 3. Chỉ định Model hoặc Provider:
+### Single Command Execution (Non-Interactive)
 ```bash
-./bin/mncode -p anthropic -m claude-3-7-sonnet-20250219
-./bin/mncode -p gemini -m gemini-2.5-pro
+mncode -e "Analyze the repository structure and list available skills"
 ```
 
-### 4. Chạy một câu lệnh trực tiếp (Non-interactive mode):
+### Auto-Approve Permissions
 ```bash
-./bin/mncode -e "Hãy kiểm tra cấu trúc thư mục và liệt kê các skill đang có"
+mncode -y
 ```
 
 ---
 
-## 🕹️ Các lệnh Slash trong REPL
+## 🕹️ Slash Commands Cheat Sheet
 
-- `/account list`: Xem danh sách tất cả các tài khoản Antigravity & Codex (trạng thái ACTIVE/COOLDOWN, số lần gọi, lỗi gần nhất).
-- `/login antigravity`: Đăng nhập thêm tài khoản Antigravity / Gemini OAuth token.
-- `/login codex`: Đăng nhập thêm tài khoản OpenAI / Codex token.
-- `/account add <provider> <id> <token>`: Thêm thủ công tài khoản vào pool.
-- `/account remove <id>`: Xóa tài khoản khỏi pool.
-- `/account import`: Tự động quét và import credentials có sẵn từ `~/.gemini/` hoặc `~/.openai/`.
-- `/skills`: Liệt kê tất cả các Claude skills đã nạp từ `.claude/skills/`.
-- `/agents`: Xem danh sách các ClaudeKit subagents (`planner`, `tester`, `code-reviewer`, v.v.).
-- `/rules`: Xem các quy tắc phát triển trong `.claude/rules/`.
-- `/model [tên_model]`: Xem hoặc thay đổi model đang chạy trong phiên.
-- `/clear`: Xóa lịch sử hội thoại hiện tại.
-- `/status`: Xem trạng thái cấu hình và số lượng tin nhắn trong phiên.
-- `/help`: Xem hướng dẫn lệnh.
-- `/exit` hoặc `/quit`: Thoát chương trình.
+| Command | Description |
+| :--- | :--- |
+| `/config` | Interactive settings manager (Language, Themes, Permissions, Editor mode) |
+| `/btw <question>` | Ask a quick side question without consuming main task history |
+| `/brainrot` | Toggle Gen Z / Sigma 10x developer personality on/off |
+| `/resume` | Browse and resume previous conversation sessions with history viewer |
+| `/model [name]` | Select or switch the active LLM model |
+| `/effort [level]` | Configure thinking budget (None, Low, Medium, High, Max, PRO MAX) |
+| `/workflow [mode]` | Switch agent orchestration mode (`auto`, `ultracode`, `plan-first`) |
+| `/agents` | Open autonomous subagents & workflow monitor |
+| `/skills` | Browse, search, and activate workspace skills |
+| `/account list` | View multi-account pool health, active accounts, and cooldown status |
+| `/theme` | Switch UI color theme (Pastel Pink, Dark, Light, Cyberpunk, Monokai) |
+| `/context` | Display context window usage bar and token breakdown |
+| `/compact` | Summarize and compress conversation history to free context tokens |
+| `/usage` | View token consumption and request stats |
+| `/clear` | Clear conversation history and reset screen |
+| `/help` | Show command palette and help guide |
+| `/exit` | Exit mncode assistant |
 
 ---
 
-## 📁 Cấu trúc mã nguồn
+## 🏗️ Project Architecture
 
 ```
 mncode/
 ├── cmd/
 │   └── mncode/
-│       └── main.go                 # Điểm khởi chạy CLI
+│       └── main.go                 # Application entrypoint & CLI flag router
 ├── pkg/
-│   ├── config/                     # Quản lý config, .env, .ck.json
-│   ├── skills/                     # Bộ parser & loader cho Claude Skills, Agents & Rules
-│   ├── tools/                      # Bộ tools: Bash, View, Edit, Write, Grep, Find, Subagents
-│   ├── provider/                   # LLM engine (Anthropic, OpenRouter, OpenAI, Gemini)
-│   ├── agent/                      # ReAct execution loop, prompt builder, subagent runner
-│   └── ui/                         # Terminal REPL, colors, spinner, slash commands
-└── bin/
-    └── mncode                      # File binary thực thi
+│   ├── accounts/                   # Multi-account pool, 9router rotation & quota checkers
+│   ├── agent/                      # ReAct agent loop, prompt builder & subagent coordinator
+│   ├── config/                     # Configuration loader, .env & settings store
+│   ├── provider/                   # LLM backends (Anthropic, Gemini, OpenAI, OpenRouter)
+│   ├── skills/                     # Open Agent Skills parser (.claude/skills, rules, agents)
+│   ├── stats/                      # Token usage tracking & heatmap visualizer
+│   ├── tools/                      # Tool implementations (Bash, File, Grep, Subagent, Web)
+│   └── ui/                         # Interactive terminal REPL, markdown renderer & themes
+├── install.sh                      # 1-Line universal curl installer
+└── LICENSE                         # MIT License
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
