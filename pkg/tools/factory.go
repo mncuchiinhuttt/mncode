@@ -12,6 +12,7 @@ func DefaultRegistry(workspaceDir string, autoApprove bool) *Registry {
 	reg.Register(&FindTool{BaseDir: workspaceDir})
 	reg.Register(&ListTool{BaseDir: workspaceDir})
 	reg.Register(&WebTool{})
+	reg.Register(&SearchWebTool{})
 	reg.Register(&AskTool{AutoApprove: autoApprove})
 
 	return reg
