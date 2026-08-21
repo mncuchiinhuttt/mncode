@@ -126,6 +126,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		}
 	case "/scan":
 		HandleScanCommand(parts, s)
+	case "/plan":
+		HandlePlanCommand(parts, s)
 	case "/mcp":
 		HandleMCPCommand(parts, s)
 	case "/research", "/deepresearch", "/deep-research":

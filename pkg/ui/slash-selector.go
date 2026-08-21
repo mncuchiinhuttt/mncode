@@ -37,6 +37,7 @@ var slashOptions = []SlashOption{
 	{Command: "/history", Description: "View conversation history and past turns", Category: "Session"},
 	{Command: "/status", Description: "Show session configuration & message stats", Category: "Settings"},
 	{Command: "/scan", Description: "Deep scan & prime entire codebase architecture into memory", Category: "General"},
+	{Command: "/plan", Description: "Autonomous multi-phase implementation planner (saves to ./plans/)", Category: "Workflow"},
 	{Command: "/research", Description: "Autonomous Deep Research pipeline with web search & full reports", Category: "Research"},
 	{Command: "/litrev", Description: "Academic Literature Review pipeline with taxonomy & comparisons", Category: "Research"},
 	{Command: "/mcp", Description: "Manage and connect Model Context Protocol (MCP) servers", Category: "Tools"},

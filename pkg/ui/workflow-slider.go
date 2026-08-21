@@ -28,6 +28,11 @@ var workflowOptions = []WorkflowOption{
 		Description: "Adaptive orchestration (automatically spawns subagents when complexity requires)",
 	},
 	{
+		ID:          "plan",
+		Label:       "plan",
+		Description: "Strict Plan Mode (Read-only codebase + write plans to ./plans/ only)",
+	},
+	{
 		ID:          "plan-first",
 		Label:       "plan-first",
 		Description: "Mandatory structured planning in ./plans/ before any code modifications",
@@ -40,8 +45,8 @@ var workflowOptions = []WorkflowOption{
 }
 
 var (
-	workflowCenters = []int{7, 25, 44, 66}
-	workflowStarts  = []int{5, 24, 40, 62}
+	workflowCenters = []int{6, 18, 32, 48, 66}
+	workflowStarts  = []int{4, 16, 30, 44, 62}
 )
 
 // OpenInteractiveWorkflowSlider opens the Claude Code styled Workflow spectrum slider
@@ -70,7 +75,6 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 
 	render := func() {
 		opt := workflowOptions[currentIdx]
-		dividerPos := 56
 		trackLen := 74
 
 		var lines []string
@@ -78,20 +82,18 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 		lines = append(lines, BoldCyan("   Agent Workflow & Autonomy Scale"))
 		lines = append(lines, "")
 
-		// 1. Direct / Autonomous spectrum header
 		directStr := GrayText("Direct")
 		autoStr := GrayText("Autonomous")
 		spectrumGap := trackLen - len("Direct") - len("Autonomous")
 		lines = append(lines, fmt.Sprintf("   %s%s%s", directStr, strings.Repeat(" ", spectrumGap), autoStr))
 
-		// 2. Track with pointer ▲ and divider ┆
 		targetCenter := workflowCenters[currentIdx]
 		var trackSb strings.Builder
 		trackSb.WriteString("   ")
 		for i := 0; i < trackLen; i++ {
 			if i == targetCenter {
 				trackSb.WriteString(BoldPastelPink("▲"))
-			} else if i == dividerPos {
+			} else if i == 56 {
 				trackSb.WriteString(GrayText("┆"))
 			} else {
 				trackSb.WriteString(GrayText("─"))
@@ -99,7 +101,6 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 		}
 		lines = append(lines, trackSb.String())
 
-		// 3. Labels line with exact column placement
 		var labelsSb strings.Builder
 		labelsSb.WriteString("   ")
 		currentCol := 0
@@ -118,16 +119,12 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 		}
 		lines = append(lines, labelsSb.String())
 
-		// 4. Subtitle below ultracode
-		lines = append(lines, fmt.Sprintf("   %s%s", strings.Repeat(" ", 58), GrayText("5-phase pipeline")))
 		lines = append(lines, "")
-
-		// 5. Active details
 		lines = append(lines, fmt.Sprintf("   %s %s",
 			Bold("Mode:       "), BoldPastelPink(strings.ToUpper(opt.Label))))
 		lines = append(lines, fmt.Sprintf("   %s %s", GrayText("Description:"), opt.Description))
 		lines = append(lines, "")
-		lines = append(lines, GrayText("   ←/→ to adjust · 1-4 to select · Enter to confirm · Esc to cancel"))
+		lines = append(lines, GrayText("   ←/→ to adjust · 1-5 to select · Enter to confirm · Esc to cancel"))
 
 		if lastLinesCount > 0 {
 			fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
@@ -171,13 +168,13 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 
 		b := buf[0]
 		switch b {
-		case 3, 27, 'q', 'Q': // Ctrl+C, Esc, q -> Cancel without leaving trace
+		case 3, 27, 'q', 'Q':
 			if lastLinesCount > 0 {
 				fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
 			}
 			return
 
-		case 13, 10: // Enter -> Apply selected workflow
+		case 13, 10:
 			chosen := workflowOptions[currentIdx]
 			s.Config.Workflow = chosen.ID
 			_ = config.SaveConfig(s.Config)
@@ -188,7 +185,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 			fmt.Printf("Workflow Mode set to: %s\r\n\r\n", BoldGreen(strings.ToUpper(chosen.Label)))
 			return
 
-		case '1', '2', '3', '4':
+		case '1', '2', '3', '4', '5':
 			idx := int(b - '1')
 			if idx >= 0 && idx < len(workflowOptions) {
 				currentIdx = idx

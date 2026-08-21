@@ -90,6 +90,18 @@ func (s *Session) BuildSystemPrompt() string {
 		sb.WriteString("</persona_genz_brainrot>\n\n")
 	}
 
+	// Inject Plan Mode Restrictions
+	if strings.EqualFold(s.Config.Workflow, "plan") {
+		sb.WriteString("<plan_mode>\n")
+		sb.WriteString("[STRICT PLAN MODE ACTIVE]\n")
+		sb.WriteString("You are in STRICT PLAN MODE. Your objective is exclusively to explore, research, and write structured implementation plans.\n")
+		sb.WriteString("1. Research codebase thoroughly using view_file, grep_search, find_by_name, search_web, read_url_content.\n")
+		sb.WriteString("2. You are STRICTLY FORBIDDEN from editing, modifying, or writing codebase source files outside ./plans/.\n")
+		sb.WriteString("3. Save all implementation plans into the ./plans/ directory (e.g. ./plans/YYYYMMDD-HHMM-[feature]/plan.md and phase-*.md files).\n")
+		sb.WriteString("4. Output a clean summary with next actionable steps for the user.\n")
+		sb.WriteString("</plan_mode>\n\n")
+	}
+
 	// Core Engineering Guidelines
 	sb.WriteString("<guidelines>\n")
 	sb.WriteString("- Keep individual code files under 200 lines for optimal context management.\n")

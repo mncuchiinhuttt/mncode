@@ -3,6 +3,8 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"mncode/pkg/provider"
 )
 
@@ -109,6 +111,41 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 }
 
 func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) provider.ToolResult {
+	// Strict Plan Mode enforcement: block code editing tools
+	if strings.EqualFold(s.Config.Workflow, "plan") {
+		if tc.Name == "edit_file_content" || tc.Name == "replace_file_content" {
+			errStr := "Plan Mode Block: Code editing is disabled in Plan Mode. You may only research and write plans in ./plans/."
+			if s.UI != nil {
+				s.UI.OnToolCallResult(tc.Name, errStr, true)
+			}
+			return provider.ToolResult{
+				ToolCallID: tc.ID,
+				Name:       tc.Name,
+				Content:    errStr,
+				IsError:    true,
+			}
+		}
+		if tc.Name == "write_to_file" {
+			target, _ := tc.Arguments["TargetFile"].(string)
+			if target == "" {
+				target, _ = tc.Arguments["path"].(string)
+			}
+			cleanTarget := strings.ReplaceAll(target, "\\", "/")
+			if !strings.Contains(cleanTarget, "plans/") && !strings.Contains(cleanTarget, "reports/") {
+				errStr := fmt.Sprintf("Plan Mode Block: Creating '%s' is disabled in Plan Mode. You may only create plan files in ./plans/.", target)
+				if s.UI != nil {
+					s.UI.OnToolCallResult(tc.Name, errStr, true)
+				}
+				return provider.ToolResult{
+					ToolCallID: tc.ID,
+					Name:       tc.Name,
+					Content:    errStr,
+					IsError:    true,
+				}
+			}
+		}
+	}
+
 	if s.UI != nil && !s.Config.AutoApprove {
 		if !s.UI.ConfirmToolExecution(tc) {
 			res := provider.ToolResult{
