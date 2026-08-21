@@ -26,11 +26,19 @@ type ToolResult struct {
 	IsError    bool   `json:"isError"`
 }
 
+// ImageData represents a base64 encoded image attachment
+type ImageData struct {
+	MediaType string `json:"mediaType"` // e.g. "image/png", "image/jpeg"
+	Data      string `json:"data"`      // base64 data
+	FilePath  string `json:"filePath,omitempty"`
+}
+
 // Message represents a conversation turn
 type Message struct {
 	Role        Role         `json:"role"`
 	Content     string       `json:"content,omitempty"`
 	Thinking    string       `json:"thinking,omitempty"`
+	Images      []ImageData  `json:"images,omitempty"`
 	ToolCalls   []ToolCall   `json:"toolCalls,omitempty"`
 	ToolResults []ToolResult `json:"toolResults,omitempty"`
 }

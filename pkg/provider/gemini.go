@@ -92,6 +92,14 @@ func (g *GeminiProvider) buildPayload(req *CompletionRequest) map[string]interfa
 			role = "model"
 		}
 		var parts []map[string]interface{}
+		for _, img := range m.Images {
+			parts = append(parts, map[string]interface{}{
+				"inlineData": map[string]interface{}{
+					"mimeType": img.MediaType,
+					"data":     img.Data,
+				},
+			})
+		}
 		if m.Content != "" {
 			parts = append(parts, map[string]interface{}{"text": m.Content})
 		}

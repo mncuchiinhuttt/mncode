@@ -3,6 +3,7 @@ package provider
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -15,6 +16,25 @@ func formatOpenAIMessage(m Message) map[string]interface{} {
 			"tool_call_id": m.ToolResults[0].ToolCallID,
 			"content":      m.ToolResults[0].Content,
 		}
+	}
+
+	if len(m.Images) > 0 {
+		var contentBlocks []map[string]interface{}
+		if m.Content != "" {
+			contentBlocks = append(contentBlocks, map[string]interface{}{
+				"type": "text",
+				"text": m.Content,
+			})
+		}
+		for _, img := range m.Images {
+			contentBlocks = append(contentBlocks, map[string]interface{}{
+				"type": "image_url",
+				"image_url": map[string]interface{}{
+					"url": fmt.Sprintf("data:%s;base64,%s", img.MediaType, img.Data),
+				},
+			})
+		}
+		return map[string]interface{}{"role": role, "content": contentBlocks}
 	}
 
 	res := map[string]interface{}{"role": role, "content": m.Content}

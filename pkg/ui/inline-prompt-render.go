@@ -147,7 +147,12 @@ func highlightPromptInput(input string) string {
 }
 
 func highlightAtMentions(text string) string {
-	return atMentionRegex.ReplaceAllStringFunc(text, func(m string) string {
+	res := atMentionRegex.ReplaceAllStringFunc(text, func(m string) string {
 		return "\033[1;38;5;218m" + m + "\033[0m"
 	})
+	res = FormatPastedTagHighlight(res)
+	if strings.Contains(res, "[Image:") {
+		res = strings.ReplaceAll(res, "[Image:", "\033[1;38;5;213m[Image:\033[0;38;5;225m")
+	}
+	return res
 }

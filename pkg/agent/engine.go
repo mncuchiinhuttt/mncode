@@ -20,10 +20,12 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 	}
 
 	userInput = s.PreprocessSkillTags(userInput)
+	cleanedInput, images := ExtractImagesFromInput(s.WorkspaceDir, userInput)
 
 	s.History = append(s.History, provider.Message{
 		Role:    provider.RoleUser,
-		Content: userInput,
+		Content: cleanedInput,
+		Images:  images,
 	})
 
 	// Auto-compact safeguard if context exceeds 85%

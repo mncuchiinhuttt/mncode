@@ -14,6 +14,16 @@ func formatAnthropicMessage(m Message) map[string]interface{} {
 	}
 
 	var content []map[string]interface{}
+	for _, img := range m.Images {
+		content = append(content, map[string]interface{}{
+			"type": "image",
+			"source": map[string]interface{}{
+				"type":       "base64",
+				"media_type": img.MediaType,
+				"data":       img.Data,
+			},
+		})
+	}
 	if m.Content != "" {
 		content = append(content, map[string]interface{}{
 			"type": "text",
