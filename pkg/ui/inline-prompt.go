@@ -9,7 +9,7 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads a user prompt with Claude Code chat frame, PRO MAX effects & Shift+Tab mode switcher
+// ReadInlinePrompt reads user prompt with chat frame, @ context autocomplete & Shift+Tab mode switcher
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -36,7 +36,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			width = 80
 		}
 
-		lines, dropdownCount, _, promptLen := buildPromptLines(s, input, selectedIdx, width, isProMax, branch)
+		lines, dropdownCount, _, promptLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
 
 		if renderedBefore {
 			fmt.Print("\033[1A\r\033[J")
@@ -71,8 +71,6 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		ResetBrainrotActivity(func() { render() })
 
-		matching := getMatchingSlashOptions(s, string(input))
-
 		if (n == 3 && buf[0] == 27 && buf[1] == 91 && buf[2] == 90) || (n == 2 && buf[0] == 27 && buf[1] == 9) {
 			cyclePermissionMode(s)
 			render()
@@ -81,15 +79,16 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		// Escape sequences (Arrows)
 		if n == 3 && buf[0] == 27 && buf[1] == 91 {
+			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
 			case 'A':
-				if len(matching) > 0 && strings.HasPrefix(string(input), "/") && selectedIdx > 0 {
+				if len(items) > 0 && selectedIdx > 0 {
 					selectedIdx--
 					render()
 				}
 				continue
 			case 'B':
-				if len(matching) > 0 && strings.HasPrefix(string(input), "/") && selectedIdx < len(matching)-1 {
+				if len(items) > 0 && selectedIdx < len(items)-1 {
 					selectedIdx++
 					render()
 				}
@@ -97,12 +96,14 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			case 'C':
 				if cursorPos < len(input) {
 					cursorPos++
+					selectedIdx = 0
 					render()
 				}
 				continue
 			case 'D':
 				if cursorPos > 0 {
 					cursorPos--
+					selectedIdx = 0
 					render()
 				} else if len(input) == 0 {
 					oldState = openSubagentMonitor(s, oldState)
@@ -115,7 +116,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		b := buf[0]
 		switch b {
-		case 1:
+		case 1: // Ctrl+A / Left edge
 			oldState = openSubagentMonitor(s, oldState)
 			renderedBefore = false
 			render()
@@ -126,17 +127,28 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			return "", false
 
 		case 13, 10:
-			matching := getMatchingSlashOptions(s, string(input))
-			if len(matching) > 0 && strings.HasPrefix(string(input), "/") && selectedIdx < len(matching) {
-				chosen := matching[selectedIdx]
-				if chosen.Category == "Skills" || strings.HasPrefix(chosen.Command, "/ck:") {
-					input = []rune(chosen.Command + " ")
-					cursorPos = len(input)
+			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
+			if len(items) > 0 && selectedIdx < len(items) {
+				chosen := items[selectedIdx]
+				if cat == "at" {
+					prefix := string(input[:atIdx])
+					suffix := string(input[cursorPos:])
+					newStr := prefix + chosen.Primary + " " + suffix
+					input = []rune(newStr)
+					cursorPos = atIdx + len([]rune(chosen.Primary)) + 1
 					selectedIdx = 0
 					render()
 					continue
+				} else if cat == "slash" {
+					if strings.HasPrefix(chosen.Primary, "/ck:") || chosen.Primary == "/btw" || chosen.Primary == "/model" {
+						input = []rune(chosen.Primary + " ")
+						cursorPos = len(input)
+						selectedIdx = 0
+						render()
+						continue
+					}
+					input = []rune(chosen.Primary)
 				}
-				input = []rune(chosen.Command)
 			}
 			promptSymbol := BoldCyan("❯")
 			if isProMax {
@@ -145,13 +157,24 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			fmt.Printf("\033[1A\r\033[J%s %s\r\n", promptSymbol, highlightPromptInput(string(input)))
 			return string(input), true
 
-		case 9:
-			matching := getMatchingSlashOptions(s, string(input))
-			if len(matching) > 0 && strings.HasPrefix(string(input), "/") && selectedIdx < len(matching) {
-				input = []rune(matching[selectedIdx].Command + " ")
-				cursorPos = len(input)
-				selectedIdx = 0
-				render()
+		case 9: // Tab autocompletion
+			items, cat, atIdx := GetActiveDropdownItems(s, input, cursorPos)
+			if len(items) > 0 && selectedIdx < len(items) {
+				chosen := items[selectedIdx]
+				if cat == "at" {
+					prefix := string(input[:atIdx])
+					suffix := string(input[cursorPos:])
+					newStr := prefix + chosen.Primary + " " + suffix
+					input = []rune(newStr)
+					cursorPos = atIdx + len([]rune(chosen.Primary)) + 1
+					selectedIdx = 0
+					render()
+				} else if cat == "slash" {
+					input = []rune(chosen.Primary + " ")
+					cursorPos = len(input)
+					selectedIdx = 0
+					render()
+				}
 			}
 			continue
 

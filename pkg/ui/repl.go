@@ -46,8 +46,14 @@ func RunREPL(s *agent.Session) {
 
 		turnIndex++
 		ctx := context.Background()
+
+		resolvedPrompt, attachedBadges := ResolveAtContext(s.WorkspaceDir, trimmed)
+		if len(attachedBadges) > 0 {
+			fmt.Printf("%s %s\n", BoldCyan("📎 Attached Context:"), BoldPastelPink(strings.Join(attachedBadges, ", ")))
+		}
+
 		fmt.Println()
-		err := s.ProcessUserInput(ctx, trimmed)
+		err := s.ProcessUserInput(ctx, resolvedPrompt)
 		if err != nil {
 			fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
 		}
