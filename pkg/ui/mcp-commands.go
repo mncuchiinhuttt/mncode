@@ -20,7 +20,12 @@ func HandleMCPCommand(parts []string, s *agent.Session) {
 		s.MCP = mcp.NewManager(s.WorkspaceDir)
 	}
 
-	if len(parts) <= 1 || parts[1] == "list" || parts[1] == "status" {
+	if len(parts) <= 1 {
+		OpenInteractiveMCPMenu(s)
+		return
+	}
+
+	if parts[1] == "list" || parts[1] == "status" {
 		showMCPStatus(s)
 		return
 	}
