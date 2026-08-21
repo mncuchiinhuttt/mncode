@@ -123,7 +123,8 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 
 		case 3, 4:
-			fmt.Print("\033[1A\r\033[JGoodbye!\r\n")
+			fmt.Print("\033[1A\r\033[J")
+			PrintRizzGoodbye(s)
 			return "", false
 
 		case 13, 10:

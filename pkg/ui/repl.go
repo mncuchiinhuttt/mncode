@@ -36,7 +36,7 @@ func RunREPL(s *agent.Session) {
 		}
 
 		if trimmed == "/exit" || trimmed == "/quit" || trimmed == "exit" || trimmed == "quit" {
-			fmt.Println("Goodbye!")
+			PrintRizzGoodbye(s)
 			break
 		}
 
