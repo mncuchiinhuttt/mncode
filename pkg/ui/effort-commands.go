@@ -60,7 +60,7 @@ func HandleEffortCommand(parts []string, s *agent.Session) {
 	_ = config.SaveConfig(s.Config)
 	RenderStickyHeader(s)
 
-	if s.Config.Effort == "pro max" || s.Config.Workflow == "ultracode" {
+	if s.Config.Effort == "pro max" || s.Config.Workflow == "ultra-workflow" || s.Config.Workflow == "ultracode" {
 		triggerProMaxActivationAnimation()
 	} else {
 		fmt.Printf("Thinking Effort set to: %s (Workflow: %s)\n",
@@ -77,7 +77,7 @@ func triggerProMaxActivationAnimation() {
 		fmt.Printf("\r  \033[1;38;5;212m[ENGAGING MNCODE PRO MAX]\033[0m \033[38;5;218m[%s]\033[0m \033[38;5;225m%d%%\033[0m", bar, pct)
 		time.Sleep(15 * time.Millisecond)
 	}
-	fmt.Printf("\r  \033[1;38;5;218m[MNCODE PRO MAX ACTIVE]\033[0m   \033[1;38;5;212m[████████████████████]\033[0m \033[1;38;5;225mULTRACODE WORKFLOW\033[0m · \033[1;38;5;219mMax Rizz & Unbounded Cognitive Depth Activated 🔥\033[0m\n\n")
+	fmt.Printf("\r  \033[1;38;5;218m[MNCODE PRO MAX ACTIVE]\033[0m   \033[1;38;5;212m[████████████████████]\033[0m \033[1;38;5;225mULTRA WORKFLOW\033[0m · \033[1;38;5;219mMax Rizz & Unbounded Cognitive Depth Activated 🔥\033[0m\n\n")
 }
 
 func showCurrentEffort(s *agent.Session) {
@@ -91,7 +91,7 @@ func showCurrentEffort(s *agent.Session) {
 	fmt.Println("  • [3] high    - Deep architectural and coding analysis")
 	fmt.Println("  • [4] xhigh   - Extended multi-step reasoning")
 	fmt.Println("  • [5] max     - Maximum raw reasoning depth")
-	fmt.Println("  • [6] pro max - Dynamic Workflows (Scout -> Plan -> Code -> Test -> Review)")
+	fmt.Println("  • [6] pro max - Ultra Workflows (Scout -> Plan -> Code -> Test -> Review)")
 	fmt.Println()
 	fmt.Println(GrayText("  Usage: /effort to open interactive slider, or /effort pro max"))
 	fmt.Println()
@@ -108,14 +108,14 @@ func HandleWorkflowCommand(parts []string, s *agent.Session) {
 	switch mode {
 	case "auto":
 		s.Config.Workflow = "auto"
-	case "ultracode", "pro":
-		s.Config.Workflow = "ultracode"
-	case "plan-first", "plan":
+	case "ultra-workflow", "ultra", "ultracode", "pro":
+		s.Config.Workflow = "ultra-workflow"
+	case "plan-first":
 		s.Config.Workflow = "plan-first"
 	case "direct":
 		s.Config.Workflow = "direct"
 	default:
-		fmt.Printf("Unknown workflow '%s'. Use: auto, ultracode, plan-first, direct\n", mode)
+		fmt.Printf("Unknown workflow '%s'. Use: auto, ultra-workflow, plan-first, direct\n", mode)
 		return
 	}
 
@@ -128,11 +128,11 @@ func showCurrentWorkflow(s *agent.Session) {
 	fmt.Printf("\n%s\n", BoldCyan("Agent Workflow Modes:"))
 	fmt.Printf("  Current Mode: %s\n\n", BoldGreen(strings.ToUpper(s.Config.Workflow)))
 	fmt.Println("Available modes:")
-	fmt.Println("  • auto       - Autonomous multi-agent orchestration (default)")
-	fmt.Println("  • ultracode  - Full 5-phase pipeline: Scout -> Plan -> Code -> Test -> Review")
-	fmt.Println("  • plan-first - Mandatory planning in ./plans/ before code execution")
-	fmt.Println("  • direct     - Direct single-agent execution without delegation")
+	fmt.Println("  • auto           - Autonomous multi-agent orchestration (default)")
+	fmt.Println("  • ultra-workflow - Full Multi-Phase Plan & Subagent Pipeline with 2-Pane Split Monitor")
+	fmt.Println("  • plan-first     - Mandatory planning in ./plans/ before code execution")
+	fmt.Println("  • direct         - Direct single-agent execution without delegation")
 	fmt.Println()
-	fmt.Println(GrayText("  Usage: /workflow <auto|ultracode|plan-first|direct>"))
+	fmt.Println(GrayText("  Usage: /workflow <auto|ultra-workflow|plan-first|direct>"))
 	fmt.Println()
 }

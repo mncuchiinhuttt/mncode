@@ -40,8 +40,8 @@ var workflowOptions = []WorkflowOption{
 }
 
 var (
-	workflowCenters = []int{7, 24, 43, 64}
-	workflowStarts  = []int{5, 23, 39, 58}
+	workflowCenters = []int{8, 26, 45, 66}
+	workflowStarts  = []int{5, 24, 40, 59}
 )
 
 // OpenInteractiveWorkflowSlider opens the Claude Code styled Workflow spectrum slider
@@ -88,7 +88,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 		for i := 0; i < trackLen; i++ {
 			if i == targetCenter {
 				trackSb.WriteString(BoldPastelPink("▲"))
-			} else if i == 52 {
+			} else if i == 55 {
 				trackSb.WriteString(GrayText("┆"))
 			} else {
 				trackSb.WriteString(GrayText("─"))

@@ -23,7 +23,7 @@ var slashOptions = []SlashOption{
 	{Command: "/model", Description: "View or change current LLM model", Category: "Settings"},
 	{Command: "/effort", Description: "Configure thinking budget / reasoning effort (low/med/high/max)", Category: "Settings"},
 	{Command: "/goal", Description: "Run persistent autonomous goal loop with live query stopwatch", Category: "Goal"},
-	{Command: "/workflow", Description: "Configure agent workflow mode (auto/ultracode/plan-first)", Category: "Workflow"},
+	{Command: "/workflow", Description: "Configure agent workflow mode (auto/ultra-workflow/plan-first)", Category: "Workflow"},
 	{Command: "/theme", Description: "Browse & switch color theme (Pastel Pink, Dark, Light...)", Category: "Theme"},
 	{Command: "/skills", Description: "Browse, search, and activate ClaudeKit & workspace skills", Category: "Skills"},
 	{Command: "/context", Description: "Show context window usage and breakdown bar", Category: "Context"},

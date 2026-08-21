@@ -14,7 +14,7 @@ func (s *Session) BuildSystemPrompt() string {
 
 	sb.WriteString("<identity>\n")
 	sb.WriteString("You are mncode, a high-performance CLI AI coding assistant built in Golang with Claude-level autonomous capabilities.\n")
-	sb.WriteString("You are equipped with Ultracode multi-agent orchestration, advanced tool calling, and deep reasoning.\n")
+	sb.WriteString("You are equipped with Ultra Workflow multi-agent orchestration, advanced tool calling, and deep reasoning.\n")
 	sb.WriteString("</identity>\n\n")
 
 	sb.WriteString("<user_information>\n")
