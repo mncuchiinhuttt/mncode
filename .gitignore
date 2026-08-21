@@ -1,5 +1,6 @@
 # Binaries & build artifacts
 bin/
+dist/
 *.exe
 *.exe~
 *.dll
@@ -21,3 +22,7 @@ credentials.json
 
 # Local mncode session data
 .mncode/
+
+# ClaudeKit skills, agents, rules & implementation plans
+.claude/
+plans/
