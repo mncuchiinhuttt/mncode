@@ -3,6 +3,7 @@ package agent
 import (
 	"mncode/pkg/accounts"
 	"mncode/pkg/config"
+	"mncode/pkg/mcp"
 	"mncode/pkg/provider"
 	"mncode/pkg/skills"
 	"mncode/pkg/tools"
@@ -38,5 +39,6 @@ type Session struct {
 	History      []provider.Message
 	Subagents    *SubagentRegistry
 	CodebaseMap  *CodebaseSummary
+	MCP          *mcp.Manager
 	UI           UIEventListener
 }

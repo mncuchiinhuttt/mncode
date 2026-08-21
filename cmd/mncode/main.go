@@ -10,6 +10,7 @@ import (
 	"mncode/pkg/accounts"
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
+	"mncode/pkg/mcp"
 	"mncode/pkg/provider"
 	"mncode/pkg/skills"
 	"mncode/pkg/stats"
@@ -118,8 +119,9 @@ func main() {
 		llmProvider, _ = provider.NewProvider(cfg)
 	}
 
-	// 5. Initialize Tools & UI
+	// 5. Initialize Tools, MCP & UI
 	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove)
+	mcpMgr := mcp.NewManager(cfg.WorkspaceDir)
 	termUI := ui.NewTerminalUI(cfg.AutoApprove)
 	tokenTracker := stats.NewTracker()
 
@@ -134,8 +136,16 @@ func main() {
 		Router:       accRouter,
 		Tracker:      tokenTracker,
 		Subagents:    agent.NewSubagentRegistry(),
+		MCP:          mcpMgr,
 		UI:           termUI,
 	}
+
+	// Start MCP servers in background and register tools
+	go func() {
+		ctx := context.Background()
+		mcpMgr.StartAll(ctx)
+		tools.RegisterMCPTools(toolRegistry, mcpMgr, ctx)
+	}()
 
 	// Register invoke_subagent and use_skill tools
 	subRunner := &agent.SubagentRunner{ParentSession: session}
