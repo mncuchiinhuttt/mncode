@@ -10,7 +10,7 @@ import (
 	"golang.org/x/term"
 )
 
-// ReadInlinePrompt reads user prompt with chat frame, native terminal scrolling & macOS shortcuts
+// ReadInlinePrompt reads user prompt with chat frame, mouse click navigation & smooth scrolling
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
 		return readPipedLine()
@@ -20,10 +20,16 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	if err != nil {
 		return readPipedLine()
 	}
-	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
+	defer func() {
+		DisableMouseTracking()
+		_ = term.Restore(int(os.Stdin.Fd()), oldState)
+	}()
+
+	EnableMouseTracking()
 
 	var input []rune
 	cursorPos, selectedIdx := 0, 0
+	promptRow := 0
 	renderedBefore := false
 	branch := GetGitBranchOrFolder(s.WorkspaceDir)
 
@@ -31,13 +37,19 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		strings.EqualFold(s.Config.Effort, "pro max") ||
 		strings.EqualFold(s.Config.Effort, "promax")
 
+	promptLen := 2
+	if isProMax {
+		promptLen = 3
+	}
+
 	render := func() {
 		width, _, err := term.GetSize(int(os.Stdout.Fd()))
 		if err != nil || width < 40 {
 			width = 80
 		}
 
-		lines, dropdownCount, _, promptLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
+		lines, dropdownCount, _, pLen := buildPromptLines(s, input, cursorPos, selectedIdx, width, isProMax, branch)
+		promptLen = pLen
 
 		if renderedBefore {
 			fmt.Print("\033[1A\r\033[J")
@@ -54,7 +66,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 		backLines := 2 + dropdownCount
 		targetCol := promptLen + len([]rune(string(input[:cursorPos])))
-		fmt.Printf("\r\033[%dA\033[%dC", backLines, targetCol)
+		fmt.Printf("\r\033[%dA\033[%dC\033[6n", backLines, targetCol)
 	}
 
 	RegisterCopyCallback(func() { render() })
@@ -63,7 +75,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 
 	render()
 
-	buf := make([]byte, 128)
+	buf := make([]byte, 256)
 	for {
 		n, err := os.Stdin.Read(buf)
 		if err != nil || n == 0 {
@@ -97,7 +109,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		}
 
 		// 4. Arrow Keys & Navigation
-		if n >= 3 && buf[0] == 27 && buf[1] == 91 {
+		if n >= 3 && buf[0] == 27 && buf[1] == 91 && buf[2] != '<' {
 			items, _, _ := GetActiveDropdownItems(s, input, cursorPos)
 			switch buf[2] {
 			case 'A':
@@ -211,12 +223,48 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			continue
 		}
 
-		// 10. Process characters safely (Swallow unhandled escape codes to prevent leakage)
+		// 10. Sequential tokenizer for DSR, Mouse & UTF-8 bytes
 		i := 0
 		for i < n {
+			if r, _, nextI, ok := ConsumeCursorReport(buf, i, n); ok {
+				promptRow = r
+				i = nextI
+				continue
+			}
+
+			if act, nextI, ok := ConsumeMouseSequence(buf, i, n); ok {
+				i = nextI
+				if act == nil {
+					continue
+				}
+				if act.IsScroll {
+					if act.ScrollUp {
+						fmt.Print("\033[3S")
+					} else {
+						fmt.Print("\033[3T")
+					}
+					continue
+				}
+				if act.IsPress && act.Button == 0 {
+					if promptRow > 0 && act.Row != promptRow {
+						continue
+					}
+					target := act.Col - promptLen - 1
+					if target < 0 {
+						target = 0
+					}
+					if target > len(input) {
+						target = len(input)
+					}
+					cursorPos = target
+					selectedIdx = 0
+					render()
+				}
+				continue
+			}
+
 			b := buf[i]
 			if b == 27 {
-				// Safely swallow escape sequence until terminator
 				i++
 				for i < n && (buf[i] < 0x40 || buf[i] > 0x7E) {
 					i++
