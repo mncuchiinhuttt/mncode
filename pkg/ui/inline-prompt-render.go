@@ -76,28 +76,28 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 		case config.PermissionModePlan:
 			label := BoldPastelPink("⏵⏵ plan mode on (read-only)")
 			if isBrainrot {
-				label = BoldPastelPink("⏵⏵ plan mode (only big brain plans fr fr)")
+				label = BoldPastelPink("⏵⏵ plan mode (200 IQ overthinking, zero code touched fr fr)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeBypass:
 			label := BoldYellow("⏵⏵ bypass permissions on")
 			if isBrainrot {
-				label = BoldYellow("⏵⏵ full bypass (let him cook with max rizz)")
+				label = BoldYellow("⏵⏵ full bypass (high risk high reward, let him cook with max rizz)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		case config.PermissionModeAuto:
 			label := BoldCyan("⏵ auto-approve on")
 			if isBrainrot {
-				label = BoldCyan("⏵ auto-cooking on fr fr (zero cap)")
+				label = BoldCyan("⏵ auto-cooking on (speedrunning tech debt, zero cap)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))
 		default:
 			label := GrayText("ask permissions")
 			if isBrainrot {
-				label = GrayText("asking permissions (don't get caught in 4k)")
+				label = GrayText("asking permissions (low risk low aura, seeking adult supervision)")
 			}
 			footer = fmt.Sprintf("  %s%s%s", proBadge, label,
 				GrayText(fmt.Sprintf(" · (shift+tab to cycle) · %s · drag to auto-copy", agentHint)))

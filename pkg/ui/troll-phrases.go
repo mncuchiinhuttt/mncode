@@ -6,40 +6,44 @@ import (
 )
 
 var trollThinkingPhrases = []string{
-	"Straight up yapping to the LLM fr fr...",
-	"Cooking up unhinged code with zero cap...",
-	"Gaslighting the unit tests into passing...",
+	"High risk high reward: raw-dogging logic with max rizz...",
+	"Cooking up unhinged code with zero cap fr fr...",
+	"Gaslighting the unit tests into passing without mocks...",
 	"Rizzing the terminal into submission...",
+	"Deploying Friday 5PM with zero tests and unhinged confidence...",
 	"Doing shady backend voodoo behind your back...",
-	"Consulting the holy spaghetti codebase...",
-	"Bluffing the compiler (it's totally working)...",
-	"Manifesting a 200 OK out of thin air...",
-	"Pretending this code works on first try...",
-	"Inventing bugs to fix later for job security...",
-	"Brainrot optimization in full swing no cap...",
-	"Blatantly faking the performance benchmarks...",
+	"Consulting the holy spaghetti codebase for guidance...",
+	"Bluffing the compiler (it's totally working no cap)...",
+	"Manifesting a 200 OK out of sheer delusion...",
+	"Pretending this code works on first try (trust the process)...",
+	"Inventing new bugs to fix later for job security...",
+	"Brainrot optimization in full swing, aura levels maxing...",
+	"Spamming console.log until the bug confesses in 4k...",
 	"Stealing GPU cycles from the mainframe...",
-	"Hypnotizing the CPU cores into overdrive...",
-	"Sweating over pointer arithmetic (trust the process)...",
+	"Hypnotizing the CPU cores into 10x overdrive...",
+	"Sweating over pointer arithmetic (we are so back)...",
 	"Summoning dark mode demons in bash...",
-	"Flexing on null pointer exceptions...",
+	"Flexing on null pointer exceptions with sigma energy...",
 	"Pure main character energy: cooking solutions...",
-	"Letting the agent cook, do not disturb...",
+	"Letting the agent cook, do not disturb chief...",
 	"Whispering sweet nothings to the linter...",
+	"Cooking with +10000 aura and zero code review fear...",
 }
 
 var trollBashPhrases = []string{
-	"Running bash roulette (hope nothing explodes)...",
-	"Blasting commands into the shell abyss...",
-	"Executing questionable terminal commands with confidence...",
+	"Running bash roulette (high risk high reward, hope nothing explodes)...",
+	"Blasting commands into the shell abyss with max confidence...",
+	"Executing questionable terminal commands like a cracked 10x dev...",
 	"Hacking the mainframe in bash like a 90s cyber movie...",
+	"Applying hotfixes directly to production, zero hesitation...",
 }
 
 var trollEditPhrases = []string{
 	"Refactoring spaghetti into slightly straighter spaghetti...",
-	"Dropping hot fresh syntax into the codebase...",
-	"Infiltrating the source code with zero regrets...",
-	"Applying tactical code surgery (no anesthesia)...",
+	"Dropping hot fresh syntax into the codebase (high risk high reward)...",
+	"Infiltrating the source code with zero regrets and max aura...",
+	"Applying tactical code surgery (no anesthesia, pure sigma)...",
+	"Rewriting half the project because we felt like it...",
 }
 
 func init() {
