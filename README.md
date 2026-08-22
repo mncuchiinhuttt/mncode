@@ -1,7 +1,7 @@
 # mncode
 
 <p align="center">
-  <img src="assets/logo.svg" alt="mncode Logo" width="240" />
+  <img src="assets/logo-transparent.svg" alt="mncode Logo" width="240" />
 </p>
 
 <p align="center">
