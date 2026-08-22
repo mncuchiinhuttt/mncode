@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"bufio"
 	"fmt"
 	"mncode/pkg/accounts"
 	"mncode/pkg/agent"
@@ -23,19 +22,16 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 	}
 
 	target := strings.ToLower(parts[1])
-	reader := bufio.NewReader(os.Stdin)
 
 	switch target {
 	case "antigravity", "google", "gemini":
 		if len(parts) > 2 && parts[2] == "manual" {
-			fmt.Print("Enter Antigravity / Gemini OAuth Token or Bearer Token: ")
-			token := readLine(reader)
-			if token == "" {
+			token, ok := ReadModalInput("Antigravity Token", "Enter OAuth or Bearer Token:", "")
+			if !ok || token == "" {
 				fmt.Println("Login cancelled.")
 				return
 			}
-			fmt.Print("Enter Account Identifier / Email (e.g. user1@gmail.com): ")
-			email := readLine(reader)
+			email, _ := ReadModalInput("Account Identifier", "Enter Account Identifier / Email:", "user1@gmail.com")
 			if email == "" {
 				email = fmt.Sprintf("antigravity-%d", time.Now().Unix())
 			}
@@ -64,14 +60,12 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 		fmt.Printf("Account pool updated: %d accounts active!\n\n", len(s.Accounts.Accounts))
 
 	case "codex", "openai":
-		fmt.Print("Enter Codex / OpenAI API Token: ")
-		token := readLine(reader)
-		if token == "" {
+		token, ok := ReadModalInput("Codex / OpenAI Token", "Enter Codex / OpenAI API Token:", "")
+		if !ok || token == "" {
 			fmt.Println("Login cancelled.")
 			return
 		}
-		fmt.Print("Enter Account Identifier (e.g. codex-team-1): ")
-		id := readLine(reader)
+		id, _ := ReadModalInput("Account Identifier", "Enter Account Identifier (e.g. codex-team-1):", "codex-1")
 		if id == "" {
 			id = fmt.Sprintf("codex-%d", time.Now().Unix())
 		}
@@ -83,14 +77,12 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 		}
 
 	case "opencode":
-		fmt.Print("Enter OpenCode API Key (e.g. sk-...): ")
-		token := readLine(reader)
-		if token == "" {
+		token, ok := ReadModalInput("OpenCode API Key", "Enter OpenCode API Key (sk-...):", "")
+		if !ok || token == "" {
 			fmt.Println("Login cancelled.")
 			return
 		}
-		fmt.Print("Enter Account Identifier (e.g. opencode-user): ")
-		id := readLine(reader)
+		id, _ := ReadModalInput("Account Identifier", "Enter Account Identifier (e.g. opencode-main):", "opencode-main")
 		if id == "" {
 			id = fmt.Sprintf("opencode-%d", time.Now().Unix())
 		}

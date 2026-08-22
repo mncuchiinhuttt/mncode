@@ -205,7 +205,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		}
 
 		// 9. Enter & Tab
-		if n == 1 && (buf[0] == 13 || buf[0] == 10) {
+		if (n == 1 && (buf[0] == 13 || buf[0] == 10)) || (n == 2 && (buf[0] == 13 || buf[0] == 10)) {
 			newIn, newPos, handled, continueLoop := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, false)
 			if handled {
 				input, cursorPos, selectedIdx = newIn, newPos, 0
@@ -242,6 +242,23 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		i := 0
 		for i < n {
 			b := buf[i]
+			if b == 13 || b == 10 {
+				newIn, newPos, handled, continueLoop := ApplyDropdownSelection(s, input, cursorPos, selectedIdx, false)
+				if handled {
+					input, cursorPos, selectedIdx = newIn, newPos, 0
+					if continueLoop {
+						render()
+						break
+					}
+				}
+				promptSymbol := BoldCyan("❯")
+				if isProMax {
+					promptSymbol = "\033[1;38;5;218m❯\033[1;38;5;212m❯\033[0m"
+				}
+				fmt.Printf("\033[1A\r\033[J%s %s\r\n", promptSymbol, highlightPromptInput(string(input)))
+				finalInput := ResolvePastedContent(string(input))
+				return finalInput, true
+			}
 			if b == 27 {
 				i++
 				for i < n && (buf[i] < 0x40 || buf[i] > 0x7E) {
