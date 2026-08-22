@@ -119,11 +119,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			newVal = "false"
 		}
 		s.Config.SetSetting("brainrot_mode", newVal)
+		s.Config.SetSetting("troll_mode", newVal)
 		_ = config.SaveConfig(s.Config)
 		if newVal == "true" {
-			fmt.Printf("\n%s Brainrot Mode enabled! 🧠🔥 (Full Gen Z / Sigma Dev Persona)\n\n", BoldPastelPink("[PRO MAX]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode enabled! 🧠🔥 (Full Gen Z / Sigma Dev + Harmless Troll Pranks)\n\n", BoldPastelPink("[PRO MAX]"))
 		} else {
-			fmt.Printf("\n%s Brainrot Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
 	case "/diff":
 		HandleDiffCommand(parts, s)
