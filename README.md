@@ -1,7 +1,7 @@
 # mncode
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mncuchiinhuttt/mncode-web/main/public/logo.svg" alt="mncode Logo" width="180" />
+  <img src="assets/logo.svg" alt="mncode Logo" width="180" />
 </p>
 
 <p align="center">
