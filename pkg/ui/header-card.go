@@ -92,7 +92,10 @@ func PrintHeaderCard(s *agent.Session) {
 
 	if s.Config.GetSetting("show_tips", "true") == "true" {
 		tips := []string{
+			"Use /diff to view uncommitted changes in your workspace.",
 			"Use /btw <question> to ask quick side questions without polluting task history.",
+			"Type /steer <guidance> to guide ongoing agent reasoning with top priority.",
+			"Type /queue <prompt> to enqueue upcoming tasks without waiting for current turn.",
 			"Type /status (dismiss with Esc) to inspect live session metadata and tokens.",
 			"Type /model to switch between ox-alpha (1M context reasoning), Claude 3.7, and Gemini.",
 			"Type /workflow ultra-workflow for deep autonomous multi-agent orchestration.",

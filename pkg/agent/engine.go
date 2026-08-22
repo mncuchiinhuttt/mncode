@@ -109,6 +109,15 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			ToolResults: results,
 		}
 		s.History = append(s.History, toolMsg)
+
+		// Inject real-time steer directives into history for next reasoning step
+		if steers := s.DrainSteer(); len(steers) > 0 {
+			steerText := strings.Join(steers, "\n")
+			s.History = append(s.History, provider.Message{
+				Role:    provider.RoleUser,
+				Content: fmt.Sprintf("[User Steering Directive (High Priority)]:\n%s", steerText),
+			})
+		}
 	}
 
 	_ = s.Save()

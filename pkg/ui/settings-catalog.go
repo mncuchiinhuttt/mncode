@@ -41,6 +41,7 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "artifacts", Label: "Structured Artifacts", Type: SettingTypeBool, DefaultVal: "true", Description: "Prompt AI to generate structured markdown artifacts for plans and docs"},
 		{Key: "auto_mode_plan", Label: "Auto-Execute Plan Phase", Type: SettingTypeBool, DefaultVal: "true", Description: "Automatically proceed to implementation after planning completes"},
 		{Key: "worktree_base", Label: "Worktree Base Ref", Type: SettingTypeChoice, DefaultVal: "current", Choices: []string{"current", "main", "fresh"}, Description: "Git base reference used for subagent workspace branch isolation"},
+		{Key: "troll_mode", Label: "Troll Mode (Harmless Pranks)", Type: SettingTypeBool, DefaultVal: "false", Description: "Display occasional funny fake scare commands before executing safe tools"},
 		{Key: "verbose_output", Label: "Verbose Debug Logging", Type: SettingTypeBool, DefaultVal: "false", Description: "Print raw LLM API payloads and tool execution debug traces"},
 	}
 }

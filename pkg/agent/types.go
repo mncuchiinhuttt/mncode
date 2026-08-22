@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"strings"
+	"sync"
+
 	"mncode/pkg/accounts"
 	"mncode/pkg/config"
 	"mncode/pkg/mcp"
@@ -41,4 +44,53 @@ type Session struct {
 	CodebaseMap  *CodebaseSummary
 	MCP          *mcp.Manager
 	UI           UIEventListener
+
+	QueueMu      sync.Mutex
+	SteerQueue   []string
+	MessageQueue []string
+}
+
+// EnqueueSteer adds high-priority steering guidance into the active agent loop
+func (s *Session) EnqueueSteer(steerMsg string) {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	s.SteerQueue = append(s.SteerQueue, strings.TrimSpace(steerMsg))
+}
+
+// DrainSteer drains all pending steer instructions
+func (s *Session) DrainSteer() []string {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	if len(s.SteerQueue) == 0 {
+		return nil
+	}
+	res := s.SteerQueue
+	s.SteerQueue = nil
+	return res
+}
+
+// EnqueueMessage places a message into the upcoming turn queue
+func (s *Session) EnqueueMessage(msg string) {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	s.MessageQueue = append(s.MessageQueue, strings.TrimSpace(msg))
+}
+
+// DrainMessageQueue retrieves and clears all queued messages
+func (s *Session) DrainMessageQueue() []string {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	if len(s.MessageQueue) == 0 {
+		return nil
+	}
+	res := s.MessageQueue
+	s.MessageQueue = nil
+	return res
+}
+
+// HasQueuedMessages returns true if there are queued messages waiting
+func (s *Session) HasQueuedMessages() bool {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	return len(s.MessageQueue) > 0 || len(s.SteerQueue) > 0
 }

@@ -14,13 +14,21 @@ type TerminalUI struct {
 	spinner     *Spinner
 	inThinking  bool
 	autoApprove bool
+	isTroll     bool
 }
 
 func NewTerminalUI(autoApprove bool) *TerminalUI {
 	return &TerminalUI{
 		spinner:     NewSpinner("Thinking..."),
 		autoApprove: autoApprove,
+		isTroll:     true,
 	}
+}
+
+func (t *TerminalUI) SetTrollMode(enabled bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.isTroll = enabled
 }
 
 func (t *TerminalUI) OnQueryStart() {
@@ -62,6 +70,7 @@ func (t *TerminalUI) OnToolCallStart(tc *provider.ToolCall) {
 		t.inThinking = false
 	}
 	t.spinner.Stop()
+	MaybeShowTrollPrank(t.isTroll)
 	fmt.Print(RenderToolCallFormatted(tc))
 	t.spinner.UpdateMessage(GetRandomTrollPhrase(tc.Name))
 	t.spinner.Start()

@@ -31,10 +31,14 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 16, Command: "/usage", Description: "View daily, monthly, and lifetime token usage stats"},
 	{Number: 17, Command: "/config", Description: "View or update settings and ~/.mncode/config.json"},
 	{Number: 18, Command: "/status", Description: "Show session configuration & message stats"},
-	{Number: 19, Command: "/feedback", Description: "Send feedback about mncode to the team"},
-	{Number: 20, Command: "/clear", Description: "Clear terminal screen and conversation history"},
-	{Number: 21, Command: "/help", Description: "Show available slash commands"},
-	{Number: 22, Command: "/exit", Description: "Exit mncode assistant"},
+	{Number: 19, Command: "/diff", Description: "View uncommitted git diffs and modified files in workspace"},
+	{Number: 20, Command: "/steer", Description: "Inject real-time high-priority steering into agent thought loop"},
+	{Number: 21, Command: "/queue", Description: "Enqueue prompts to execute automatically after current turn"},
+	{Number: 22, Command: "/troll", Description: "Toggle harmless fake scare prank commands on/off"},
+	{Number: 23, Command: "/feedback", Description: "Send feedback about mncode to the team"},
+	{Number: 24, Command: "/clear", Description: "Clear terminal screen and conversation history"},
+	{Number: 25, Command: "/help", Description: "Show available slash commands"},
+	{Number: 26, Command: "/exit", Description: "Exit mncode assistant"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis

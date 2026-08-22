@@ -61,6 +61,26 @@ func RunREPL(s *agent.Session) {
 		}
 		fmt.Println()
 
+		// Process any queued messages sequentially
+		for {
+			queued := s.DrainMessageQueue()
+			if len(queued) == 0 {
+				break
+			}
+			for _, qMsg := range queued {
+				turnIndex++
+				fmt.Printf("%s %s\n\n", BoldCyan("📥 [Running Queued Prompt]:"), Bold(qMsg))
+				qResolved, qBadges := ResolveAtContext(s.WorkspaceDir, qMsg)
+				if len(qBadges) > 0 {
+					fmt.Printf("%s %s\n", BoldCyan("📎 Attached Context:"), BoldPastelPink(strings.Join(qBadges, ", ")))
+				}
+				if err := s.ProcessUserInput(ctx, qResolved); err != nil {
+					fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
+				}
+				fmt.Println()
+			}
+		}
+
 		CheckAndPrintPeriodicRecap(s, turnIndex)
 	}
 }

@@ -125,6 +125,29 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		} else {
 			fmt.Printf("\n%s Brainrot Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
+	case "/diff":
+		HandleDiffCommand(parts, s)
+	case "/steer":
+		HandleSteerCommand(parts, s)
+	case "/queue":
+		HandleQueueCommand(parts, s)
+	case "/troll":
+		curTroll := s.Config.GetSetting("troll_mode", "false")
+		newTroll := "true"
+		if len(parts) > 1 {
+			if strings.ToLower(parts[1]) == "off" || strings.ToLower(parts[1]) == "false" {
+				newTroll = "false"
+			}
+		} else if curTroll == "true" {
+			newTroll = "false"
+		}
+		s.Config.SetSetting("troll_mode", newTroll)
+		_ = config.SaveConfig(s.Config)
+		if newTroll == "true" {
+			fmt.Printf("\n%s Troll Mode ENABLED! 💀 (Occasional harmless scare pranks before tools)\n\n", BoldPastelPink("[Troll Mode]"))
+		} else {
+			fmt.Printf("\n%s Troll Mode disabled. 💼 (Strict serious dev mode)\n\n", BoldCyan("[Troll Mode]"))
+		}
 	case "/scan":
 		HandleScanCommand(parts, s)
 	case "/plan":

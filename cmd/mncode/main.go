@@ -125,6 +125,7 @@ func main() {
 	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove)
 	mcpMgr := mcp.NewManager(cfg.WorkspaceDir)
 	termUI := ui.NewTerminalUI(cfg.AutoApprove)
+	termUI.SetTrollMode(cfg.GetSetting("troll_mode", "false") == "true" || cfg.GetSetting("brainrot_mode", "false") == "true")
 	tokenTracker := stats.NewTracker()
 
 	session := &agent.Session{
