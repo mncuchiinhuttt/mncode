@@ -20,11 +20,22 @@ var (
 	stopWatcher     chan struct{}
 )
 
-// RegisterCopyCallback registers a hook called whenever text is copied
-func RegisterCopyCallback(fn func()) {
+// SetCopyCallback sets the active prompt copy hook and returns an unregister function
+func SetCopyCallback(fn func()) func() {
 	copyToastMu.Lock()
-	defer copyToastMu.Unlock()
-	onCopyCallbacks = append(onCopyCallbacks, fn)
+	onCopyCallbacks = []func(){fn}
+	copyToastMu.Unlock()
+
+	return func() {
+		copyToastMu.Lock()
+		onCopyCallbacks = nil
+		copyToastMu.Unlock()
+	}
+}
+
+// RegisterCopyCallback registers a hook called whenever text is copied
+func RegisterCopyCallback(fn func()) func() {
+	return SetCopyCallback(fn)
 }
 
 // GetActiveCopyToast returns the current toast message if active

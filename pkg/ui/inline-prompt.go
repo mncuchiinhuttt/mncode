@@ -58,7 +58,8 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		fmt.Printf("\r\033[%dA\033[%dC", backLines, targetCol)
 	}
 
-	RegisterCopyCallback(func() { render() })
+	unregisterCopy := SetCopyCallback(func() { render() })
+	defer unregisterCopy()
 	stopIdleWatcher := StartBrainrotIdleWatcher(s, func() { render() })
 	defer stopIdleWatcher()
 

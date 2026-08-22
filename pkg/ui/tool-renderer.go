@@ -10,16 +10,18 @@ import (
 // RenderToolCallFormatted prints a rich UI box when a tool begins execution
 func RenderToolCallFormatted(tc *provider.ToolCall) string {
 	t := GetCurrentTheme()
+	argBytes, _ := json.Marshal(tc.Arguments)
+
 	switch tc.Name {
 	case "run_command", "bash":
 		var args struct {
 			CommandLine string `json:"CommandLine"`
 			Cwd         string `json:"Cwd"`
 		}
-		_ = json.Unmarshal([]byte(fmt.Sprintf("%v", tc.Arguments)), &args)
+		_ = json.Unmarshal(argBytes, &args)
 		cmd := args.CommandLine
 		if cmd == "" {
-			cmd = fmt.Sprintf("%v", tc.Arguments)
+			cmd = string(argBytes)
 		}
 		cwd := args.Cwd
 		if cwd == "" {
@@ -38,32 +40,44 @@ func RenderToolCallFormatted(tc *provider.ToolCall) string {
 			StartLine   int    `json:"StartLine"`
 			EndLine     int    `json:"EndLine"`
 		}
-		_ = json.Unmarshal([]byte(fmt.Sprintf("%v", tc.Arguments)), &args)
-		return fmt.Sprintf("\n%s %s %s\n  %s %s\n",
+		_ = json.Unmarshal(argBytes, &args)
+		lineRange := ""
+		if args.StartLine > 0 && args.EndLine > 0 {
+			lineRange = fmt.Sprintf(" (lines %d-%d)", args.StartLine, args.EndLine)
+		}
+		summary := args.Instruction
+		if summary == "" {
+			summary = "Modifying code block"
+		}
+		return fmt.Sprintf("\n%s %s%s\n  %s %s\n",
 			Colorize(AttrBold+t.Primary, "✎ [Code Edit]"),
 			Colorize(AttrBold+t.Text, args.TargetFile),
-			Colorize(t.Muted, fmt.Sprintf("(lines %d-%d)", args.StartLine, args.EndLine)),
+			Colorize(t.Muted, lineRange),
 			Colorize(t.Muted, "Action:"),
-			Colorize(t.Secondary, args.Instruction))
+			Colorize(t.Secondary, summary))
 
 	case "write_to_file":
 		var args struct {
 			TargetFile  string `json:"TargetFile"`
 			Description string `json:"Description"`
 		}
-		_ = json.Unmarshal([]byte(fmt.Sprintf("%v", tc.Arguments)), &args)
+		_ = json.Unmarshal(argBytes, &args)
+		desc := args.Description
+		if desc == "" {
+			desc = "Creating new file"
+		}
 		return fmt.Sprintf("\n%s %s\n  %s %s\n",
 			Colorize(AttrBold+t.Success, "✚ [Create File]"),
 			Colorize(AttrBold+t.Text, args.TargetFile),
 			Colorize(t.Muted, "Summary:"),
-			Colorize(t.Secondary, args.Description))
+			Colorize(t.Secondary, desc))
 
 	case "grep_search", "find_by_name":
 		var args struct {
 			Query      string `json:"Query"`
 			SearchPath string `json:"SearchPath"`
 		}
-		_ = json.Unmarshal([]byte(fmt.Sprintf("%v", tc.Arguments)), &args)
+		_ = json.Unmarshal(argBytes, &args)
 		return fmt.Sprintf("\n%s %s in %s\n",
 			Colorize(AttrBold+t.Warning, "🔍 [Search]"),
 			Colorize(AttrBold+t.Text, args.Query),
