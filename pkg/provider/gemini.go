@@ -104,12 +104,16 @@ func (g *GeminiProvider) buildPayload(req *CompletionRequest) map[string]interfa
 			parts = append(parts, map[string]interface{}{"text": m.Content})
 		}
 		for _, tc := range m.ToolCalls {
-			parts = append(parts, map[string]interface{}{
+			part := map[string]interface{}{
 				"functionCall": map[string]interface{}{
 					"name": tc.Name,
 					"args": tc.Arguments,
 				},
-			})
+			}
+			if tc.ThoughtSignature != "" {
+				part["thoughtSignature"] = tc.ThoughtSignature
+			}
+			parts = append(parts, part)
 		}
 		for _, tr := range m.ToolResults {
 			parts = append(parts, map[string]interface{}{

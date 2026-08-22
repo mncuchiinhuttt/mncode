@@ -29,12 +29,16 @@ func (a *AntigravityProvider) buildGeminiRequest(req *CompletionRequest) map[str
 			parts = append(parts, map[string]interface{}{"text": m.Content})
 		}
 		for _, tc := range m.ToolCalls {
-			parts = append(parts, map[string]interface{}{
+			part := map[string]interface{}{
 				"functionCall": map[string]interface{}{
 					"name": tc.Name,
 					"args": tc.Arguments,
 				},
-			})
+			}
+			if tc.ThoughtSignature != "" {
+				part["thoughtSignature"] = tc.ThoughtSignature
+			}
+			parts = append(parts, part)
 		}
 		for _, tr := range m.ToolResults {
 			parts = append(parts, map[string]interface{}{
@@ -83,9 +87,11 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 				Candidates []struct {
 					Content struct {
 						Parts []struct {
-							Text         string                 `json:"text"`
-							FunctionCall map[string]interface{} `json:"functionCall"`
-							Thought      bool                   `json:"thought"`
+							Text                  string                 `json:"text"`
+							FunctionCall          map[string]interface{} `json:"functionCall"`
+							Thought               bool                   `json:"thought"`
+							ThoughtSignature      string                 `json:"thoughtSignature"`
+							ThoughtSignatureSnake string                 `json:"thought_signature"`
 						} `json:"parts"`
 					} `json:"content"`
 				} `json:"candidates"`
@@ -93,9 +99,11 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 			Candidates []struct {
 				Content struct {
 					Parts []struct {
-						Text         string                 `json:"text"`
-						FunctionCall map[string]interface{} `json:"functionCall"`
-						Thought      bool                   `json:"thought"`
+						Text                  string                 `json:"text"`
+						FunctionCall          map[string]interface{} `json:"functionCall"`
+						Thought               bool                   `json:"thought"`
+						ThoughtSignature      string                 `json:"thoughtSignature"`
+						ThoughtSignatureSnake string                 `json:"thought_signature"`
 					} `json:"parts"`
 				} `json:"content"`
 			} `json:"candidates"`
@@ -123,10 +131,15 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 				if len(part.FunctionCall) > 0 {
 					name, _ := part.FunctionCall["name"].(string)
 					args, _ := part.FunctionCall["args"].(map[string]interface{})
+					sig := part.ThoughtSignature
+					if sig == "" {
+						sig = part.ThoughtSignatureSnake
+					}
 					tc := ToolCall{
-						ID:        fmt.Sprintf("tc-%d", time.Now().UnixNano()),
-						Name:      name,
-						Arguments: args,
+						ID:               fmt.Sprintf("tc-%d", time.Now().UnixNano()),
+						Name:             name,
+						Arguments:        args,
+						ThoughtSignature: sig,
 					}
 					toolCalls = append(toolCalls, tc)
 					_ = cb(StreamEvent{Type: EventToolCallStart, ToolCall: &tc})

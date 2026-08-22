@@ -12,10 +12,11 @@ const (
 
 // ToolCall represents a model request to execute a tool
 type ToolCall struct {
-	ID        string                 `json:"id"`
-	Name      string                 `json:"name"`
-	Arguments map[string]interface{} `json:"arguments"`
-	RawArgs   string                 `json:"rawArgs,omitempty"`
+	ID               string                 `json:"id"`
+	Name             string                 `json:"name"`
+	Arguments        map[string]interface{} `json:"arguments"`
+	RawArgs          string                 `json:"rawArgs,omitempty"`
+	ThoughtSignature string                 `json:"thoughtSignature,omitempty"`
 }
 
 // ToolResult represents the output of a tool execution

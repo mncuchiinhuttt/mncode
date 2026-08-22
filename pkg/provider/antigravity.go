@@ -24,7 +24,7 @@ type AntigravityProvider struct {
 
 func NewAntigravityProvider(accessToken, baseURL string) *AntigravityProvider {
 	if baseURL == "" || !strings.Contains(baseURL, "googleapis.com") {
-		baseURL = "https://cloudcode-pa.googleapis.com/v1internal"
+		baseURL = "https://daily-cloudcode-pa.googleapis.com/v1internal"
 	}
 	return &AntigravityProvider{
 		AccessToken: accessToken,
