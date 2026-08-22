@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"mncode/pkg/agent"
+	"mncode/pkg/config"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,7 +51,7 @@ func HandleChangelogCommand(parts []string, s *agent.Session) {
 
 	var sb strings.Builder
 	today := time.Now().Format("2006-01-02")
-	sb.WriteString(fmt.Sprintf("## Release %s (%s)\n\n", "v0.1.1-beta", today))
+	sb.WriteString(fmt.Sprintf("## Release %s (%s)\n\n", config.CurrentVersion, today))
 
 	if len(feats) > 0 {
 		sb.WriteString("### 🚀 New Features\n")

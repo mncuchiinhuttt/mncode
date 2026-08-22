@@ -78,12 +78,28 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 
 | Command | Description |
 | :--- | :--- |
+| `/resolve` | **Autonomous Git Merge Conflict Resolver** — Merges conflicting branches cleanly |
+| `/db` | **Database Explorer & SQL Query** — Inspect tables, schemas, and run queries |
+| `/api` | **In-Terminal REST / HTTP Tester** — Send requests with syntax JSON & latency meter |
+| `/tree` | **Interactive ASCII File Tree** — Visualize codebase structure and file sizes |
+| `/share` | **Web Session Share** — Export & publish public transcripts to `mncode.dev/share/[id]` |
+| `/doctor` | **Workspace Health Audit** — Diagnostic scorecard, runtimes, and file size limits |
+| `/test [--heal]` | **Test Runner & Auto-Healer** — Run test suite & autonomously heal stack traces |
+| `/commit [-p]` | **AI Semantic Commit** — Conventional commit generation, auto-stage & push |
+| `/review` | **Pre-Commit Code Auditor** — Scan uncommitted diffs for secrets, SQLi, and smells |
+| `/symbol <name>` | **AST Symbol Search** — Find functions, structs, interfaces, and classes instantly |
+| `/scratch [ext]` | **Code Sandbox** — Open, evaluate, and test temporary code snippets |
+| `/undo` / `/rewind` | **Checkpoint Rollback** — Revert last agent turn and restore workspace files |
+| `/diff` | **Diff Inspector** — View syntax-highlighted uncommitted workspace changes |
+| `/steer <msg>` | **Real-Time Steering** — Inject high-priority course corrections into thought loop |
+| `/queue <msg>` | **Prompt Queue** — Enqueue prompts for hands-free sequential execution |
+| `/changelog` | **Release Notes Generator** — Synthesize categorized notes from git commits |
+| `/skills [install]` | Browse, activate, or install skills directly from `skills.sh` |
 | `/status` | Open interactive session status overlay (`Esc` / `q` to dismiss) |
 | `/model [name]` | Interactive model catalog selector (`ox-alpha`, `claude-3.7-sonnet`, `gemini-3.7-flash`, `o3-mini`, etc.) |
 | `/effort [level]` | Configure thinking token budget (`None`, `Low`, `Medium`, `High`, `Max`, `PRO MAX`) |
 | `/workflow [mode]` | Switch orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
 | `/mcp` | Model Context Protocol (MCP) server manager and tool inspector |
-| `/skills` | Browse, search, and activate workspace skills catalog |
 | `/agents` | Inspect active subagents and multi-agent execution pipeline |
 | `/account` | Manage multi-account pool, health checks, and cooldown status |
 | `/quota` | Check real-time rate limit headroom and remaining token quotas |
