@@ -91,6 +91,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleContextCommand(parts, s)
 	case "/compact", "/compress":
 		HandleCompactCommand(s)
+	case "/sync", "/telemetry":
+		HandleSyncCommand(parts, s)
 	case "/usage", "/tokens", "/cost", "/stats":
 		ShowUsageStats(s)
 	case "/quota", "/limits":

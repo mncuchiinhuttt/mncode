@@ -43,7 +43,23 @@ type Config struct {
 	ContextWindow   string         `json:"contextWindow,omitempty"`
 	ThinkingLang    string            `json:"thinkingLang"`
 	ResponseLang    string            `json:"responseLang"`
+	TelemetryKey    string            `json:"telemetryKey,omitempty"`
+	TelemetryURL    string            `json:"telemetryUrl,omitempty"`
 	Settings        map[string]string `json:"settings,omitempty"`
+}
+
+func (c *Config) GetTelemetryURL() string {
+	if c.TelemetryURL != "" {
+		return c.TelemetryURL
+	}
+	return c.GetSetting("telemetry_url", "http://localhost:3000/api/telemetry/sync")
+}
+
+func (c *Config) GetTelemetryKey() string {
+	if c.TelemetryKey != "" {
+		return c.TelemetryKey
+	}
+	return c.GetSetting("telemetry_key", "")
 }
 
 func (c *Config) GetContextWindowTokens() int {
