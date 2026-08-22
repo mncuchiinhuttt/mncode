@@ -1,54 +1,58 @@
 # mncode
 
 <p align="center">
-  <strong>High-Performance AI Coding Assistant CLI in Golang</strong><br>
-  <em>Claude Code Alternative with Multi-Account Smart Routing, ClaudeKit Skills & Autonomous Multi-Agent Orchestration</em>
+  <img src="https://raw.githubusercontent.com/mncuchiinhuttt/mncode-web/main/public/logo.svg" alt="mncode Logo" width="180" />
+</p>
+
+<p align="center">
+  <strong>High-Performance Autonomous AI Coding Assistant CLI in Golang</strong><br>
+  <em>Next-Generation Pair Programmer with Multi-Account Smart Routing, MCP Support, ClaudeKit Skills & Web Telemetry Hub</em>
 </p>
 
 <p align="center">
   <a href="#-quick-install"><img src="https://img.shields.io/badge/Install-1--Line%20Script-brightgreen" alt="Install Script"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go" alt="Go Version"></a>
+  <a href="https://github.com/mncuchiinhuttt/mncode/releases"><img src="https://img.shields.io/github/v/release/mncuchiinhuttt/mncode?color=f472b6" alt="Release"></a>
+  <a href="https://github.com/mncuchiinhuttt/mncode-web"><img src="https://img.shields.io/badge/Web%20Hub-mncode--web-a855f7" alt="Web Platform"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
 ---
 
-## ⚡️ Key Features
+## ⚡️ Key Highlights
 
-- **Blazing-Fast Golang Core**: Single static binary with near-instant startup (< 20ms) and minimal memory footprint — no heavy Node.js runtime or Python virtualenv required.
-- **Multi-Account Smart Routing & Failover**:
-  - Connect unlimited **Antigravity (Gemini)** and **Codex (OpenAI)** accounts simultaneously.
-  - Automatic round-robin load balancing and instant cooldown rotation on rate limits (`429`) or auth errors (`401`).
-  - Auto-import existing credentials from `~/.gemini/` and `~/.openai/`.
-- **Full ClaudeKit & Open Agent Skills Support**:
-  - Automatically discovers and executes 60+ Claude Skills from `.claude/skills/*/SKILL.md` (Open Agent Skills Specification).
-  - Built-in multi-agent delegation: `planner`, `researcher`, `scout`, `tester`, `debugger`, `code-reviewer`, `fullstack-developer`, `docs-manager`.
-  - Enforces workspace rules (`.claude/rules/*.md`) and project conventions.
-- **Full-Featured Tool Calling Suite**:
-  - `run_command`: Shell command execution with real-time output streaming.
-  - `view_file` & `replace_file_content`: Precise line-slice inspection and atomic chunk replacement.
-  - `write_to_file`: Atomic file creation with auto-parent directory generation.
-  - `grep_search` & `find_by_name`: Ripgrep-speed pattern searching and glob matching.
-  - `list_dir` & `read_url_content`: Directory exploration and web content extraction.
-  - `ask_user`: Interactive clarifying questions.
-  - `invoke_subagent`: Autonomous subagent lifecycle coordination.
-- **Multi-Provider LLM Engine**:
-  - **Anthropic Claude**: Claude 3.7 Sonnet with Extended Thinking budget control.
-  - **Google Gemini / Antigravity**: Gemini 2.5 Flash/Pro and Gemini 3.0.
-  - **OpenRouter & OpenAI**: GPT-4o, o3-mini, DeepSeek R1/V3, and Ollama local models.
-- **Modern Interactive Terminal REPL**:
-  - Clean full-width header card and status bar.
-  - Live slash command autocomplete with relevance-ranked search.
-  - Ephemeral side questions (`/btw <question>`) that answer inquiries without polluting main task history.
-  - Session persistence and interactive restore (`/resume`).
-  - Native mouse text selection with non-disruptive copy toast notifications (`✓ Copied X characters`).
-  - Dedicated Brainrot / Gen-Z 10x Developer Persona toggle (`/brainrot`).
+- 🚀 **Blazing-Fast Golang Core**: Single static binary with sub-20ms cold startup and lightweight RAM footprint. No Node.js runtime, Python virtualenvs, or heavy dependencies needed.
+- 🔄 **Multi-Account Smart Routing & Failover**:
+  - Connect unlimited **Antigravity (Gemini)**, **Codex (OpenAI)**, **Anthropic Claude**, and **OpenCode / Stealth** accounts simultaneously.
+  - Automatic round-robin load balancing and instant cooldown rotation on rate limits (`429`) or quota exhaustion.
+  - Auto-import existing credentials directly from `~/.gemini/` and `~/.openai/`.
+- 🧠 **Cutting-Edge Reasoning Models & Thinking Budget**:
+  - Full support for **`ox-alpha` / `stealth/ox-alpha`** (1,048,576 context tokens reasoning model with 131k output tokens).
+  - Extended thinking budgets (`/effort` up to **PRO MAX 64,000 tokens**) for Claude 3.7 Sonnet, Gemini 3.7 Flash Thinking, and o3-mini.
+- 🔌 **Model Context Protocol (MCP) Integration**:
+  - Full MCP client support with interactive server manager (`/mcp`).
+  - Connect stdio & SSE MCP servers with dynamic tool discovery, lazy loading, and eager execution.
+- 🌐 **Web Platform & Analytics Hub Sync**:
+  - Connect with [`mncode-web`](https://github.com/mncuchiinhuttt/mncode-web) via API Key or CLI login (`/login web`).
+  - Automatic daily telemetry synchronization (token consumption, model distribution, request volume).
+  - Web dashboard, user role management, and built-in feedback reporting (`/feedback`).
+- 🛠️ **Autonomous Multi-Agent Orchestration & Skills**:
+  - Discover and execute 60+ modular skills from `.claude/skills/*/SKILL.md`.
+  - Specialized built-in subagents: `planner`, `researcher`, `scout`, `tester`, `debugger`, `code-reviewer`, `docs-manager`.
+  - 4 Orchestration workflows (`/workflow`): `auto`, `ultra-workflow`, `plan-first`, and `direct`.
+- 🎨 **Modern Interactive TUI & Overlays**:
+  - Ephemeral status card overlay (`/status`) dismissable with `Esc` without cluttering terminal history.
+  - Live fuzzy autocomplete dropdown with argument isolation.
+  - Ephemeral side questions (`/btw <question>`) that answer inquiries without polluting main conversation context.
+  - Session persistence, history viewer, and interactive resume (`/resume`).
+  - Native mouse text selection with smooth copy toast notifications.
+  - Gen-Z / Sigma 10x Developer Persona toggle (`/brainrot`).
 
 ---
 
 ## 🚀 Quick Install
 
-### macOS & Linux (Terminal)
+### macOS & Linux (Universal 1-Line Script)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.sh | bash
@@ -60,102 +64,88 @@ curl -fsSL https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.
 irm https://raw.githubusercontent.com/mncuchiinhuttt/mncode/main/install.ps1 | iex
 ```
 
-### Build from Source (All Platforms)
+### Build from Source
 
 ```bash
 git clone https://github.com/mncuchiinhuttt/mncode.git
 cd mncode
-go build -o bin/mncode ./cmd/mncode
+go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 ```
 
 ---
 
-## 🔑 Configuration & Authentication
-
-### 1. Interactive Multi-Account Login
-
-```bash
-# Add Antigravity (Gemini) OAuth account
-mncode /login antigravity
-
-# Add Codex (OpenAI) account
-mncode /login codex
-
-# Auto-import credentials from local directories
-mncode /account import
-```
-
-### 2. Environment Variables (Optional)
-
-Create a `.env` file in your workspace or set system environment variables:
-
-```env
-# Anthropic Claude
-ANTHROPIC_API_KEY=your_anthropic_api_key
-ANTHROPIC_MODEL=claude-3-7-sonnet-20250219
-
-# Google Gemini
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-3.7-flash-high
-
-# OpenRouter
-OPENROUTER_API_KEY=your_openrouter_api_key
-OPENROUTER_MODEL=anthropic/claude-3.7-sonnet
-```
-
----
-
-## 💻 Usage
-
-### Interactive Mode (Default)
-```bash
-mncode
-```
-
-### Resume Previous Session
-```bash
-mncode --resume
-# or
-mncode -r
-```
-
-### Single Command Execution (Non-Interactive)
-```bash
-mncode -e "Analyze the repository structure and list available skills"
-```
-
-### Auto-Approve Permissions
-```bash
-mncode -y
-```
-
----
-
-## 🕹️ Slash Commands Cheat Sheet
+## 🕹️ Interactive Slash Commands
 
 | Command | Description |
 | :--- | :--- |
-| `/config` | Interactive settings manager (Language, Themes, Permissions, Editor mode) |
-| `/btw <question>` | Ask a quick side question without consuming main task history |
-| `/brainrot` | Toggle Gen Z / Sigma 10x developer personality on/off |
-| `/resume` | Browse and resume previous conversation sessions with history viewer |
-| `/model [name]` | Select or switch the active LLM model |
-| `/effort [level]` | Configure thinking budget (None, Low, Medium, High, Max, PRO MAX) |
-| `/workflow [mode]` | Switch agent orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
-| `/agents` | Open autonomous subagents & workflow monitor |
-| `/skills` | Browse, search, and activate workspace skills |
-| `/account list` | View multi-account pool health, active accounts, and cooldown status |
+| `/status` | Open interactive session status overlay (`Esc` / `q` to dismiss) |
+| `/model [name]` | Interactive model catalog selector (`ox-alpha`, `claude-3.7-sonnet`, `gemini-3.7-flash`, `o3-mini`, etc.) |
+| `/effort [level]` | Configure thinking token budget (`None`, `Low`, `Medium`, `High`, `Max`, `PRO MAX`) |
+| `/workflow [mode]` | Switch orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
+| `/mcp` | Model Context Protocol (MCP) server manager and tool inspector |
+| `/skills` | Browse, search, and activate workspace skills catalog |
+| `/agents` | Inspect active subagents and multi-agent execution pipeline |
+| `/account` | Manage multi-account pool, health checks, and cooldown status |
+| `/quota` | Check real-time rate limit headroom and remaining token quotas |
+| `/btw <question>` | Ask a side question without consuming conversation context |
 | `/theme` | Switch UI color theme (Pastel Pink, Dark, Light, Cyberpunk, Monokai) |
 | `/context` | Display context window usage bar and token breakdown |
 | `/compact` | Summarize and compress conversation history to free context tokens |
-| `/usage` | View token consumption and request stats |
+| `/resume` | Browse and resume previous conversation sessions |
+| `/feedback <msg>` | Submit direct feedback or bug report to the web admin portal |
+| `/brainrot` | Toggle Gen-Z / Sigma 10x developer personality on/off |
 | `/clear` | Clear conversation history and reset screen |
-| `/help` | Show command palette and help guide |
-| `/exit` | Exit mncode assistant |
+| `/help` | Display command palette and keybinding cheat sheet |
+| `/exit` | Gracefully exit mncode |
 
 ---
 
-## 🏗️ Project Architecture
+## 🔑 Authentication & Providers
+
+### 1. Web Platform Sync (Recommended)
+
+Generate an API key on your [mncode-web](https://github.com/mncuchiinhuttt/mncode-web) dashboard:
+
+```bash
+# Login via API key
+mncode /login web
+
+# Or login via email/password
+mncode /login web --email user@example.com
+```
+
+### 2. Multi-Account OAuth Pool
+
+```bash
+# Connect Google Antigravity (Gemini)
+mncode /login antigravity
+
+# Connect OpenAI Codex
+mncode /login codex
+
+# Auto-import local credentials (~/.gemini, ~/.openai)
+mncode /account import
+```
+
+### 3. Direct API Keys (`.env` or Environment Variables)
+
+```env
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-api03-...
+ANTHROPIC_MODEL=claude-3-7-sonnet-20250219
+
+# Google Gemini
+GEMINI_API_KEY=AIzaSy...
+GEMINI_MODEL=gemini-3.7-flash-high
+
+# OpenRouter / OpenCode (ox-alpha)
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=stealth/ox-alpha
+```
+
+---
+
+## 🏗️ Architecture & Modules
 
 ```
 mncode/
@@ -163,20 +153,30 @@ mncode/
 │   └── mncode/
 │       └── main.go                 # Application entrypoint & CLI flag router
 ├── pkg/
-│   ├── accounts/                   # Multi-account pool, 9router rotation & quota checkers
+│   ├── accounts/                   # Multi-account pool, auto-rotation & quota checkers
 │   ├── agent/                      # ReAct agent loop, prompt builder & subagent coordinator
-│   ├── config/                     # Configuration loader, .env & settings store
-│   ├── provider/                   # LLM backends (Anthropic, Gemini, OpenAI, OpenRouter)
+│   ├── config/                     # Configuration loader, .env & persistent settings store
+│   ├── mcp/                        # Model Context Protocol client & server lifecycle manager
+│   ├── provider/                   # LLM backends (Anthropic, Gemini, OpenAI, OpenRouter, OpenCode)
 │   ├── skills/                     # Open Agent Skills parser (.claude/skills, rules, agents)
-│   ├── stats/                      # Token usage tracking & heatmap visualizer
-│   ├── tools/                      # Tool implementations (Bash, File, Grep, Subagent, Web)
-│   └── ui/                         # Interactive terminal REPL, markdown renderer & themes
-├── install.sh                      # 1-Line universal curl installer
+│   ├── stats/                      # Token usage tracking, telemetry sync & visualizer
+│   ├── tools/                      # Tool suite (Bash, File Slice, Ripgrep, Subagents, Web)
+│   └── ui/                         # Interactive terminal REPL, theme selector & overlays
+├── dist/                           # Multi-platform compiled release binaries
+├── install.sh                      # Universal macOS/Linux 1-line curl installer
+├── install.ps1                     # Universal Windows PowerShell 1-line installer
 └── LICENSE                         # MIT License
 ```
 
 ---
 
+## 🌐 Ecosystem
+
+- **CLI Engine**: [mncode](https://github.com/mncuchiinhuttt/mncode) — High-performance Golang CLI.
+- **Web Platform**: [mncode-web](https://github.com/mncuchiinhuttt/mncode-web) — Web UI, Docs, Auth & Analytics Hub.
+
+---
+
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE). Built with ❤️ by [mncuchiinhuttt](https://github.com/mncuchiinhuttt).
