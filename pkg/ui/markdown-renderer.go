@@ -110,6 +110,84 @@ func RenderMarkdown(md string) string {
 	return strings.Join(result, "\n")
 }
 
+// RenderMarkdownLine renders a single line of markdown given current stream state
+func RenderMarkdownLine(line string, inCodeBlock *bool, codeLang *string, t Theme) string {
+	trimmed := strings.TrimSpace(line)
+
+	// 1. Code Block Fence (```lang)
+	if strings.HasPrefix(trimmed, "```") {
+		if *inCodeBlock {
+			*inCodeBlock = false
+			*codeLang = ""
+			return fmt.Sprintf("  %s", Colorize(t.Muted, "╰──────────────────────────────────────────────────"))
+		} else {
+			*inCodeBlock = true
+			lang := strings.TrimSpace(strings.TrimPrefix(trimmed, "```"))
+			if lang == "" {
+				lang = "code"
+			}
+			*codeLang = lang
+			return fmt.Sprintf("  %s %s %s",
+				Colorize(t.Muted, "╭──"),
+				Colorize(AttrBold+t.Primary, lang),
+				Colorize(t.Muted, strings.Repeat("─", 45-len(lang))))
+		}
+	}
+
+	if *inCodeBlock {
+		return fmt.Sprintf("  %s %s", Colorize(t.Muted, "│"), Colorize(t.Text, line))
+	}
+
+	// 2. Horizontal Rule (---, ***, ___)
+	if trimmed == "---" || trimmed == "***" || trimmed == "___" {
+		return GrayText(strings.Repeat("─", 60))
+	}
+
+	// 3. Headers (# Header, ## Header, ### Header)
+	if strings.HasPrefix(trimmed, "# ") {
+		title := strings.TrimPrefix(trimmed, "# ")
+		return fmt.Sprintf("\n%s", Colorize(AttrBold+t.Primary, "# "+formatInlineMarkdown(title, t)))
+	}
+	if strings.HasPrefix(trimmed, "## ") {
+		title := strings.TrimPrefix(trimmed, "## ")
+		return fmt.Sprintf("\n%s", Colorize(AttrBold+t.Secondary, "## "+formatInlineMarkdown(title, t)))
+	}
+	if strings.HasPrefix(trimmed, "### ") {
+		title := strings.TrimPrefix(trimmed, "### ")
+		return fmt.Sprintf("\n%s", Colorize(AttrBold+t.Info, "### "+formatInlineMarkdown(title, t)))
+	}
+
+	// 4. Blockquotes (> quote)
+	if strings.HasPrefix(trimmed, ">") {
+		quoteText := strings.TrimSpace(strings.TrimPrefix(trimmed, ">"))
+		styledQuote := formatInlineMarkdown(quoteText, t)
+		return fmt.Sprintf("  %s %s", Colorize(t.Primary, "│"), Colorize(AttrDim, styledQuote))
+	}
+
+	// 5. Unordered Lists (- item, * item)
+	if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") {
+		itemText := trimmed[2:]
+		styledItem := formatInlineMarkdown(itemText, t)
+		indent := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+		return fmt.Sprintf("%s  %s %s", indent, Colorize(AttrBold+t.Primary, "•"), styledItem)
+	}
+
+	// 6. Ordered Lists (1. item, 2. item)
+	if matched, _ := regexp.MatchString(`^\d+\.\s+`, trimmed); matched {
+		parts := strings.SplitN(trimmed, " ", 2)
+		num := parts[0]
+		itemText := ""
+		if len(parts) > 1 {
+			itemText = parts[1]
+		}
+		styledItem := formatInlineMarkdown(itemText, t)
+		return fmt.Sprintf("  %s %s", Colorize(AttrBold+t.Secondary, num), styledItem)
+	}
+
+	// 7. Normal paragraph with inline formatting
+	return formatInlineMarkdown(line, t)
+}
+
 func formatInlineMarkdown(s string, t Theme) string {
 	// Inline Code: `code`
 	s = inlineCodeRe.ReplaceAllStringFunc(s, func(m string) string {

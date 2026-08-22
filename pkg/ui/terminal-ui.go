@@ -15,6 +15,10 @@ type TerminalUI struct {
 	inThinking  bool
 	autoApprove bool
 	isTroll     bool
+	streamBuf   string
+	inCodeBlock bool
+	codeLang    string
+	hasStreamed bool
 }
 
 func NewTerminalUI(autoApprove bool) *TerminalUI {
@@ -35,6 +39,10 @@ func (t *TerminalUI) OnQueryStart() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.inThinking = false
+	t.streamBuf = ""
+	t.inCodeBlock = false
+	t.codeLang = ""
+	t.hasStreamed = false
 	t.spinner.ResetTimer()
 	t.spinner.UpdateMessage(GetRandomTrollPhrase("thinking"))
 	t.spinner.Start()
@@ -48,7 +56,42 @@ func (t *TerminalUI) OnToken(token string) {
 		t.inThinking = false
 	}
 	t.spinner.Stop()
-	fmt.Print(token)
+	t.hasStreamed = true
+
+	t.streamBuf += token
+	theme := GetCurrentTheme()
+
+	for {
+		idx := strings.Index(t.streamBuf, "\n")
+		if idx == -1 {
+			break
+		}
+		line := t.streamBuf[:idx]
+		t.streamBuf = t.streamBuf[idx+1:]
+
+		renderedLine := RenderMarkdownLine(line, &t.inCodeBlock, &t.codeLang, theme)
+		fmt.Println(renderedLine)
+	}
+}
+
+func (t *TerminalUI) Flush() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if len(t.streamBuf) > 0 {
+		theme := GetCurrentTheme()
+		renderedLine := RenderMarkdownLine(t.streamBuf, &t.inCodeBlock, &t.codeLang, theme)
+		fmt.Println(renderedLine)
+		t.streamBuf = ""
+	}
+	if t.inCodeBlock {
+		theme := GetCurrentTheme()
+		fmt.Println(fmt.Sprintf("  %s", Colorize(theme.Muted, "╰──────────────────────────────────────────────────")))
+		t.inCodeBlock = false
+	}
+	if t.hasStreamed {
+		fmt.Println()
+		t.hasStreamed = false
+	}
 }
 
 func (t *TerminalUI) OnThinking(thinking string) {
@@ -69,6 +112,19 @@ func (t *TerminalUI) OnToolCallStart(tc *provider.ToolCall) {
 		fmt.Print(Reset + "\n")
 		t.inThinking = false
 	}
+	if len(t.streamBuf) > 0 {
+		theme := GetCurrentTheme()
+		renderedLine := RenderMarkdownLine(t.streamBuf, &t.inCodeBlock, &t.codeLang, theme)
+		fmt.Println(renderedLine)
+		t.streamBuf = ""
+	}
+	if t.inCodeBlock {
+		theme := GetCurrentTheme()
+		fmt.Println(fmt.Sprintf("  %s", Colorize(theme.Muted, "╰──────────────────────────────────────────────────")))
+		t.inCodeBlock = false
+	}
+	t.hasStreamed = false
+
 	t.spinner.Stop()
 	MaybeShowTrollPrank(t.isTroll)
 	fmt.Print(RenderToolCallFormatted(tc))

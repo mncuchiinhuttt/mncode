@@ -71,6 +71,10 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			return err
 		}
 
+		if s.UI != nil {
+			s.UI.Flush()
+		}
+
 		// Record token stats
 		if s.Tracker != nil {
 			inTokens := resp.InputTokens

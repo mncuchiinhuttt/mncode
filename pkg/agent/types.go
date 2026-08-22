@@ -24,6 +24,7 @@ type UIEventListener interface {
 	OnGoalDone(goal string, elapsedSecs float64, turns int, toolCount int)
 	OnError(err error)
 	ConfirmToolExecution(tc *provider.ToolCall) bool
+	Flush()
 }
 
 // Session represents a single conversational agent session
