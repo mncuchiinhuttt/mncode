@@ -189,6 +189,16 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleSymbolCommand(parts, s)
 	case "/scratch":
 		HandleScratchCommand(parts, s)
+	case "/resolve", "/conflict", "/conflicts":
+		HandleResolveCommand(parts, s)
+	case "/db", "/sql", "/database":
+		HandleDBCommand(parts, s)
+	case "/api", "/curl", "/http":
+		HandleAPICommand(parts)
+	case "/tree", "/files":
+		HandleTreeCommand(parts, s)
+	case "/changelog", "/release-notes":
+		HandleChangelogCommand(parts, s)
 	case "/resume", "/history":
 		HandleResumeCommand(parts, s)
 	default:

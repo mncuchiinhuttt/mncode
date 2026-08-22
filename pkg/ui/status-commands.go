@@ -89,10 +89,17 @@ func ShowSessionStatus(s *agent.Session) {
 	if tracker, ok := s.Tracker.(*stats.Tracker); ok && tracker != nil {
 		today := tracker.GetToday()
 		lifetime := tracker.GetLifetime()
+		savedEst := float64(lifetime.TotalTokens) / 1000000.0 * 9.00
+		if savedEst < 0.05 && lifetime.TotalTokens > 0 {
+			savedEst = 0.05
+		}
+
 		lines = append(lines, fmt.Sprintf("  %-16s %s %s", GrayText("Today Tokens:"),
 			BoldGreen(formatNumber(today.TotalTokens)), GrayText(fmt.Sprintf("(%d requests)", today.Requests))))
 		lines = append(lines, fmt.Sprintf("  %-16s %s %s", GrayText("Total Tokens:"),
 			BoldYellow(formatNumber(lifetime.TotalTokens)), GrayText(fmt.Sprintf("(%d requests)", lifetime.Requests))))
+		lines = append(lines, fmt.Sprintf("  %-16s %s %s", GrayText("Est. Savings:"),
+			BoldGreen(fmt.Sprintf("~$%.2f USD", savedEst)), GrayText("(vs commercial API rates)")))
 	}
 
 	if s.Config.GetTelemetryKey() == "" {

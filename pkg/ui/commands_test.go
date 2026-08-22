@@ -57,3 +57,47 @@ func TestScratchCommand(t *testing.T) {
 	HandleScratchCommand([]string{"/scratch", "go"}, s)
 	HandleScratchCommand([]string{"/scratch", "view"}, s)
 }
+
+func TestTreeCommand(t *testing.T) {
+	cfg := config.DefaultConfig()
+	s := &agent.Session{
+		ID:           "test-session",
+		WorkspaceDir: ".",
+		Config:       cfg,
+	}
+	HandleTreeCommand([]string{"/tree", "1"}, s)
+}
+
+func TestResolveCommand(t *testing.T) {
+	cfg := config.DefaultConfig()
+	s := &agent.Session{
+		ID:           "test-session",
+		WorkspaceDir: ".",
+		Config:       cfg,
+	}
+	HandleResolveCommand([]string{"/resolve"}, s)
+}
+
+func TestDBCommand(t *testing.T) {
+	cfg := config.DefaultConfig()
+	s := &agent.Session{
+		ID:           "test-session",
+		WorkspaceDir: ".",
+		Config:       cfg,
+	}
+	HandleDBCommand([]string{"/db"}, s)
+}
+
+func TestAPICommand(t *testing.T) {
+	HandleAPICommand([]string{"/api"})
+}
+
+func TestChangelogCommand(t *testing.T) {
+	cfg := config.DefaultConfig()
+	s := &agent.Session{
+		ID:           "test-session",
+		WorkspaceDir: ".",
+		Config:       cfg,
+	}
+	HandleChangelogCommand([]string{"/changelog"}, s)
+}
