@@ -29,15 +29,13 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 	case "antigravity", "google", "gemini":
 		if len(parts) > 2 && parts[2] == "manual" {
 			fmt.Print("Enter Antigravity / Gemini OAuth Token or Bearer Token: ")
-			token, _ := reader.ReadString('\n')
-			token = strings.TrimSpace(token)
+			token := readLine(reader)
 			if token == "" {
 				fmt.Println("Login cancelled.")
 				return
 			}
 			fmt.Print("Enter Account Identifier / Email (e.g. user1@gmail.com): ")
-			email, _ := reader.ReadString('\n')
-			email = strings.TrimSpace(email)
+			email := readLine(reader)
 			if email == "" {
 				email = fmt.Sprintf("antigravity-%d", time.Now().Unix())
 			}
@@ -67,15 +65,13 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 
 	case "codex", "openai":
 		fmt.Print("Enter Codex / OpenAI API Token: ")
-		token, _ := reader.ReadString('\n')
-		token = strings.TrimSpace(token)
+		token := readLine(reader)
 		if token == "" {
 			fmt.Println("Login cancelled.")
 			return
 		}
 		fmt.Print("Enter Account Identifier (e.g. codex-team-1): ")
-		id, _ := reader.ReadString('\n')
-		id = strings.TrimSpace(id)
+		id := readLine(reader)
 		if id == "" {
 			id = fmt.Sprintf("codex-%d", time.Now().Unix())
 		}
@@ -88,15 +84,13 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 
 	case "opencode":
 		fmt.Print("Enter OpenCode API Key (e.g. sk-...): ")
-		token, _ := reader.ReadString('\n')
-		token = strings.TrimSpace(token)
+		token := readLine(reader)
 		if token == "" {
 			fmt.Println("Login cancelled.")
 			return
 		}
 		fmt.Print("Enter Account Identifier (e.g. opencode-user): ")
-		id, _ := reader.ReadString('\n')
-		id = strings.TrimSpace(id)
+		id := readLine(reader)
 		if id == "" {
 			id = fmt.Sprintf("opencode-%d", time.Now().Unix())
 		}
