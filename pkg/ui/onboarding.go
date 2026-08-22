@@ -8,6 +8,7 @@ import (
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
 
+	"github.com/manifoldco/promptui"
 	"golang.org/x/term"
 )
 
@@ -56,6 +57,47 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 		for !HandleMncodeLoginCommand(nil, s) {
 			fmt.Println(GrayText("   Let's try that again."))
 		}
+	}
+
+	// AI Personality & Persona Onboarding
+	fmt.Println()
+	fmt.Println(Bold("AI Personality & Persona"))
+	brainrotPrompt := promptui.Select{
+		Label: BoldCyan("Enable Brainrot Mode? (Gen Z / Sigma 10x Developer Persona)"),
+		Items: []string{
+			"No  - Standard Professional Dev (Clean & Serious)",
+			"Yes - Gen Z / Max Rizz / Zero Cap fr fr 💀",
+		},
+		HideSelected: true,
+	}
+
+	bIdx, _, err := brainrotPrompt.Run()
+	if err == nil && bIdx == 1 {
+		s.Config.SetSetting("brainrot_mode", "true")
+		fmt.Printf("   %s %s\n", BoldGreen("✓"), BoldPastelPink("Brainrot Mode enabled! (Zero cap fr fr)"))
+
+		// Troll Mode Onboarding (only asked if Brainrot is enabled)
+		fmt.Println()
+		trollPrompt := promptui.Select{
+			Label: BoldMagenta("Enable Troll Mode? (Harmless fake scare commands before tools)"),
+			Items: []string{
+				"No  - Regular Gen Z vibes (Safe & standard tool execution)",
+				"Yes - Harmless fake scare pranks (Flashing fake rm -rf / 💀)",
+			},
+			HideSelected: true,
+		}
+		tIdx, _, tErr := trollPrompt.Run()
+		if tErr == nil && tIdx == 1 {
+			s.Config.SetSetting("troll_mode", "true")
+			fmt.Printf("   %s %s\n", BoldGreen("✓"), BoldMagenta("Troll Mode enabled! (Harmless pranks active)"))
+		} else {
+			s.Config.SetSetting("troll_mode", "false")
+			fmt.Printf("   %s %s\n", BoldGreen("✓"), GrayText("Troll Mode disabled."))
+		}
+	} else {
+		s.Config.SetSetting("brainrot_mode", "false")
+		s.Config.SetSetting("troll_mode", "false")
+		fmt.Printf("   %s %s\n", BoldGreen("✓"), GrayText("Standard Professional Dev mode set."))
 	}
 
 	s.Config.SetSetting("onboarding_completed", "true")
