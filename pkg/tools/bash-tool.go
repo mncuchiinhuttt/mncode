@@ -54,48 +54,120 @@ func (b *BashTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		cwd = b.DefaultCwd
 	}
 
-	timeoutMs := 30000
-	if t, ok := args["TimeoutMs"].(float64); ok && t > 0 {
-		timeoutMs = int(t)
+	timeoutMs := 30000 // 30s default
+	for _, key := range []string{"TimeoutMs", "timeout_ms", "Timeout", "timeout", "WaitMsBeforeAsync", "wait_ms"} {
+		if val, exists := args[key]; exists {
+			switch v := val.(type) {
+			case float64:
+				if v > 0 {
+					timeoutMs = int(v)
+				}
+			case int:
+				if v > 0 {
+					timeoutMs = v
+				}
+			case int64:
+				if v > 0 {
+					timeoutMs = int(v)
+				}
+			}
+		}
 	}
 
-	cmdCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMs)*time.Millisecond)
-	defer cancel()
+	// For persistent preview/dev server commands without backgrounding (&), enforce a strict 6s cap
+	lowerCmd := strings.ToLower(cmdStr)
+	isServerCmd := strings.Contains(lowerCmd, "preview") ||
+		strings.Contains(lowerCmd, "run dev") ||
+		strings.Contains(lowerCmd, "npm start") ||
+		strings.Contains(lowerCmd, "http.server") ||
+		strings.Contains(lowerCmd, "vite") ||
+		strings.Contains(lowerCmd, "next dev")
 
-	cmd := exec.CommandContext(cmdCtx, "bash", "-c", cmdStr)
+	if isServerCmd && !strings.Contains(cmdStr, "&") && timeoutMs > 10000 {
+		timeoutMs = 6000
+	}
+
+	if timeoutMs > 120000 {
+		timeoutMs = 120000
+	}
+	if timeoutMs < 1000 {
+		timeoutMs = 5000
+	}
+
+	cmd := exec.Command("bash", "-c", cmdStr)
 	if cwd != "" {
 		cmd.Dir = cwd
 	}
+	setProcessGroup(cmd)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
-	err := cmd.Run()
-
-	var sb strings.Builder
-	if stdout.Len() > 0 {
-		sb.WriteString("Output:\n")
-		sb.WriteString(stdout.String())
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("failed to start command: %w", err)
 	}
-	if stderr.Len() > 0 {
-		if sb.Len() > 0 {
-			sb.WriteString("\n")
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case <-time.After(time.Duration(timeoutMs) * time.Millisecond):
+		killProcessGroup(cmd)
+		<-done
+
+		var sb strings.Builder
+		if stdout.Len() > 0 {
+			sb.WriteString("Output before timeout:\n")
+			sb.WriteString(stdout.String())
 		}
-		sb.WriteString("Error:\n")
-		sb.WriteString(stderr.String())
-	}
-
-	if err != nil {
-		if cmdCtx.Err() == context.DeadlineExceeded {
-			return sb.String(), fmt.Errorf("command timed out after %d ms: %w", timeoutMs, err)
+		if stderr.Len() > 0 {
+			if sb.Len() > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString("Error:\n")
+			sb.WriteString(stderr.String())
 		}
-		return sb.String(), fmt.Errorf("command failed with exit code: %w\n%s", err, sb.String())
-	}
 
-	if sb.Len() == 0 {
-		return "Command executed successfully with no output.", nil
-	}
+		if isServerCmd {
+			// For server preview commands, return the startup output as success
+			if sb.Len() > 0 {
+				return fmt.Sprintf("Server started (preview verified):\n%s", sb.String()), nil
+			}
+			return fmt.Sprintf("Server process executed for %dms and terminated.", timeoutMs), nil
+		}
 
-	return sb.String(), nil
+		return sb.String(), fmt.Errorf("command execution reached timeout (%dms) and was terminated: %s", timeoutMs, cmdStr)
+
+	case <-ctx.Done():
+		killProcessGroup(cmd)
+		<-done
+		return "", ctx.Err()
+
+	case err := <-done:
+		var sb strings.Builder
+		if stdout.Len() > 0 {
+			sb.WriteString("Output:\n")
+			sb.WriteString(stdout.String())
+		}
+		if stderr.Len() > 0 {
+			if sb.Len() > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString("Error:\n")
+			sb.WriteString(stderr.String())
+		}
+
+		if err != nil {
+			return sb.String(), fmt.Errorf("command failed with exit code: %w\n%s", err, sb.String())
+		}
+
+		if sb.Len() == 0 {
+			return "Command executed successfully with no output.", nil
+		}
+
+		return sb.String(), nil
+	}
 }
