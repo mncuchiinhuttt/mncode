@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // GetConfigFilePath returns the path to ~/.mncode/config.json
@@ -58,7 +59,13 @@ func LoadUserConfig(cfg *Config) error {
 		cfg.APIKey = saved.APIKey
 	}
 	if saved.BaseURL != "" {
-		cfg.BaseURL = saved.BaseURL
+		if (saved.Provider == ProviderAntigravity || saved.Provider == ProviderGemini) && !strings.Contains(saved.BaseURL, "googleapis.com") {
+			cfg.BaseURL = ""
+		} else if saved.Provider == ProviderAnthropic && !strings.Contains(saved.BaseURL, "anthropic.com") {
+			cfg.BaseURL = ""
+		} else {
+			cfg.BaseURL = saved.BaseURL
+		}
 	}
 	if saved.ThinkingBudget > 0 {
 		cfg.ThinkingBudget = saved.ThinkingBudget

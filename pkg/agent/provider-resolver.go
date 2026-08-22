@@ -45,7 +45,11 @@ func (s *Session) EnsureProvider() error {
 			if s.Config.Model == "" {
 				s.Config.Model = "gemini-3.7-flash-high"
 			}
-			ap := provider.NewAntigravityProvider(acc.AccessToken, s.Config.BaseURL)
+			baseURL := ""
+			if strings.Contains(s.Config.BaseURL, "googleapis.com") {
+				baseURL = s.Config.BaseURL
+			}
+			ap := provider.NewAntigravityProvider(acc.AccessToken, baseURL)
 			ap.RefreshToken = acc.RefreshToken
 			targetID := acc.ID
 			ap.OnTokenRefreshed = func(newTok string) {
@@ -69,7 +73,11 @@ func (s *Session) EnsureProvider() error {
 			if s.Config.Model == "" {
 				s.Config.Model = "gpt-4o"
 			}
-			s.Provider = provider.NewOpenAIProvider(acc.AccessToken, s.Config.BaseURL)
+			baseURL := s.Config.BaseURL
+			if !strings.Contains(baseURL, "openai.com") && !strings.Contains(baseURL, "openrouter.ai") {
+				baseURL = "https://api.openai.com/v1"
+			}
+			s.Provider = provider.NewOpenAIProvider(acc.AccessToken, baseURL)
 			return nil
 		}
 	}

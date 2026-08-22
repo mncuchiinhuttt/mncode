@@ -158,10 +158,19 @@ func OpenInteractiveAccountMenu(s *agent.Session) {
 						}
 					}
 				}
-				_ = s.Accounts.Save()
 				s.Config.APIKey = targetAcc.AccessToken
-				s.Config.Provider = config.ProviderAntigravity
+				if targetAcc.Provider == accounts.ProviderTypeAntigravity {
+					s.Config.Provider = config.ProviderAntigravity
+					s.Config.BaseURL = ""
+				} else if targetAcc.Provider == accounts.ProviderTypeCodex || targetAcc.Provider == accounts.ProviderTypeOpenAI {
+					s.Config.Provider = config.ProviderOpenAI
+					s.Config.BaseURL = "https://api.openai.com/v1"
+				} else if targetAcc.Provider == accounts.ProviderTypeOpenCode {
+					s.Config.Provider = config.ProviderOpenCode
+					s.Config.BaseURL = "https://opencode.ai/zen/v1"
+				}
 				s.Provider = nil
+				_ = config.SaveConfig(s.Config)
 				_ = s.EnsureProvider()
 
 				if lastLinesCount > 0 {

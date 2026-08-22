@@ -149,7 +149,19 @@ func OpenInteractiveModelSelector(s *agent.Session) {
 			s.Config.Model = chosen.ID
 			if chosen.Provider != "" {
 				s.Config.Provider = chosen.Provider
+				if chosen.Provider == config.ProviderOpenCode {
+					s.Config.BaseURL = "https://opencode.ai/zen/v1"
+				} else if chosen.Provider == config.ProviderAntigravity || chosen.Provider == config.ProviderGemini {
+					s.Config.BaseURL = ""
+				} else if chosen.Provider == config.ProviderAnthropic {
+					s.Config.BaseURL = ""
+				} else if chosen.Provider == config.ProviderOpenAI {
+					s.Config.BaseURL = "https://api.openai.com/v1"
+				} else if chosen.Provider == config.ProviderOpenRouter {
+					s.Config.BaseURL = "https://openrouter.ai/api/v1"
+				}
 			}
+			s.Provider = nil
 			_ = config.SaveConfig(s.Config)
 			_ = s.EnsureProvider()
 
