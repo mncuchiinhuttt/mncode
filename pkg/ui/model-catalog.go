@@ -83,7 +83,9 @@ var curatedModels = []ModelChoice{
 
 	// --- OpenCode Zen Free Models & Stealth Reasoning ---
 	{
-		ID:          "ox-alpha",
+		// OpenCode Zen's real slug for "Ox Alpha Free" is x-preview-f-free —
+		// "ox-alpha" 401s ("Model ox-alpha is not supported"), verified live.
+		ID:          "x-preview-f-free",
 		Name:        "Ox Alpha (1M Free Reasoning)",
 		Provider:    config.ProviderOpenCode,
 		Tag:         "[OpenCode Free]",
@@ -97,18 +99,15 @@ var curatedModels = []ModelChoice{
 		Description: "Stealth Ox Alpha 1M context reasoning model via OpenRouter (100% Free)",
 	},
 	{
+		// Slug is correct (confirmed against OpenCode Zen docs) and returns a
+		// distinct "model is unavailable" server_error via the anonymous public
+		// key — not an auth/not-found error — so this looks like a temporarily
+		// paused free-tier model upstream, not a wrong ID. Re-verify occasionally.
 		ID:          "deepseek-v4-flash-free",
-		Name:        "DeepSeek V4 Flash (Free)",
+		Name:        "DeepSeek V4 Flash (Free, currently unavailable)",
 		Provider:    config.ProviderOpenCode,
 		Tag:         "[OpenCode Free]",
-		Description: "OpenCode Zen Free tier DeepSeek V4 Flash model (No API key needed)",
-	},
-	{
-		ID:          "x-preview-f-free",
-		Name:        "X Preview Flash (Free)",
-		Provider:    config.ProviderOpenCode,
-		Tag:         "[OpenCode Free]",
-		Description: "OpenCode Zen preview flash model (Free tier)",
+		Description: "OpenCode Zen Free tier DeepSeek V4 Flash model. Currently returning \"model unavailable\" upstream — try mimo-v2.5-free or x-preview-f-free instead for now.",
 	},
 	{
 		ID:          "mimo-v2.5-free",

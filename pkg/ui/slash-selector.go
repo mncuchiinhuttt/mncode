@@ -20,6 +20,7 @@ var slashOptions = []SlashOption{
 	{Command: "/account list", Description: "View multi-account pool status", Category: "Accounts"},
 	{Command: "/account import", Description: "Auto-import Antigravity & OpenAI credentials", Category: "Accounts"},
 	{Command: "/login", Description: "Log in to your mncode web account (sync, feedback)", Category: "Accounts"},
+	{Command: "/logout", Description: "Log out of your mncode web account", Category: "Accounts"},
 	{Command: "/account login", Description: "Interactive login to Antigravity (Gemini) or Codex (OpenAI)", Category: "Accounts"},
 	{Command: "/model", Description: "View or change current LLM model", Category: "Settings"},
 	{Command: "/effort", Description: "Configure thinking budget / reasoning effort (low/med/high/max)", Category: "Settings"},

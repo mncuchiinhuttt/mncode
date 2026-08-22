@@ -1,140 +1,158 @@
 package ui
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
-	"io"
+	"net"
 	"net/http"
-	"os"
-	"strings"
+	"net/url"
+	"os/exec"
+	"runtime"
 	"time"
 
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
-
-	"golang.org/x/term"
 )
 
-type signInPayload struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+const loginCallbackTimeout = 5 * time.Minute
+
+type loginResult struct {
+	key string
+	err error
 }
 
-type signInResponse struct {
-	Token string `json:"token"`
-}
-
-type generateKeyResponse struct {
-	Success bool   `json:"success"`
-	APIKey  string `json:"apiKey"`
-}
-
-// HandleMncodeLoginCommand logs into the mncode web account (mncode.dev, or a
-// self-hosted instance) and mints a fresh CLI sync key — the "/login" command.
-// Provider accounts (Antigravity, Codex...) now live under "/account login".
-func HandleMncodeLoginCommand(parts []string, s *agent.Session) {
-	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		fmt.Println("Usage: /login  (interactive — prompts for your mncode account email & password)")
+// HandleMncodeLogoutCommand logs out of the mncode web account — clears the
+// locally stored sync key. Reached via "/logout" with no arguments;
+// "/logout <provider-account-id>" still removes a specific provider account
+// (Antigravity, Codex...) from the pool, unchanged.
+func HandleMncodeLogoutCommand(s *agent.Session) {
+	if s.Config.GetTelemetryKey() == "" {
+		fmt.Println("\nNot logged in to a mncode account.")
 		return
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Printf("\n%s Log in to your mncode account\n", BoldPastelPink("[Login]"))
-	fmt.Print("Email: ")
-	email, _ := reader.ReadString('\n')
-	email = strings.TrimSpace(email)
-	if email == "" {
-		fmt.Println("Login cancelled.")
-		return
-	}
-
-	fmt.Print("Password: ")
-	passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
-	if err != nil {
-		fmt.Printf("%s Failed to read password: %v\n", BoldRed("[Error]"), err)
-		return
-	}
-	password := strings.TrimSpace(string(passwordBytes))
-	if password == "" {
-		fmt.Println("Login cancelled.")
-		return
-	}
-
-	key, err := signInAndMintKey(s.Config.GetWebBaseURL(), email, password)
-	if err != nil {
-		fmt.Printf("%s %v\n", BoldRed("[Login Failed]"), err)
-		fmt.Println(GrayText("  No account? Register at the mncode web dashboard, then run /login again."))
-		return
-	}
-
-	s.Config.TelemetryKey = key
-	s.Config.SetSetting("telemetry_key", key)
+	s.Config.TelemetryKey = ""
+	s.Config.SetSetting("telemetry_key", "")
+	s.Config.SetSetting("last_telemetry_sync_date", "")
 	_ = config.SaveConfig(s.Config)
 
-	fmt.Printf("%s Logged in as %s — sync key saved.\n", BoldGreen("[Success]"), Bold(email))
-	fmt.Println(GrayText("  Run /status to confirm, /sync to push usage, /feedback to send feedback."))
+	fmt.Printf("\n%s Logged out of your mncode account.\n", BoldGreen("[Logout]"))
+	fmt.Println(GrayText("  Run /login anytime to link a new one."))
 	fmt.Println()
 }
 
-// signInAndMintKey authenticates against the web app and generates a fresh
-// CLI API key for this login, using the bearer-token session it returns.
-func signInAndMintKey(baseURL, email, password string) (string, error) {
-	signInURL := baseURL + "/api/auth/sign-in/email"
-	genKeyURL := baseURL + "/api/keys/generate"
-	client := &http.Client{Timeout: 8 * time.Second}
-
-	signInBody, _ := json.Marshal(signInPayload{Email: email, Password: password})
-	req, err := http.NewRequest("POST", signInURL, bytes.NewBuffer(signInBody))
+// HandleMncodeLoginCommand logs into the mncode web account by opening the
+// user's browser to a login page and waiting for it to redirect back to a
+// short-lived local server with a freshly minted CLI sync key — no
+// email/password ever typed into the terminal. Returns true on success.
+// Provider accounts (Antigravity, Codex...) live under "/account login".
+func HandleMncodeLoginCommand(parts []string, s *agent.Session) bool {
+	state, err := randomHex(16)
 	if err != nil {
+		fmt.Printf("%s Could not start login: %v\n", BoldRed("[Login Error]"), err)
+		return false
+	}
+
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		fmt.Printf("%s Could not start local login server: %v\n", BoldRed("[Login Error]"), err)
+		return false
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	callbackURL := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
+	loginURL := fmt.Sprintf("%s/cli-login?callback=%s&state=%s", s.Config.GetWebBaseURL(), url.QueryEscape(callbackURL), state)
+
+	resultCh := make(chan loginResult, 1)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if q.Get("state") != state {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, callbackPage(false, "State mismatch — please try again from your terminal."))
+			resultCh <- loginResult{err: fmt.Errorf("state mismatch (stale or spoofed callback)")}
+			return
+		}
+		key := q.Get("key")
+		if key == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, callbackPage(false, "No sync key was received."))
+			resultCh <- loginResult{err: fmt.Errorf("no key in callback")}
+			return
+		}
+		fmt.Fprint(w, callbackPage(true, ""))
+		resultCh <- loginResult{key: key}
+	})
+	server := &http.Server{Handler: mux}
+	go func() { _ = server.Serve(listener) }()
+	defer server.Close()
+
+	fmt.Printf("\n%s Opening your browser to log in...\n", BoldPastelPink("[Login]"))
+	fmt.Println(GrayText("  " + loginURL))
+	if err := openBrowser(loginURL); err != nil {
+		fmt.Println(GrayText("  Couldn't auto-open a browser — copy the URL above into one manually."))
+	}
+	fmt.Println(GrayText("  Waiting for you to finish in the browser (5 min timeout, Ctrl+C to cancel)..."))
+
+	select {
+	case res := <-resultCh:
+		// Let the callback's HTTP response actually flush to the browser
+		// before the deferred server.Close() tears the connection down.
+		time.Sleep(1 * time.Second)
+		if res.err != nil {
+			fmt.Printf("%s %v\n", BoldRed("[Login Failed]"), res.err)
+			return false
+		}
+		s.Config.TelemetryKey = res.key
+		s.Config.SetSetting("telemetry_key", res.key)
+		_ = config.SaveConfig(s.Config)
+		fmt.Printf("%s Logged in — sync key saved.\n", BoldGreen("[Success]"))
+		fmt.Println(GrayText("  Run /status to confirm, /sync to push usage, /feedback to send feedback."))
+		fmt.Println()
+		return true
+	case <-time.After(loginCallbackTimeout):
+		fmt.Printf("%s Timed out waiting for the browser login. Run /login to try again.\n", BoldRed("[Login Timeout]"))
+		return false
+	}
+}
+
+func randomHex(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	return hex.EncodeToString(b), nil
+}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("connection failed: %w (make sure the web app is running at %s)", err, signInURL)
+func openBrowser(targetURL string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", targetURL)
+	case "linux":
+		cmd = exec.Command("xdg-open", targetURL)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", targetURL)
+	default:
+		return fmt.Errorf("unsupported platform")
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	return cmd.Start()
+}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("sign-in failed: %s", string(body))
+func callbackPage(ok bool, errMsg string) string {
+	title, body := "You're logged in!", "You can close this tab and return to your terminal."
+	color := "#ec4899"
+	if !ok {
+		title, body, color = "Login failed", errMsg, "#e11d48"
 	}
-
-	var signIn signInResponse
-	if err := json.Unmarshal(body, &signIn); err != nil || signIn.Token == "" {
-		return "", fmt.Errorf("unexpected sign-in response: %s", string(body))
-	}
-
-	hostname, _ := os.Hostname()
-	keyName := fmt.Sprintf("CLI Login (%s)", hostname)
-	genBody, _ := json.Marshal(map[string]string{"name": keyName})
-	genReq, err := http.NewRequest("POST", genKeyURL, bytes.NewBuffer(genBody))
-	if err != nil {
-		return "", err
-	}
-	genReq.Header.Set("Content-Type", "application/json")
-	genReq.Header.Set("Authorization", "Bearer "+signIn.Token)
-
-	genResp, err := client.Do(genReq)
-	if err != nil {
-		return "", err
-	}
-	defer genResp.Body.Close()
-	genRespBody, _ := io.ReadAll(genResp.Body)
-
-	if genResp.StatusCode < 200 || genResp.StatusCode >= 300 {
-		return "", fmt.Errorf("could not generate a sync key: %s", string(genRespBody))
-	}
-
-	var keyResp generateKeyResponse
-	if err := json.Unmarshal(genRespBody, &keyResp); err != nil || keyResp.APIKey == "" {
-		return "", fmt.Errorf("unexpected key response: %s", string(genRespBody))
-	}
-
-	return keyResp.APIKey, nil
+	return fmt.Sprintf(`<!doctype html>
+<html><head><meta charset="utf-8"><title>mncode</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #fdf7fb; color: #1c1420;
+         display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  .card { text-align: center; padding: 2.5rem; border-radius: 1rem; border: 1px solid #f5d7e8; max-width: 26rem; }
+  h1 { color: %s; margin: 0 0 0.5rem; font-size: 1.25rem; }
+  p { color: #746b82; margin: 0; }
+</style></head>
+<body><div class="card"><h1>%s</h1><p>%s</p></div></body></html>`, color, title, body)
 }

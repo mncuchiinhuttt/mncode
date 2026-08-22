@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
-	"mncode/pkg/stats"
 	"strings"
 )
 
@@ -84,7 +83,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		fmt.Print("\033[H\033[2J") // Clear terminal
 		fmt.Println("Session history cleared.")
 	case "/status":
-		showStatus(s)
+		ShowSessionStatus(s)
 	case "/config", "/settings", "/cfg":
 		HandleConfigCommand(parts, s)
 	case "/context", "/ctx":
@@ -105,7 +104,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		if len(parts) > 1 {
 			HandleAccountCommand([]string{"/account", "remove", parts[1]}, s)
 		} else {
-			OpenInteractiveAccountMenu(s)
+			HandleMncodeLogoutCommand(s)
 		}
 	case "/login":
 		HandleMncodeLoginCommand(parts, s)
@@ -162,41 +161,5 @@ func showRules(s *agent.Session) {
 	for name := range s.Catalog.Rules {
 		fmt.Printf("  • %s\n", name)
 	}
-	fmt.Println()
-}
-
-func showStatus(s *agent.Session) {
-	fmt.Printf("\n%s\n", BoldCyan("Session Status:"))
-	fmt.Printf("  Workspace:    %s\n", s.WorkspaceDir)
-	fmt.Printf("  Provider:     %s\n", s.Config.Provider)
-	fmt.Printf("  Model:        %s\n", s.Config.Model)
-	fmt.Printf("  Effort Level: %s (%d tokens budget)\n", BoldGreen(strings.ToUpper(s.Config.Effort)), s.Config.ThinkingBudget)
-	fmt.Printf("  Workflow:     %s\n", BoldCyan(strings.ToUpper(s.Config.Workflow)))
-	fmt.Printf("  Auto-Approve: %v\n", s.Config.AutoApprove)
-	fmt.Printf("  History Size: %d messages\n", len(s.History))
-	if tracker, ok := s.Tracker.(*stats.Tracker); ok && tracker != nil {
-		today := tracker.GetToday()
-		lifetime := tracker.GetLifetime()
-		fmt.Printf("  Today Tokens: %s (%d requests)\n", BoldGreen(formatNumber(today.TotalTokens)), today.Requests)
-		fmt.Printf("  Total Tokens: %s (%d requests)\n", BoldYellow(formatNumber(lifetime.TotalTokens)), lifetime.Requests)
-	}
-
-	if s.Config.GetTelemetryKey() == "" {
-		fmt.Printf("  Web Account:  %s (run /sync key <key>)\n", GrayText("not linked"))
-	} else if who, err := fetchWhoAmI(s); err != nil {
-		fmt.Printf("  Web Account:  %s (%v)\n", BoldRed("lookup failed"), err)
-	} else {
-		label := fmt.Sprintf("%s <%s>", who.User.Name, who.User.Email)
-		if who.IsAdmin {
-			label += " " + BoldYellow("[admin]")
-		}
-		fmt.Printf("  Web Account:  %s\n", BoldGreen(label))
-		lastSync := s.Config.GetSetting("last_telemetry_sync_date", "")
-		if lastSync == "" {
-			lastSync = "never"
-		}
-		fmt.Printf("  Last Synced:  %s\n", lastSync)
-	}
-
 	fmt.Println()
 }
