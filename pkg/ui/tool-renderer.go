@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// RenderToolCallFormatted prints a rich UI box when a tool begins execution
+// RenderToolCallFormatted prints a clean syntax for tool calls
 func RenderToolCallFormatted(tc *provider.ToolCall) string {
 	t := GetCurrentTheme()
 	argBytes, _ := json.Marshal(tc.Arguments)
@@ -19,19 +19,34 @@ func RenderToolCallFormatted(tc *provider.ToolCall) string {
 			Cwd         string `json:"Cwd"`
 		}
 		_ = json.Unmarshal(argBytes, &args)
-		cmd := args.CommandLine
+		cmd := strings.TrimSpace(args.CommandLine)
 		if cmd == "" {
 			cmd = string(argBytes)
 		}
-		cwd := args.Cwd
-		if cwd == "" {
-			cwd = "."
-		}
-		return fmt.Sprintf("\n%s %s\n  %s %s\n",
-			Colorize(AttrBold+t.Primary, "⏵ [Bash Execution]"),
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Primary, "Bash("),
 			Colorize(AttrBold+t.Text, cmd),
-			Colorize(t.Muted, "Directory:"),
-			Colorize(t.Secondary, cwd))
+			Colorize(AttrBold+t.Primary, ")"))
+
+	case "view_file", "read_file":
+		var args struct {
+			AbsolutePath string `json:"AbsolutePath"`
+			StartLine    int    `json:"StartLine"`
+			EndLine      int    `json:"EndLine"`
+		}
+		_ = json.Unmarshal(argBytes, &args)
+		target := args.AbsolutePath
+		if target == "" {
+			target = formatCleanArgs(tc.Arguments)
+		}
+		lineInfo := ""
+		if args.StartLine > 0 && args.EndLine > 0 {
+			lineInfo = fmt.Sprintf(":%d-%d", args.StartLine, args.EndLine)
+		}
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Primary, tc.Name+"("),
+			Colorize(AttrBold+t.Text, target+lineInfo),
+			Colorize(AttrBold+t.Primary, ")"))
 
 	case "replace_file_content", "edit_file":
 		var args struct {
@@ -43,53 +58,93 @@ func RenderToolCallFormatted(tc *provider.ToolCall) string {
 		_ = json.Unmarshal(argBytes, &args)
 		lineRange := ""
 		if args.StartLine > 0 && args.EndLine > 0 {
-			lineRange = fmt.Sprintf(" (lines %d-%d)", args.StartLine, args.EndLine)
+			lineRange = fmt.Sprintf(":%d-%d", args.StartLine, args.EndLine)
 		}
-		summary := args.Instruction
-		if summary == "" {
-			summary = "Modifying code block"
-		}
-		return fmt.Sprintf("\n%s %s%s\n  %s %s\n",
-			Colorize(AttrBold+t.Primary, "✎ [Code Edit]"),
-			Colorize(AttrBold+t.Text, args.TargetFile),
-			Colorize(t.Muted, lineRange),
-			Colorize(t.Muted, "Action:"),
-			Colorize(t.Secondary, summary))
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Primary, tc.Name+"("),
+			Colorize(AttrBold+t.Text, args.TargetFile+lineRange),
+			Colorize(AttrBold+t.Primary, ")"))
 
-	case "write_to_file":
+	case "write_to_file", "create_file":
 		var args struct {
 			TargetFile  string `json:"TargetFile"`
 			Description string `json:"Description"`
 		}
 		_ = json.Unmarshal(argBytes, &args)
-		desc := args.Description
-		if desc == "" {
-			desc = "Creating new file"
+		target := args.TargetFile
+		if target == "" {
+			target = formatCleanArgs(tc.Arguments)
 		}
-		return fmt.Sprintf("\n%s %s\n  %s %s\n",
-			Colorize(AttrBold+t.Success, "✚ [Create File]"),
-			Colorize(AttrBold+t.Text, args.TargetFile),
-			Colorize(t.Muted, "Summary:"),
-			Colorize(t.Secondary, desc))
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Success, tc.Name+"("),
+			Colorize(AttrBold+t.Text, target),
+			Colorize(AttrBold+t.Success, ")"))
 
-	case "grep_search", "find_by_name":
+	case "list_dir":
+		var args struct {
+			DirectoryPath string `json:"DirectoryPath"`
+		}
+		_ = json.Unmarshal(argBytes, &args)
+		path := args.DirectoryPath
+		if path == "" {
+			path = "."
+		}
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Primary, "list_dir("),
+			Colorize(AttrBold+t.Text, path),
+			Colorize(AttrBold+t.Primary, ")"))
+
+	case "grep_search":
 		var args struct {
 			Query      string `json:"Query"`
 			SearchPath string `json:"SearchPath"`
 		}
 		_ = json.Unmarshal(argBytes, &args)
-		return fmt.Sprintf("\n%s %s in %s\n",
-			Colorize(AttrBold+t.Warning, "🔍 [Search]"),
-			Colorize(AttrBold+t.Text, args.Query),
-			Colorize(t.Secondary, args.SearchPath))
+		return fmt.Sprintf("\n%s%s, in=%s%s\n",
+			Colorize(AttrBold+t.Warning, "grep_search("),
+			Colorize(AttrBold+t.Text, fmt.Sprintf("%q", args.Query)),
+			Colorize(t.Secondary, args.SearchPath),
+			Colorize(AttrBold+t.Warning, ")"))
+
+	case "find_by_name":
+		var args struct {
+			Pattern         string `json:"Pattern"`
+			SearchDirectory string `json:"SearchDirectory"`
+		}
+		_ = json.Unmarshal(argBytes, &args)
+		return fmt.Sprintf("\n%s%s, in=%s%s\n",
+			Colorize(AttrBold+t.Warning, "find_by_name("),
+			Colorize(AttrBold+t.Text, fmt.Sprintf("%q", args.Pattern)),
+			Colorize(t.Secondary, args.SearchDirectory),
+			Colorize(AttrBold+t.Warning, ")"))
 
 	default:
-		argsBytes, _ := json.Marshal(tc.Arguments)
-		return fmt.Sprintf("\n%s %s(%s)\n",
-			Colorize(AttrBold+t.Primary, "[Tool Call]"),
-			Colorize(AttrBold+t.Text, tc.Name),
-			Colorize(t.Muted, string(argsBytes)))
+		argsFormatted := formatCleanArgs(tc.Arguments)
+		return fmt.Sprintf("\n%s%s%s\n",
+			Colorize(AttrBold+t.Primary, tc.Name+"("),
+			Colorize(t.Muted, argsFormatted),
+			Colorize(AttrBold+t.Primary, ")"))
 	}
+}
+
+func formatCleanArgs(args map[string]interface{}) string {
+	if len(args) == 0 {
+		return ""
+	}
+	var pairs []string
+	for k, v := range args {
+		switch val := v.(type) {
+		case string:
+			if len([]rune(val)) > 60 {
+				val = string([]rune(val)[:57]) + "…"
+			}
+			pairs = append(pairs, fmt.Sprintf("%s=%q", k, val))
+		default:
+			b, _ := json.Marshal(val)
+			pairs = append(pairs, fmt.Sprintf("%s=%s", k, string(b)))
+		}
+	}
+	return strings.Join(pairs, ", ")
 }
 
 // RenderToolResultFormatted prints highlighted diffs, stdout, or search previews
