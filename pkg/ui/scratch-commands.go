@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // HandleScratchCommand manages the local code sandbox
@@ -28,7 +29,11 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 
 	switch sub {
 	case "run", "eval":
-		runScratchFile(scratchDir)
+		reqExt := ""
+		if len(parts) > 2 {
+			reqExt = strings.ToLower(parts[2])
+		}
+		runScratchFile(scratchDir, reqExt)
 		return
 
 	case "clear", "reset":
@@ -66,23 +71,31 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 func getStarterCode(ext string) string {
 	switch ext {
 	case "py":
-		return "# mncode python scratchpad\ndef main():\n    print('Hello from scratchpad!')\n\nif __name__ == '__main__':\n    main()\n"
+		return "# mncode python scratchpad\ndef main():\n    print('Hello from Python scratchpad!')\n\nif __name__ == '__main__':\n    main()\n"
 	case "ts", "js":
-		return "// mncode typescript/javascript scratchpad\nconsole.log('Hello from scratchpad!');\n"
+		return "// mncode typescript/javascript scratchpad\nconsole.log('Hello from TS scratchpad!');\n"
 	case "sh":
-		return "#!/bin/bash\necho 'Hello from scratchpad!'\n"
+		return "#!/bin/bash\necho 'Hello from bash scratchpad!'\n"
 	default:
-		return "// mncode Go scratchpad\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Hello from scratchpad!\")\n}\n"
+		return "// mncode Go scratchpad\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"Hello from Go scratchpad!\")\n}\n"
 	}
 }
 
-func runScratchFile(scratchDir string) {
+func runScratchFile(scratchDir, reqExt string) {
 	entries, _ := os.ReadDir(scratchDir)
 	var target string
+	var latestTime time.Time
+
 	for _, e := range entries {
 		if strings.HasPrefix(e.Name(), "scratch.") {
-			target = filepath.Join(scratchDir, e.Name())
-			break
+			if reqExt != "" && !strings.HasSuffix(e.Name(), "."+reqExt) {
+				continue
+			}
+			info, err := e.Info()
+			if err == nil && (target == "" || info.ModTime().After(latestTime)) {
+				target = filepath.Join(scratchDir, e.Name())
+				latestTime = info.ModTime()
+			}
 		}
 	}
 	if target == "" {
@@ -116,5 +129,5 @@ func runScratchFile(scratchDir string) {
 		fmt.Printf("%s %s\n\n", BoldRed("[Execution Error]:"), string(out))
 		return
 	}
-	fmt.Printf("%s\n\n", string(out))
+	fmt.Printf("%s\n\n", strings.TrimSpace(string(out)))
 }
