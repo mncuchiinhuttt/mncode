@@ -93,6 +93,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleCompactCommand(s)
 	case "/sync", "/telemetry":
 		HandleSyncCommand(parts, s)
+	case "/feedback":
+		HandleFeedbackCommand(parts, s)
 	case "/usage", "/tokens", "/cost", "/stats":
 		ShowUsageStats(s)
 	case "/quota", "/limits":
@@ -106,7 +108,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			OpenInteractiveAccountMenu(s)
 		}
 	case "/login":
-		HandleLoginPrompt(parts, s)
+		HandleMncodeLoginCommand(parts, s)
 	case "/btw":
 		HandleBTWCommand(parts, s)
 	case "/brainrot":
@@ -151,8 +153,6 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 	return true
 }
 
-
-
 func showRules(s *agent.Session) {
 	if s.Catalog == nil || len(s.Catalog.Rules) == 0 {
 		fmt.Println("No rules loaded.")
@@ -180,5 +180,23 @@ func showStatus(s *agent.Session) {
 		fmt.Printf("  Today Tokens: %s (%d requests)\n", BoldGreen(formatNumber(today.TotalTokens)), today.Requests)
 		fmt.Printf("  Total Tokens: %s (%d requests)\n", BoldYellow(formatNumber(lifetime.TotalTokens)), lifetime.Requests)
 	}
+
+	if s.Config.GetTelemetryKey() == "" {
+		fmt.Printf("  Web Account:  %s (run /sync key <key>)\n", GrayText("not linked"))
+	} else if who, err := fetchWhoAmI(s); err != nil {
+		fmt.Printf("  Web Account:  %s (%v)\n", BoldRed("lookup failed"), err)
+	} else {
+		label := fmt.Sprintf("%s <%s>", who.User.Name, who.User.Email)
+		if who.IsAdmin {
+			label += " " + BoldYellow("[admin]")
+		}
+		fmt.Printf("  Web Account:  %s\n", BoldGreen(label))
+		lastSync := s.Config.GetSetting("last_telemetry_sync_date", "")
+		if lastSync == "" {
+			lastSync = "never"
+		}
+		fmt.Printf("  Last Synced:  %s\n", lastSync)
+	}
+
 	fmt.Println()
 }

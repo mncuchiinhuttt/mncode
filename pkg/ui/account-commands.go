@@ -22,6 +22,10 @@ func HandleAccountCommand(parts []string, s *agent.Session) {
 
 	sub := strings.ToLower(parts[1])
 	switch sub {
+	case "login":
+		// Reshape ["/account","login","antigravity",...] into what
+		// HandleLoginPrompt expects: ["/login","antigravity",...]
+		HandleLoginPrompt(append([]string{"/login"}, parts[2:]...), s)
 	case "manage", "menu":
 		OpenInteractiveAccountMenu(s)
 	case "list", "ls":
@@ -103,7 +107,7 @@ func HandleAccountCommand(parts []string, s *agent.Session) {
 func showAccounts(s *agent.Session) {
 	if s.Accounts == nil || len(s.Accounts.Accounts) == 0 {
 		fmt.Println()
-		fmt.Println("No accounts configured in pool. Use '/login antigravity' to connect an account.")
+		fmt.Println("No accounts configured in pool. Use '/account login antigravity' to connect an account.")
 		fmt.Println()
 		return
 	}

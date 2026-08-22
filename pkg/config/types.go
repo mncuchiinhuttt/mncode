@@ -1,6 +1,9 @@
 package config
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 // ProviderType represents the LLM provider
 type ProviderType string
@@ -25,34 +28,52 @@ const (
 
 // Config represents the application configuration
 type Config struct {
-	Provider        ProviderType   `json:"provider"`
-	Model           string         `json:"model"`
-	APIKey          string         `json:"apiKey"`
-	BaseURL         string         `json:"baseUrl"`
-	ThinkingBudget  int            `json:"thinkingBudget"`
-	MaxTokens       int            `json:"maxTokens"`
-	Temperature     float64        `json:"temperature"`
-	AutoApprove     bool           `json:"autoApprove"`
-	PermissionMode  PermissionMode `json:"permissionMode"`
-	Verbose         bool           `json:"verbose"`
-	WorkspaceDir    string         `json:"workspaceDir"`
-	ClaudeDir       string         `json:"claudeDir"`
-	CodingLevel     int            `json:"codingLevel"`
-	Effort          string         `json:"effort"`
-	Workflow        string         `json:"workflow"`
-	ContextWindow   string         `json:"contextWindow,omitempty"`
-	ThinkingLang    string            `json:"thinkingLang"`
-	ResponseLang    string            `json:"responseLang"`
-	TelemetryKey    string            `json:"telemetryKey,omitempty"`
-	TelemetryURL    string            `json:"telemetryUrl,omitempty"`
-	Settings        map[string]string `json:"settings,omitempty"`
+	Provider       ProviderType      `json:"provider"`
+	Model          string            `json:"model"`
+	APIKey         string            `json:"apiKey"`
+	BaseURL        string            `json:"baseUrl"`
+	ThinkingBudget int               `json:"thinkingBudget"`
+	MaxTokens      int               `json:"maxTokens"`
+	Temperature    float64           `json:"temperature"`
+	AutoApprove    bool              `json:"autoApprove"`
+	PermissionMode PermissionMode    `json:"permissionMode"`
+	Verbose        bool              `json:"verbose"`
+	WorkspaceDir   string            `json:"workspaceDir"`
+	ClaudeDir      string            `json:"claudeDir"`
+	CodingLevel    int               `json:"codingLevel"`
+	Effort         string            `json:"effort"`
+	Workflow       string            `json:"workflow"`
+	ContextWindow  string            `json:"contextWindow,omitempty"`
+	ThinkingLang   string            `json:"thinkingLang"`
+	ResponseLang   string            `json:"responseLang"`
+	TelemetryKey   string            `json:"telemetryKey,omitempty"`
+	TelemetryURL   string            `json:"telemetryUrl,omitempty"`
+	Settings       map[string]string `json:"settings,omitempty"`
+}
+
+// GetWebBaseURL returns the origin of the mncode web app (dashboard, sync,
+// feedback, login all hang off this). Resolution order: explicit
+// "/config web_base_url <url>" setting, then the MNCODE_WEB_URL env var
+// (so a distributed binary can be built/run pointed at production without
+// every user having to configure it by hand), then localhost for local dev.
+func (c *Config) GetWebBaseURL() string {
+	if base := c.GetSetting("web_base_url", ""); base != "" {
+		return strings.TrimRight(base, "/")
+	}
+	if envURL := os.Getenv("MNCODE_WEB_URL"); envURL != "" {
+		return strings.TrimRight(envURL, "/")
+	}
+	return "http://localhost:3000"
 }
 
 func (c *Config) GetTelemetryURL() string {
 	if c.TelemetryURL != "" {
 		return c.TelemetryURL
 	}
-	return c.GetSetting("telemetry_url", "http://localhost:3000/api/telemetry/sync")
+	if url := c.GetSetting("telemetry_url", ""); url != "" {
+		return url
+	}
+	return c.GetWebBaseURL() + "/api/telemetry/sync"
 }
 
 func (c *Config) GetTelemetryKey() string {

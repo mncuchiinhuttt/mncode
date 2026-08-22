@@ -192,6 +192,10 @@ func main() {
 		return
 	}
 
+	// First-run wizard: connect a provider / mncode account. Only for the
+	// interactive REPL, and only shown once ever (see RunOnboardingIfNeeded).
+	ui.RunOnboardingIfNeeded(session)
+
 	// Push today's usage telemetry once per day, if a sync key is configured.
 	// Only for the interactive REPL — one-shot `-e` invocations (which may
 	// themselves be a scripted `/sync`) shouldn't race a background push.

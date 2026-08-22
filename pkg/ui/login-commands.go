@@ -12,7 +12,9 @@ import (
 	"golang.org/x/term"
 )
 
-// HandleLoginPrompt handles interactive login for antigravity and codex
+// HandleLoginPrompt handles interactive login for provider accounts
+// (Antigravity/Gemini, Codex/OpenAI) — reached via "/account login <provider>".
+// For logging into your mncode web account, see HandleMncodeLoginCommand ("/login").
 func HandleLoginPrompt(parts []string, s *agent.Session) {
 	if len(parts) < 2 {
 		OpenInteractiveLoginMenu(s)
@@ -55,7 +57,7 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 		acc, err := accounts.StartAntigravityWebLogin(s.Accounts)
 		if err != nil {
 			fmt.Printf("%s Google login failed: %v\n", BoldRed("[Error]"), err)
-			fmt.Println(GrayText("  Tip: You can also login manually using '/login antigravity manual'"))
+			fmt.Println(GrayText("  Tip: You can also login manually using '/account login antigravity manual'"))
 			return
 		}
 
@@ -90,7 +92,7 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 // OpenInteractiveLoginMenu displays an arrow-navigable menu for selecting provider to log in
 func OpenInteractiveLoginMenu(s *agent.Session) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		fmt.Println("Usage: /login <antigravity|codex>")
+		fmt.Println("Usage: /account login <antigravity|codex>")
 		return
 	}
 
@@ -119,7 +121,7 @@ func OpenInteractiveLoginMenu(s *agent.Session) {
 	selected := 0
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		fmt.Println("Usage: /login <antigravity|codex>")
+		fmt.Println("Usage: /account login <antigravity|codex>")
 		return
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
@@ -134,7 +136,7 @@ func OpenInteractiveLoginMenu(s *agent.Session) {
 		}
 
 		var sb strings.Builder
-		sb.WriteString(fmt.Sprintf("%s\r\n", BoldPastelPink("╭── [Authentication / Login] ───────────────────────────────────────────────────╮")))
+		sb.WriteString(fmt.Sprintf("%s\r\n", BoldPastelPink("╭── [Provider Accounts] ────────────────────────────────────────────────────────╮")))
 		sb.WriteString(fmt.Sprintf("│ Select an account provider to connect:%s│\r\n", strings.Repeat(" ", 38)))
 		sb.WriteString(fmt.Sprintf("%s\r\n\r\n", BoldPastelPink("╰───────────────────────────────────────────────────────────────────────────────╯")))
 
