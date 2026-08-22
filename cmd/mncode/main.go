@@ -143,6 +143,16 @@ func main() {
 
 	// 5. Initialize Tools, MCP & UI
 	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove)
+	toolRegistry.Register(&tools.AskTool{
+		AutoApprove: cfg.AutoApprove,
+		Prompter: func(question string, options []string, isMultiSelect bool) string {
+			return ui.PromptAgentQuestion(ui.AskQuestionParams{
+				Question:      question,
+				Options:       options,
+				IsMultiSelect: isMultiSelect,
+			})
+		},
+	})
 	mcpMgr := mcp.NewManager(cfg.WorkspaceDir)
 	termUI := ui.NewTerminalUI(cfg.AutoApprove)
 	termUI.SetTrollMode(cfg.GetSetting("troll_mode", "false") == "true" || cfg.GetSetting("brainrot_mode", "false") == "true")

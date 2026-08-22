@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rizzer Web ⚡ - Trạm Thả Thính Super Rizz 3000</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&family=Righteous&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf2f8',
+              100: '#fce7f3',
+              500: '#ec4899',
+              600: '#db2777',
+              700: '#be185d',
+              neon: '#ff007f',
+              cyan: '#00f0ff',
+              purple: '#8b5cf6',
+              dark: '#0f0c20',
+              card: 'rgba(23, 17, 46, 0.7)'
+            }
+          },
+          fontFamily: {
+            display: ['Righteous', 'sans-serif'],
+            sans: ['Outfit', 'Poppins', 'sans-serif'],
+          },
+          animation: {
+            'glow-pulse': 'glowPulse 2s infinite alternate',
+            'float': 'float 3s ease-in-out infinite',
+            'shimmer': 'shimmer 2.5s infinite linear',
+          },
+          keyframes: {
+            glowPulse: {
+              '0%': { boxShadow: '0 0 15px rgba(236, 72, 153, 0.4), 0 0 30px rgba(139, 92, 246, 0.2)' },
+              '100%': { boxShadow: '0 0 25px rgba(236, 72, 153, 0.8), 0 0 50px rgba(0, 240, 255, 0.5)' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-8px)' },
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-200% 0' },
+              '100%': { backgroundPosition: '200% 0' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0b0819] text-slate-100 font-sans min-h-screen relative overflow-x-hidden selection:bg-pink-500 selection:text-white">
+
+  <!-- Ambient Glowing Background Blobs -->
+  <div class="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-pink-600/20 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-600/20 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse"></div>
+  <div class="fixed top-[40%] right-[20%] w-[350px] h-[350px] bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none -z-10"></div>
+
+  <!-- Header Navigation -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#0b0819]/80 border-b border-white/10 px-4 lg:px-8 py-3 transition-all duration-300">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('generator')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-500 to-cyan-400 p-[2px] shadow-lg shadow-pink-500/30 animate-float">
+          <div class="w-full h-full bg-[#0b0819] rounded-[10px] flex items-center justify-center">
+            <svg class="w-6 h-6 text-pink-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h1 class="font-display text-2xl tracking-wide bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-sm">
+            RIZZER<span class="text-cyan-400 font-sans text-sm font-semibold ml-1 px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">PRO MAX</span>
+          </h1>
+          <p class="text-xs text-slate-400 font-medium hidden sm:block">Trạm Thả Thính Super Rizz 3000 • No Cap 100%</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-1 sm:gap-2 bg-white/5 p-1 rounded-2xl border border-white/10">
+        <button id="nav-generator" onclick="switchTab('generator')" class="nav-btn active px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></button>
+          <span class="hidden md:inline">Tạo Rizz</span>
+        </button>
+        <button id="nav-rizzometer" onclick="switchTab('rizzometer')" class="nav-btn px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"/></svg>
+          <span class="hidden md:inline">Máy Đo Rizz</span>
+        </button>
+        <button id="nav-chat" onclick="switchTab('chat')" class="nav-btn px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          <span class="hidden md:inline">Giả Lập Chat</span>
+        </button>
+        <button id="nav-favorites" onclick="switchTab('favorites')" class="nav-btn px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 flex items-center gap-1.5 cursor-pointer relative">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+          <span class="hidden md:inline">Đã Lưu</span>
+          <span id="fav-badge" class="ml-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-pink-600 text-white">0</span>
+        </button>
+      </nav>
+
+      <!-- Audio Mute Control Button -->
+      <button id="audio-toggle-btn" onclick="toggleAudio()" class="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition cursor-pointer text-slate-300 hover:text-pink-400" title="Bật/Tắt Âm Thanh">
+        <svg id="audio-icon-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        <svg id="audio-icon-off" class="w-5 h-5 hidden text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- ================= TAB 1: RIZZ GENERATOR ================= -->
+    <section id="tab-generator" class="tab-content block space-y-8 animate-fadeIn">
+      
+      <!-- Hero Banner -->
+      <div class="text-center space-y-4 max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-300 text-xs font-semibold uppercase tracking-widest">
+          <span>🔥 Ultimate Rizz Generator 2026</span>
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight font-sans">
+          Thả Thính <span class="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Cực Dính</span>, Nối Lại Tình Yêu
+        </h2>
+        <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+          Chọn vibe yêu thích, bấm tạo câu thả thính 100% chuẩn Gen Z, copy gửi ngay cho Crush hoặc xuất card sống ảo cực nét!
+        </p>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex items-center justify-center flex-wrap gap-2 sm:gap-3 py-2">
+        <button onclick="selectCategory('all')" class="cat-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          ✨ Tất Cả Vibe
+        </button>
+        <button onclick="selectCategory('smooth')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          🔥 Ngọt Ngào & Tinh Tế
+        </button>
+        <button onclick="selectCategory('brainrot')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          🧠 Brainrot & Sigma
+        </button>
+        <button onclick="selectCategory('tech')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          💻 Dev & IT Bro
+        </button>
+        <button onclick="selectCategory('vietnam')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          ☕ Thả Thính Tiếng Việt
+        </button>
+        <button onclick="selectCategory('cute')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          🌸 Đáng Yêu
+        </button>
+        <button onclick="selectCategory('unhinged')" class="cat-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 border cursor-pointer">
+          ⚡ Táo Bạo & Chaos
+        </button>
+      </div>
+
+      <!-- Main Pickup Card Box -->
+      <div class="relative group">
+        <!-- Card Backdrop Glow -->
+        <div class="absolute -inset-1 bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-500 rounded-3xl blur-xl opacity-40 group-hover:opacity-75 transition duration-500"></div>
+        
+        <div class="relative rounded-3xl bg-[#120d2b]/90 border border-white/15 p-6 sm:p-10 backdrop-blur-2xl shadow-2xl flex flex-col justify-between min-h-[280px]">
+          
+          <!-- Top info bar -->
+          <div class="flex items-center justify-between pb-4 border-b border-white/10">
+            <div class="flex items-center gap-2">
+              <span id="card-cat-tag" class="px-3 py-1 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold uppercase tracking-wider">
+                🔥 Smooth
+              </span>
+              <span id="card-rizz-score" class="text-xs text-amber-400 font-semibold flex items-center gap-1 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                Rizz Power: <strong id="card-rizz-num">98%</strong>
+              </span>
+            </div>
+
+            <!-- Action icons (Favorite & Speak) -->
+            <div class="flex items-center gap-2">
+              <button onclick="speakCurrentLine()" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-cyan-400 border border-white/10 transition cursor-pointer" title="Đọc Thành Tiếng (TTS)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+              </button>
+              <button id="card-fav-btn" onclick="toggleFavoriteCurrent()" class="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-amber-400 border border-white/10 transition cursor-pointer" title="Lưu Vào Yêu Thích">
+                <svg id="fav-icon-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pickup Line Content Display -->
+          <div class="my-6 py-4 flex items-center justify-center min-h-[120px]">
+            <p id="pickup-text" class="text-xl sm:text-2xl md:text-3xl font-semibold text-center text-slate-100 leading-snug tracking-tight transition-all duration-300">
+              "Đang tải câu thả thính siêu rizz cho bạn..."
+            </p>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <button onclick="generateRizz()" class="flex-1 sm:flex-none px-6 py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 hover:from-pink-600 hover:via-purple-600 hover:to-cyan-600 text-white font-bold shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer">
+              <svg class="w-5 h-5 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>Tạo Câu Mới ⚡</span>
+            </button>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button onclick="copyCurrentLine()" class="flex-1 sm:flex-none px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-medium border border-white/15 transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span>Sao Chép</span>
+              </button>
+              <button onclick="openCardExportModal()" class="flex-1 sm:flex-none px-5 py-3.5 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-medium border border-cyan-500/40 transition duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Xuất Card 🎨</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Rizz Stats & Info Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-xl bg-pink-500/20 text-pink-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Kho Thả Thính</p>
+              <h3 class="text-lg font-bold text-white"><span id="stat-total-lines">120</span>+ Câu Cực Dính</h3>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-xl bg-purple-500/20 text-purple-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Tỷ Lệ Thành Công</p>
+              <h3 class="text-lg font-bold text-white">99.8% Tán Đâu Dính Đó</h3>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-5 backdrop-blur-md">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-xl bg-cyan-500/20 text-cyan-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400">Cập Nhật Mới</p>
+              <h3 class="text-lg font-bold text-white">Gen Z 2026 Edition</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 2: RIZZOMETER (MÁY ĐO độ RIZZ) ================= -->
+    <section id="tab-rizzometer" class="tab-content hidden space-y-8 animate-fadeIn">
+      <div class="text-center space-y-3 max-w-2xl mx-auto">
+        <h2 class="text-3xl sm:text-4xl font-extrabold font-sans">
+          Máy Đo Độ Rizz <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">AI Analyzer</span>
+        </h2>
+        <p class="text-slate-400 text-sm">
+          Nhập câu thả thính của bạn hoặc của ai đó để AI chấm điểm độ rizz, phân tích chỉ số và đưa ra nhận xét siêu hài hước!
+        </p>
+      </div>
+
+      <!-- Input Form -->
+      <div class="rounded-3xl bg-[#120d2b]/90 border border-white/15 p-6 sm:p-8 backdrop-blur-2xl space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-slate-200 mb-2">Nhập câu thả thính cần kiểm tra:</label>
+          <textarea id="rizz-input" rows="3" class="w-full bg-black/40 border border-white/15 rounded-2xl p-4 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition duration-200 resize-none text-base" placeholder="Ví dụ: Are you a magician? Because whenever I look at you, everyone else disappears..."></textarea>
+        </div>
+
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-green-400 animate-ping"></span>
+            <span>Thuật toán AI Rizz 4.0 Ready</span>
+          </div>
+          <button onclick="analyzeRizzScore()" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 active:scale-95 transition cursor-pointer">
+            Phân Tích Độ Rizz ⚡
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Card Container -->
+      <div id="rizzometer-result" class="hidden rounded-3xl bg-[#161033] border border-white/15 p-6 sm:p-8 backdrop-blur-xl space-y-6 animate-fadeIn">
+        
+        <!-- Score Header -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pb-6 border-b border-white/10 text-center sm:text-left">
+          <div>
+            <span id="res-badge" class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-pink-500/20 text-pink-300 border border-pink-500/30">
+              Sigma Rizzer
+            </span>
+            <h3 id="res-title" class="text-2xl sm:text-3xl font-extrabold text-white mt-2">
+              Rizz Supreme God! 👑
+            </h3>
+            <p id="res-verdict" class="text-slate-400 text-sm mt-1">
+              "Câu thả thính này khiến Crush đổ đứ đừ không cần phanh!"
+            </p>
+          </div>
+
+          <!-- Circular Gauge Indicator -->
+          <div class="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-white/10" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              <path id="gauge-circle" class="text-pink-500 transition-all duration-1000 ease-out" stroke-dasharray="0, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span id="res-score-num" class="text-3xl font-black text-white font-display">85</span>
+              <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Rizz Score</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown Progress Bars -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-black/30 rounded-2xl p-4 border border-white/5 space-y-2">
+            <div class="flex justify-between text-xs font-semibold">
+              <span class="text-slate-300">🔥 Độ Ngọt Ngào</span>
+              <span id="bar-smooth-val" class="text-pink-400">90%</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div id="bar-smooth" class="h-full bg-gradient-to-r from-pink-500 to-rose-400 transition-all duration-700 w-0"></div>
+            </div>
+          </div>
+
+          <div class="bg-black/30 rounded-2xl p-4 border border-white/5 space-y-2">
+            <div class="flex justify-between text-xs font-semibold">
+              <span class="text-slate-300">🧠 Độ Sáng Tạo</span>
+              <span id="bar-creative-val" class="text-purple-400">85%</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div id="bar-creative" class="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-700 w-0"></div>
+            </div>
+          </div>
+
+          <div class="bg-black/30 rounded-2xl p-4 border border-white/5 space-y-2">
+            <div class="flex justify-between text-xs font-semibold">
+              <span class="text-slate-300">⚡ Độ Mạo Hiểm</span>
+              <span id="bar-risk-val" class="text-cyan-400">40%</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+              <div id="bar-risk" class="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-700 w-0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Advice -->
+        <div class="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-sm text-purple-200">
+          <strong class="text-purple-300">💡 Gợi Ý Tối Ưu Rizz:</strong> <span id="res-advice">Nên thêm chút ánh mắt tự tin và nụ cười mỉm khi nói câu này nhé!</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 3: RIZZ SIMULATOR CHAT ================= -->
+    <section id="tab-chat" class="tab-content hidden space-y-6 animate-fadeIn">
+      <div class="text-center space-y-2 max-w-2xl mx-auto">
+        <h2 class="text-3xl font-extrabold font-sans">
+          Giả Lập Chat <span class="bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent">Rizz Practice Bot</span>
+        </h2>
+        <p class="text-slate-400 text-sm">
+          Luyện tập nhắn tin thử với Crush AI để nâng trình Rizz trước khi trận chiến thực sự bắt đầu!
+        </p>
+      </div>
+
+      <!-- Character Selector Pills -->
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="selectBot('crush_cute')" class="bot-pill active px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border cursor-pointer">
+          🌸 Crush Đáng Yêu
+        </button>
+        <button onclick="selectBot('crush_dev')" class="bot-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border cursor-pointer">
+          💻 Crush Dev Girl
+        </button>
+        <button onclick="selectBot('crush_meme')" class="bot-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border cursor-pointer">
+          🧠 Crush Mê Meme
+        </button>
+      </div>
+
+      <!-- Chat Container -->
+      <div class="rounded-3xl bg-[#120d2b]/95 border border-white/15 p-4 sm:p-6 backdrop-blur-2xl flex flex-col h-[480px]">
+        
+        <!-- Bot Header & Rizz meter bar -->
+        <div class="flex items-center justify-between pb-4 border-b border-white/10">
+          <div class="flex items-center gap-3">
+            <div id="chat-avatar" class="w-10 h-10 rounded-full bg-pink-500/30 flex items-center justify-center text-xl border border-pink-500/50">
+              🌸
+            </div>
+            <div>
+              <h4 id="chat-bot-name" class="font-bold text-white text-sm">Crush Đáng Yêu (Mai)</h4>
+              <p id="chat-bot-status" class="text-[11px] text-green-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> Online • Sẵn sàng đón nhận Rizz
+              </p>
+            </div>
+          </div>
+
+          <!-- Live Rizz Meter -->
+          <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
+            <span class="text-xs text-slate-400 font-semibold">Tình Cảm:</span>
+            <div class="w-24 h-2.5 rounded-full bg-white/10 overflow-hidden">
+              <div id="chat-rizz-bar" class="h-full bg-gradient-to-r from-pink-500 to-rose-400 transition-all duration-500 w-[40%]"></div>
+            </div>
+            <span id="chat-rizz-val" class="text-xs font-bold text-pink-400">40%</span>
+          </div>
+        </div>
+
+        <!-- Message History Log -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto py-4 space-y-3 pr-2 scrollbar-thin">
+          <!-- Messages inserted dynamically -->
+        </div>
+
+        <!-- Chat Input Field -->
+        <div class="pt-3 border-t border-white/10 flex items-center gap-2">
+          <input id="chat-user-input" type="text" onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-1 bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition" placeholder="Nhập tin nhắn thả thính của bạn...">
+          <button onclick="sendChatMessage()" class="px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-sm transition cursor-pointer flex items-center gap-1">
+            <span>Gửi</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TAB 4: FAVORITES (ĐÃ LƯU) ================= -->
+    <section id="tab-favorites" class="tab-content hidden space-y-6 animate-fadeIn">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold font-sans">
+            Bộ Sưu Tập <span class="bg-gradient-to-r from-amber-400 to-pink-400 bg-clip-text text-transparent">Yêu Thích</span>
+          </h2>
+          <p class="text-slate-400 text-sm">Các câu thả thính bạn đã lưu để dành dùng dần.</p>
+        </div>
+        <button onclick="clearAllFavorites()" class="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/20 transition cursor-pointer">
+          Xóa Tất Cả
+        </button>
+      </div>
+
+      <!-- Grid of Saved Pickup Lines -->
+      <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Injected dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: RIZZ CARD EXPORTER ================= -->
+  <div id="card-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-[#130f2c] border border-white/20 rounded-3xl max-w-lg w-full p-6 space-y-6 relative shadow-2xl animate-scaleUp">
+      <button onclick="closeCardExportModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition cursor-pointer">
+        ✕
+      </button>
+      
+      <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <span>🎨 Social Rizz Card Canvas Exporter</span>
+      </h3>
+
+      <!-- Live Canvas Preview Box -->
+      <div class="flex justify-center">
+        <canvas id="rizz-canvas" width="600" height="400" class="rounded-2xl border border-white/20 shadow-xl max-w-full h-auto"></canvas>
+      </div>
+
+      <!-- Theme Color Selector for Canvas -->
+      <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-300">Chọn Theme Màu Card:</label>
+        <div class="flex items-center gap-3">
+          <button onclick="setCanvasTheme('neon')" class="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 border-2 border-white/40 cursor-pointer" title="Cyber Neon"></button>
+          <button onclick="setCanvasTheme('sunset')" class="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 border-2 border-white/40 cursor-pointer" title="Sunset Vibe"></button>
+          <button onclick="setCanvasTheme('cyan')" class="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 border-2 border-white/40 cursor-pointer" title="Cyber Cyan"></button>
+          <button onclick="setCanvasTheme('darkgold')" class="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-purple-900 border-2 border-white/40 cursor-pointer" title="Luxury Gold"></button>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="flex items-center gap-3 pt-2">
+        <button onclick="downloadCanvasImage()" class="flex-1 py-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-sm transition cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Tải Ảnh PNG</span>
+        </button>
+        <button onclick="copyCanvasImageToClipboard()" class="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-medium text-sm border border-white/15 transition cursor-pointer flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <span>Sao Chép Ảnh</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="mt-16 py-8 border-t border-white/10 text-center text-xs text-slate-500">
+    <p>Rizzer Web App © 2026 • Crafted with 🔥 for 10x Gen Z Rizzers • Powered by mncode</p>
+  </footer>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

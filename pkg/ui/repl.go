@@ -47,7 +47,8 @@ func RunREPL(s *agent.Session) {
 		}
 
 		turnIndex++
-		ctx := context.Background()
+		ctx, cancel := context.WithCancel(context.Background())
+		stopSteerWatcher := StartExecutionSteerWatcher(s, cancel)
 
 		resolvedPrompt, attachedBadges := ResolveAtContext(s.WorkspaceDir, trimmed)
 		if len(attachedBadges) > 0 {
@@ -56,7 +57,8 @@ func RunREPL(s *agent.Session) {
 
 		fmt.Println()
 		err := s.ProcessUserInput(ctx, resolvedPrompt)
-		if err != nil {
+		stopSteerWatcher()
+		if err != nil && err != context.Canceled {
 			fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
 		}
 		fmt.Println()
@@ -69,12 +71,17 @@ func RunREPL(s *agent.Session) {
 			}
 			for _, qMsg := range queued {
 				turnIndex++
+				qCtx, qCancel := context.WithCancel(context.Background())
+				qStopSteer := StartExecutionSteerWatcher(s, qCancel)
+
 				fmt.Printf("%s %s\n\n", BoldCyan("📥 [Running Queued Prompt]:"), Bold(qMsg))
 				qResolved, qBadges := ResolveAtContext(s.WorkspaceDir, qMsg)
 				if len(qBadges) > 0 {
 					fmt.Printf("%s %s\n", BoldCyan("📎 Attached Context:"), BoldPastelPink(strings.Join(qBadges, ", ")))
 				}
-				if err := s.ProcessUserInput(ctx, qResolved); err != nil {
+				err := s.ProcessUserInput(qCtx, qResolved)
+				qStopSteer()
+				if err != nil && err != context.Canceled {
 					fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
 				}
 				fmt.Println()

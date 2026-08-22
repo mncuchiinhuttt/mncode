@@ -82,7 +82,7 @@ fi
 if [ ! -f "$TMP_FILE" ]; then
   TAG="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" 2>/dev/null | grep -m1 '"tag_name":' | cut -d'"' -f4 || true)"
   if [ -z "$TAG" ]; then
-    TAG="v0.1.2.4-beta"
+    TAG="v0.1.2.5-beta"
   fi
   RELEASE_URL="https://github.com/${REPO}/releases/download/${TAG}/${BINARY_NAME}-${OS}-${ARCH}"
   echo -e "${CYAN}Downloading pre-built ${TAG} binary from GitHub Releases...${RESET}"

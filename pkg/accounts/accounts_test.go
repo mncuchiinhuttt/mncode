@@ -20,14 +20,14 @@ func TestStoreAndRouter(t *testing.T) {
 		Email:       "user1@gmail.com",
 		Provider:    ProviderTypeAntigravity,
 		AccessToken: "token_anti_1",
-		IsActive:    true,
+		IsActive:    false,
 	}
 	acc2 := &Account{
 		ID:          "antigravity-2",
 		Email:       "user2@gmail.com",
 		Provider:    ProviderTypeAntigravity,
 		AccessToken: "token_anti_2",
-		IsActive:    true,
+		IsActive:    false,
 	}
 
 	_ = store.AddOrUpdate(acc1)

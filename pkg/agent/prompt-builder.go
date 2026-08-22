@@ -116,6 +116,11 @@ func (s *Session) BuildSystemPrompt() string {
 		sb.WriteString("</artifacts>\n\n")
 	}
 
+	// Inject Human-in-the-Loop guidance
+	sb.WriteString("<human_in_the_loop>\n")
+	sb.WriteString("When you encounter ambiguous requirements, multiple architectural design choices, or need user confirmation on key trade-offs, invoke the 'ask_question' (or 'ask_user') tool with structured multiple-choice options. Always list your top recommendation first (e.g. '(Recommended) ...'). The user will be presented with an interactive terminal selection modal and can pick an option or write in custom feedback.\n")
+	sb.WriteString("</human_in_the_loop>\n\n")
+
 	// Core Engineering Guidelines
 	sb.WriteString("<guidelines>\n")
 	sb.WriteString("- Keep individual code files under 200 lines for optimal context management.\n")

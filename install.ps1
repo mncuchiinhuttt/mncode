@@ -47,7 +47,7 @@ try {
 
     # 3. Fallback: Download pre-built release binary from GitHub Releases
     if (!$Built) {
-        $Tag = "v0.1.2.4-beta"
+        $Tag = "v0.1.2.5-beta"
         try {
             $ReleaseData = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases" -UseBasicParsing
             if ($ReleaseData -and $ReleaseData.Count -gt 0) {

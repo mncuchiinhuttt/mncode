@@ -133,12 +133,24 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		resultText = fmt.Sprintf("Subagent %s completed assigned task.", agentName)
 	}
 
+	statsSuffix := ""
 	if sr.ParentSession.Subagents != nil {
 		sr.ParentSession.Subagents.Complete(subID, resultText, lastErr != nil)
+		for _, rec := range sr.ParentSession.Subagents.List() {
+			if rec.ID == subID {
+				secs := int(rec.Duration.Seconds())
+				dur := fmt.Sprintf("%ds", secs)
+				if secs == 0 {
+					dur = fmt.Sprintf("%dms", rec.Duration.Milliseconds())
+				}
+				statsSuffix = fmt.Sprintf("(%s · %d tool calls)", dur, len(rec.ToolCalls))
+				break
+			}
+		}
 	}
 
 	if sr.ParentSession.UI != nil {
-		sr.ParentSession.UI.OnSubagentComplete(agentName, resultText)
+		sr.ParentSession.UI.OnSubagentComplete(agentName, statsSuffix)
 	}
 
 	return resultText, lastErr

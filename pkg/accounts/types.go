@@ -31,11 +31,8 @@ type Account struct {
 	CreatedAt    time.Time       `json:"createdAt"`
 }
 
-// IsAvailable checks if the account is active, not expired, and not in cooldown
+// IsAvailable checks if the account is not expired and not in cooldown
 func (a *Account) IsAvailable() bool {
-	if !a.IsActive {
-		return false
-	}
 	if time.Now().Before(a.CooldownUntil) {
 		return false
 	}
