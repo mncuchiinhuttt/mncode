@@ -148,7 +148,7 @@ func (t *TerminalUI) OnSubagentStart(agentName, role, prompt string) {
 
 func (t *TerminalUI) OnSubagentComplete(agentName string, summary string) {
 	t.spinner.Stop()
-	fmt.Printf("%s %s completed task.\n", BoldGreen("[Subagent Done]"), agentName)
+	fmt.Printf("%s %s %s\n", BoldGreen("[Subagent Done]"), Bold(agentName), GrayText(summary))
 }
 
 func (t *TerminalUI) OnGoalDone(goal string, elapsedSecs float64, turns int, toolCount int) {

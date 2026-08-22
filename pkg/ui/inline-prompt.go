@@ -155,6 +155,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 				} else if len(input) == 0 {
 					oldState = openSubagentMonitor(s, oldState)
 					renderedBefore = false
+					unregisterCopy = SetCopyCallback(func() { render() })
 					render()
 				}
 				continue

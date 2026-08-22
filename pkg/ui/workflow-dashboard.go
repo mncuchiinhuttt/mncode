@@ -118,7 +118,10 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 		}
 
 		leftColWidth := 34
-		rightColWidth := cardWidth - leftColWidth - 3
+		rightColWidth := cardWidth - leftColWidth - 5
+		if rightColWidth < 20 {
+			rightColWidth = 20
+		}
 
 		var lines []string
 		lines = append(lines, "")
@@ -132,13 +135,18 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 			rightHeader = "🍳 Minions Cooking & Rizz"
 		}
 
+		dashesCount := cardWidth - DisplayCellWidth(title) - 8
+		if dashesCount < 2 {
+			dashesCount = 2
+		}
 		header := fmt.Sprintf("%s %s %s",
 			BoldPastelPink("╭── ["), Bold(title),
-			BoldPastelPink("] "+strings.Repeat("─", cardWidth-visualLen(title)-10)+"╮"))
+			BoldPastelPink("] "+strings.Repeat("─", dashesCount)+"╮"))
 		lines = append(lines, header)
 
-		splitTop := fmt.Sprintf("│ %-*s │ %-*s │",
-			leftColWidth, BoldCyan(leftHeader), rightColWidth, BoldCyan(rightHeader))
+		splitTop := fmt.Sprintf("│ %s │ %s │",
+			PadToCellWidth(BoldCyan(leftHeader), leftColWidth),
+			PadToCellWidth(BoldCyan(rightHeader), rightColWidth))
 		sep := fmt.Sprintf("├%s┼%s┤", strings.Repeat("─", leftColWidth+2), strings.Repeat("─", rightColWidth+2))
 		lines = append(lines, splitTop, sep)
 
@@ -155,10 +163,10 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 					marker = BoldPastelPink("❯ ")
 					nameStr = Bold(p.Name)
 				}
-				if len([]rune(p.Name)) > 30 {
-					nameStr = string([]rune(p.Name)[:29]) + "…"
-				}
-				leftStr = fmt.Sprintf("%s%-32s", marker, nameStr)
+				nameStr = TruncateToCellWidth(nameStr, leftColWidth-2)
+				leftStr = PadToCellWidth(marker+nameStr, leftColWidth)
+			} else {
+				leftStr = strings.Repeat(" ", leftColWidth)
 			}
 
 			rightStr := ""
@@ -203,8 +211,8 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 				}
 			}
 
-			lines = append(lines, fmt.Sprintf("│ %-*s │ %-*s │",
-				leftColWidth, leftStr, rightColWidth, truncateText(rightStr, rightColWidth)))
+			rightPadded := PadToCellWidth(TruncateToCellWidth(rightStr, rightColWidth), rightColWidth)
+			lines = append(lines, fmt.Sprintf("│ %s │ %s │", leftStr, rightPadded))
 		}
 
 		bottomBorder := fmt.Sprintf("╰%s┴%s╯", strings.Repeat("─", leftColWidth+2), strings.Repeat("─", rightColWidth+2))
@@ -227,6 +235,9 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 		}
 		lastLinesCount = len(lines)
 	}
+
+	unregisterCopy := SetCopyCallback(func() { render() })
+	defer unregisterCopy()
 
 	render()
 

@@ -43,7 +43,7 @@ func OpenSubagentMonitorView(s *agent.Session) {
 
 		titleLeft := "AUTONOMOUS SUBAGENTS & WORKFLOW MONITOR"
 		titleRight := "(→ for chat)"
-		midDashes := cardWidth - 8 - len([]rune(titleLeft)) - len([]rune(titleRight))
+		midDashes := cardWidth - 8 - DisplayCellWidth(titleLeft) - DisplayCellWidth(titleRight)
 		if midDashes < 2 {
 			midDashes = 2
 		}
@@ -143,6 +143,9 @@ func OpenSubagentMonitorView(s *agent.Session) {
 		}
 		lastLinesCount = len(lines)
 	}
+
+	unregisterCopy := SetCopyCallback(func() { render() })
+	defer unregisterCopy()
 
 	render()
 
