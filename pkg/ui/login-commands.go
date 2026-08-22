@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mncode/pkg/accounts"
 	"mncode/pkg/agent"
+	"mncode/pkg/config"
 	"os"
 	"strings"
 	"time"
@@ -84,15 +85,49 @@ func HandleLoginPrompt(parts []string, s *agent.Session) {
 		} else {
 			fmt.Printf("%s Codex account %s logged in successfully.\n", BoldGreen("[Success]"), Bold(id))
 		}
+
+	case "opencode":
+		fmt.Print("Enter OpenCode API Key (e.g. sk-...): ")
+		token, _ := reader.ReadString('\n')
+		token = strings.TrimSpace(token)
+		if token == "" {
+			fmt.Println("Login cancelled.")
+			return
+		}
+		fmt.Print("Enter Account Identifier (e.g. opencode-user): ")
+		id, _ := reader.ReadString('\n')
+		id = strings.TrimSpace(id)
+		if id == "" {
+			id = fmt.Sprintf("opencode-%d", time.Now().Unix())
+		}
+		if s.Accounts != nil {
+			_ = s.Accounts.AddOrUpdate(&accounts.Account{
+				ID:          id,
+				Email:       id,
+				Provider:    accounts.ProviderTypeOpenCode,
+				AccessToken: token,
+				IsActive:    true,
+				CreatedAt:   time.Now(),
+			})
+		}
+		s.Config.OpenCodeAPIKey = token
+		s.Config.SetSetting("opencode_api_key", token)
+		if s.Config.Provider == config.ProviderOpenCode {
+			s.Config.APIKey = token
+			_ = s.EnsureProvider()
+		}
+		_ = config.SaveConfig(s.Config)
+		fmt.Printf("%s OpenCode API key for %s saved successfully.\n", BoldGreen("[Success]"), Bold(id))
+
 	default:
-		fmt.Printf("Unknown provider '%s'. Supported: antigravity, codex\n", target)
+		fmt.Printf("Unknown provider '%s'. Supported: antigravity, codex, opencode\n", target)
 	}
 }
 
 // OpenInteractiveLoginMenu displays an arrow-navigable menu for selecting provider to log in
 func OpenInteractiveLoginMenu(s *agent.Session) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		fmt.Println("Usage: /account login <antigravity|codex>")
+		fmt.Println("Usage: /account login <antigravity|codex|opencode>")
 		return
 	}
 
@@ -110,6 +145,11 @@ func OpenInteractiveLoginMenu(s *agent.Session) {
 			Title:       "Codex / OpenAI (API Key / Token)",
 			Description: "Connect OpenAI or Codex API access token",
 			Action:      func() { HandleLoginPrompt([]string{"/login", "codex"}, s) },
+		},
+		{
+			Title:       "OpenCode Zen (API Key)",
+			Description: "Connect OpenCode API key for free reasoning & specialist models",
+			Action:      func() { HandleLoginPrompt([]string{"/login", "opencode"}, s) },
 		},
 		{
 			Title:       "Auto-import local credentials (~/.gemini, ~/.openai)",

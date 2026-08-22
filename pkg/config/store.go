@@ -94,6 +94,15 @@ func LoadUserConfig(cfg *Config) error {
 		cfg.AutoApprove = false
 	}
 	cfg.Verbose = saved.Verbose
+	if saved.OpenCodeAPIKey != "" {
+		cfg.OpenCodeAPIKey = saved.OpenCodeAPIKey
+	}
+	if saved.TelemetryKey != "" {
+		cfg.TelemetryKey = saved.TelemetryKey
+	}
+	if saved.TelemetryURL != "" {
+		cfg.TelemetryURL = saved.TelemetryURL
+	}
 	if saved.Settings != nil {
 		cfg.Settings = saved.Settings
 	}

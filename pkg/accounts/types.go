@@ -13,6 +13,7 @@ const (
 	ProviderTypeAnthropic   AccountProvider = "anthropic"
 	ProviderTypeGemini      AccountProvider = "gemini"
 	ProviderTypeOpenAI      AccountProvider = "openai"
+	ProviderTypeOpenCode    AccountProvider = "opencode"
 )
 
 // Account represents a single logged-in account/credential

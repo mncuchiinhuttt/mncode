@@ -123,6 +123,20 @@ var curatedModels = []ModelChoice{
 		Tag:         "[OpenCode Free]",
 		Description: "NVIDIA Nemotron 3 Ultra free tier model via OpenCode Zen",
 	},
+	{
+		ID:          "nemotron-3.5-lightning-free",
+		Name:        "Nemotron 3.5 Lightning (Free)",
+		Provider:    config.ProviderOpenCode,
+		Tag:         "[OpenCode Free]",
+		Description: "NVIDIA Nemotron 3.5 Lightning fast coding model via OpenCode Zen",
+	},
+	{
+		ID:          "hy3-free",
+		Name:        "Hunyuan 3 (Free)",
+		Provider:    config.ProviderOpenCode,
+		Tag:         "[OpenCode Free]",
+		Description: "Tencent Hunyuan 3 free tier model via OpenCode Zen",
+	},
 
 	// --- Direct Provider & API Models ---
 	{

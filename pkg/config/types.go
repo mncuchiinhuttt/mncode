@@ -48,7 +48,25 @@ type Config struct {
 	ResponseLang   string            `json:"responseLang"`
 	TelemetryKey   string            `json:"telemetryKey,omitempty"`
 	TelemetryURL   string            `json:"telemetryUrl,omitempty"`
+	OpenCodeAPIKey string            `json:"opencodeApiKey,omitempty"`
 	Settings       map[string]string `json:"settings,omitempty"`
+}
+
+// GetOpenCodeAPIKey returns configured OpenCode API key from config, settings, or env
+func (c *Config) GetOpenCodeAPIKey() string {
+	if c.OpenCodeAPIKey != "" {
+		return c.OpenCodeAPIKey
+	}
+	if key := c.GetSetting("opencode_api_key", ""); key != "" {
+		return key
+	}
+	if envKey := os.Getenv("OPENCODE_API_KEY"); envKey != "" {
+		return envKey
+	}
+	if c.Provider == ProviderOpenCode && c.APIKey != "" && c.APIKey != "public" {
+		return c.APIKey
+	}
+	return ""
 }
 
 // GetWebBaseURL returns the origin of the mncode web app (dashboard, sync,

@@ -162,11 +162,25 @@ func setConfigValue(key, value string, s *agent.Session) {
 		}
 	case "auto_approve":
 		cfg.AutoApprove = (strings.ToLower(value) == "true" || value == "1" || value == "yes")
+	case "opencode_api_key", "opencode_key":
+		cfg.OpenCodeAPIKey = value
+		cfg.SetSetting("opencode_api_key", value)
+		if cfg.Provider == config.ProviderOpenCode {
+			cfg.APIKey = value
+			_ = s.EnsureProvider()
+		}
+	case "api_key", "key":
+		cfg.APIKey = value
+		if cfg.Provider == config.ProviderOpenCode {
+			cfg.OpenCodeAPIKey = value
+			cfg.SetSetting("opencode_api_key", value)
+		}
+		_ = s.EnsureProvider()
 	case "base_url":
 		cfg.BaseURL = value
 		_ = s.EnsureProvider()
 	default:
-		fmt.Printf("Unknown config key '%s'. Available: model, provider, effort, workflow, thinking_budget, max_tokens, temperature, auto_approve, base_url\n", key)
+		fmt.Printf("Unknown config key '%s'. Available: model, provider, effort, workflow, thinking_budget, max_tokens, temperature, auto_approve, base_url, opencode_api_key, api_key\n", key)
 		return
 	}
 

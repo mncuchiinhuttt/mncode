@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -22,8 +23,10 @@ func NewOpenCodeProvider(apiKey, baseURL string) *OpenCodeProvider {
 	if baseURL == "" {
 		baseURL = "https://opencode.ai/zen/v1"
 	}
-	if apiKey == "" {
-		apiKey = "public"
+	if apiKey == "" || apiKey == "public" {
+		if envKey := os.Getenv("OPENCODE_API_KEY"); envKey != "" {
+			apiKey = envKey
+		}
 	}
 	return &OpenCodeProvider{
 		APIKey:     apiKey,

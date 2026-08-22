@@ -14,7 +14,22 @@ import (
 // EnsureProvider verifies or dynamically initializes an LLM provider before processing prompts
 func (s *Session) EnsureProvider() error {
 	if s.Config.Provider == config.ProviderOpenCode {
-		s.Provider = provider.NewOpenCodeProvider(s.Config.APIKey, s.Config.BaseURL)
+		key := s.Config.GetOpenCodeAPIKey()
+		if key == "" && s.Accounts != nil {
+			for _, acc := range s.Accounts.Accounts {
+				if acc.Provider == accounts.ProviderTypeOpenCode && acc.IsActive && acc.AccessToken != "" {
+					key = acc.AccessToken
+					break
+				}
+			}
+		}
+		if key == "" && s.Config.APIKey != "" && !strings.HasPrefix(s.Config.APIKey, "ya29.") && !strings.HasPrefix(s.Config.APIKey, "sk-ant-") {
+			key = s.Config.APIKey
+		}
+		if key != "" {
+			s.Config.APIKey = key
+		}
+		s.Provider = provider.NewOpenCodeProvider(key, s.Config.BaseURL)
 		return nil
 	}
 

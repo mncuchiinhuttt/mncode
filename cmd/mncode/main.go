@@ -89,13 +89,15 @@ func main() {
 	catalog, _ := skills.LoadCatalog(cfg.ClaudeDir)
 
 	// 4. Auto-configure Provider from multi-account pool if not set in .env
-	if cfg.APIKey == "" {
-		if cfg.Provider == config.ProviderOpenCode {
-			cfg.APIKey = "public"
-			if cfg.BaseURL == "" {
-				cfg.BaseURL = "https://opencode.ai/zen/v1"
-			}
-		} else if acc, err := accRouter.GetNextAccount(accounts.ProviderTypeAntigravity); err == nil && acc != nil {
+	if cfg.Provider == config.ProviderOpenCode {
+		if opencodeKey := cfg.GetOpenCodeAPIKey(); opencodeKey != "" {
+			cfg.APIKey = opencodeKey
+		}
+		if cfg.BaseURL == "" {
+			cfg.BaseURL = "https://opencode.ai/zen/v1"
+		}
+	} else if cfg.APIKey == "" {
+		if acc, err := accRouter.GetNextAccount(accounts.ProviderTypeAntigravity); err == nil && acc != nil {
 			cfg.APIKey = acc.AccessToken
 			if cfg.Provider == "" {
 				cfg.Provider = config.ProviderAntigravity
