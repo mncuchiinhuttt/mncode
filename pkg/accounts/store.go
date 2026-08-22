@@ -109,3 +109,22 @@ func (s *Store) ListByProvider(provider AccountProvider) []*Account {
 	})
 	return list
 }
+
+// GetActiveAccount returns the explicitly selected active account for a provider
+func (s *Store) GetActiveAccount(provider AccountProvider) *Account {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	var fallback *Account
+	for _, acc := range s.Accounts {
+		if acc.Provider == provider {
+			if acc.IsActive {
+				return acc
+			}
+			if fallback == nil {
+				fallback = acc
+			}
+		}
+	}
+	return fallback
+}

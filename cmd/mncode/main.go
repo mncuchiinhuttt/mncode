@@ -88,7 +88,7 @@ func main() {
 	// 3. Discover skills, agents, rules from .claude
 	catalog, _ := skills.LoadCatalog(cfg.ClaudeDir)
 
-	// 4. Auto-configure Provider from multi-account pool if not set in .env
+	// 4. Auto-configure Provider from active account in pool if not set in .env
 	if cfg.Provider == config.ProviderOpenCode {
 		if opencodeKey := cfg.GetOpenCodeAPIKey(); opencodeKey != "" {
 			cfg.APIKey = opencodeKey
@@ -96,8 +96,22 @@ func main() {
 		if cfg.BaseURL == "" {
 			cfg.BaseURL = "https://opencode.ai/zen/v1"
 		}
-	} else if cfg.APIKey == "" {
-		if acc, err := accRouter.GetNextAccount(accounts.ProviderTypeAntigravity); err == nil && acc != nil {
+	} else if cfg.Provider == config.ProviderAntigravity || cfg.Provider == config.ProviderGemini || cfg.APIKey == "" || strings.HasPrefix(cfg.APIKey, "ya29.") {
+		if acc := accStore.GetActiveAccount(accounts.ProviderTypeAntigravity); acc != nil {
+			if acc.RefreshToken != "" {
+				if freshTok, rErr := accounts.RefreshGoogleToken(acc.RefreshToken, "", ""); rErr == nil && freshTok != "" {
+					acc.AccessToken = freshTok
+					_ = accStore.AddOrUpdate(acc)
+				}
+			}
+			cfg.APIKey = acc.AccessToken
+			cfg.Provider = config.ProviderAntigravity
+			cfg.BaseURL = ""
+			if cfg.Model == "" {
+				cfg.Model = "gemini-3.7-flash-high"
+			}
+			_ = config.SaveConfig(cfg)
+		} else if acc, err := accRouter.GetNextAccount(accounts.ProviderTypeAntigravity); err == nil && acc != nil {
 			cfg.APIKey = acc.AccessToken
 			if cfg.Provider == "" {
 				cfg.Provider = config.ProviderAntigravity
@@ -105,14 +119,20 @@ func main() {
 			if cfg.Model == "" {
 				cfg.Model = "gemini-3.7-flash-high"
 			}
-		} else if acc, err := accRouter.GetNextAccount(accounts.ProviderTypeCodex); err == nil && acc != nil {
+		}
+	} else if cfg.Provider == config.ProviderOpenAI || cfg.Provider == config.ProviderOpenRouter {
+		if acc := accStore.GetActiveAccount(accounts.ProviderTypeCodex); acc != nil {
 			cfg.APIKey = acc.AccessToken
 			if cfg.Provider == "" {
 				cfg.Provider = config.ProviderOpenAI
 			}
+			if cfg.BaseURL == "" {
+				cfg.BaseURL = "https://api.openai.com/v1"
+			}
 			if cfg.Model == "" {
 				cfg.Model = "gpt-4o"
 			}
+			_ = config.SaveConfig(cfg)
 		}
 	}
 

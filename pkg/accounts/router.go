@@ -21,7 +21,7 @@ func NewRouter(store *Store) *Router {
 	}
 }
 
-// GetNextAccount selects the next healthy account using round-robin and availability checks
+// GetNextAccount selects the active account if available, or rotates among healthy accounts
 func (r *Router) GetNextAccount(provider AccountProvider) (*Account, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -31,6 +31,16 @@ func (r *Router) GetNextAccount(provider AccountProvider) (*Account, error) {
 		return nil, fmt.Errorf("no accounts found for provider '%s'. Use /account add to add one", provider)
 	}
 
+	// 1. Prefer explicitly marked Active account if available
+	for _, acc := range all {
+		if acc.IsActive && acc.IsAvailable() {
+			acc.UsageCount++
+			_ = r.store.AddOrUpdate(acc)
+			return acc, nil
+		}
+	}
+
+	// 2. Otherwise fallback to available healthy accounts in rotation
 	var available []*Account
 	for _, acc := range all {
 		if acc.IsAvailable() {
