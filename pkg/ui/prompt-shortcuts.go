@@ -2,7 +2,6 @@ package ui
 
 import (
 	"mncode/pkg/agent"
-	"strings"
 )
 
 // DeleteToStart deletes from cursorPos to 0 (Cmd+Backspace / Ctrl+U)
@@ -77,18 +76,20 @@ func ApplyDropdownSelection(s *agent.Session, input []rune, cursorPos int, selec
 		return newInput, newPos, true, true
 	}
 
-	isSkill := false
-	if s != nil && s.Catalog != nil {
-		cleanName := strings.TrimPrefix(chosen.Primary, "/")
-		if _, ok := s.Catalog.Skills[cleanName]; ok {
-			isSkill = true
-		}
-	}
-
-	if isTab || isSkill || chosen.Primary == "/btw" || chosen.Primary == "/model" {
+	// For TAB key: Autocomplete the command with a trailing space and stay in prompt
+	if isTab {
 		newInput := []rune(chosen.Primary + " ")
 		return newInput, len(newInput), true, true
 	}
 
+	// For ENTER key:
+	// If it's "/btw", add space and let user type the message
+	if chosen.Primary == "/btw" {
+		newInput := []rune(chosen.Primary + " ")
+		return newInput, len(newInput), true, true
+	}
+
+	// For all other slash commands and skills (/model, /theme, /status, /cook, /plan, /agents, /mcp, etc.):
+	// Immediately execute the chosen command
 	return []rune(chosen.Primary), len([]rune(chosen.Primary)), true, false
 }

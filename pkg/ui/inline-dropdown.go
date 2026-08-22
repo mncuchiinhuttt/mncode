@@ -38,8 +38,8 @@ func GetActiveDropdownItems(s *agent.Session, input []rune, cursorPos int) ([]Dr
 		return items, "at", atIdx
 	}
 
-	// 2. Check for / slash command
-	if strings.HasPrefix(inputStr, "/") {
+	// 2. Check for / slash command (only show dropdown while typing command name)
+	if strings.HasPrefix(inputStr, "/") && !strings.Contains(inputStr, " ") {
 		slashOpts := getMatchingSlashOptions(s, inputStr)
 		var items []DropdownItem
 		for _, o := range slashOpts {

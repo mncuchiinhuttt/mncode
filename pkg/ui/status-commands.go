@@ -96,15 +96,15 @@ func ShowSessionStatus(s *agent.Session) {
 	}
 
 	if s.Config.GetTelemetryKey() == "" {
-		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Web Account:"), GrayText("not linked (run /login)")))
+		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Account:"), GrayText("not linked (run /login)")))
 	} else if who, err := fetchWhoAmI(s); err != nil {
-		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Web Account:"), GrayText("connected (offline cache)")))
+		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Account:"), GrayText("connected (offline cache)")))
 	} else {
 		label := fmt.Sprintf("%s <%s>", who.User.Name, who.User.Email)
 		if who.IsAdmin {
 			label += " " + BoldYellow("[admin]")
 		}
-		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Web Account:"), BoldGreen(label)))
+		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Account:"), BoldGreen(label)))
 		lastSync := s.Config.GetSetting("last_telemetry_sync_date", "")
 		if lastSync == "" {
 			lastSync = "never (run /sync)"
