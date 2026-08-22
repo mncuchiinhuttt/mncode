@@ -57,7 +57,12 @@ func HandleQueueCommand(parts []string, s *agent.Session) {
 		fmt.Println("  /queue list              - View pending message queue")
 		fmt.Println("  /queue clear             - Clear all queued messages")
 		fmt.Println()
-		fmt.Println(GrayText("Example: /queue run tests and check if everything passes"))
+		mode := "queue"
+		if s.Config != nil {
+			mode = s.Config.GetSetting("interrupt_mode", "queue")
+		}
+		fmt.Printf("  %s %s\n", GrayText("Current default message action:"), BoldCyan(mode))
+		fmt.Println(GrayText("  (Change default in /config -> 'Default Message Action')"))
 		fmt.Println()
 		return
 	}

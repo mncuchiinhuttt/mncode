@@ -94,3 +94,34 @@ func (s *Session) HasQueuedMessages() bool {
 	defer s.QueueMu.Unlock()
 	return len(s.MessageQueue) > 0 || len(s.SteerQueue) > 0
 }
+
+// EnqueueDefault routes un-prefixed input based on the interrupt_mode setting (queue vs steer)
+func (s *Session) EnqueueDefault(rawMsg string) (action string, payload string) {
+	trimmed := strings.TrimSpace(rawMsg)
+	if trimmed == "" {
+		return "", ""
+	}
+
+	if strings.HasPrefix(trimmed, "/steer ") {
+		guidance := strings.TrimSpace(strings.TrimPrefix(trimmed, "/steer "))
+		s.EnqueueSteer(guidance)
+		return "steer", guidance
+	} else if strings.HasPrefix(trimmed, "/queue ") {
+		prompt := strings.TrimSpace(strings.TrimPrefix(trimmed, "/queue "))
+		s.EnqueueMessage(prompt)
+		return "queue", prompt
+	}
+
+	mode := "queue"
+	if s.Config != nil {
+		mode = strings.ToLower(s.Config.GetSetting("interrupt_mode", "queue"))
+	}
+
+	if mode == "steer" {
+		s.EnqueueSteer(trimmed)
+		return "steer", trimmed
+	}
+
+	s.EnqueueMessage(trimmed)
+	return "queue", trimmed
+}
