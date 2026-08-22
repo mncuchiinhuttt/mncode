@@ -58,7 +58,7 @@ func OpenInteractiveModelSelector(s *agent.Session) {
 			tagStr := BoldYellow(m.Tag)
 			if m.Tag == "[Antigravity]" {
 				tagStr = BoldGreen(m.Tag)
-			} else if m.Tag == "[OpenCode Free]" {
+			} else if m.Tag == "[OpenCode Free]" || m.Tag == "[OpenRouter Free]" {
 				tagStr = BoldCyan(m.Tag)
 			}
 

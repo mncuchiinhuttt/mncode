@@ -20,11 +20,11 @@ import (
 
 func main() {
 	var (
-		workspaceFlag = flag.String("w", ".", "Workspace directory path")
-		modelFlag     = flag.String("m", "", "Model name override (e.g. claude-3-7-sonnet-20250219)")
-		providerFlag  = flag.String("p", "", "Provider override (anthropic, openrouter, openai, gemini)")
-		autoApprove   = flag.Bool("y", false, "Auto-approve all tool executions")
-		bypassPerms   = flag.Bool("dangerously-skip-permissions", false, "Bypass all permission prompts for tool execution")
+		workspaceFlag    = flag.String("w", ".", "Workspace directory path")
+		modelFlag        = flag.String("m", "", "Model name override (e.g. claude-3-7-sonnet-20250219)")
+		providerFlag     = flag.String("p", "", "Provider override (anthropic, openrouter, openai, gemini)")
+		autoApprove      = flag.Bool("y", false, "Auto-approve all tool executions")
+		bypassPerms      = flag.Bool("dangerously-skip-permissions", false, "Bypass all permission prompts for tool execution")
 		bypassPermsShort = flag.Bool("dangerously-skip-permission", false, "Bypass all permission prompts for tool execution")
 		promptFlag       = flag.String("e", "", "Execute a single prompt non-interactively")
 		resumeFlag       = flag.Bool("resume", false, "Resume previous conversation session")
@@ -191,6 +191,11 @@ func main() {
 		}
 		return
 	}
+
+	// Push today's usage telemetry once per day, if a sync key is configured.
+	// Only for the interactive REPL — one-shot `-e` invocations (which may
+	// themselves be a scripted `/sync`) shouldn't race a background push.
+	go ui.MaybeAutoSyncDaily(session)
 
 	ui.RunREPL(session)
 }

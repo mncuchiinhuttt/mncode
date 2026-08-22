@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -58,13 +59,21 @@ func (o *OpenAIProvider) Stream(ctx context.Context, req *CompletionRequest, cb 
 }
 
 func (o *OpenAIProvider) buildPayload(req *CompletionRequest) map[string]interface{} {
+	modelName := req.Model
+	if modelName == "ox-alpha" {
+		modelName = "stealth/ox-alpha"
+	}
+
 	payload := map[string]interface{}{
-		"model":       req.Model,
+		"model":       modelName,
 		"stream":      true,
 		"temperature": req.Temperature,
 	}
 	if req.MaxTokens > 0 {
 		payload["max_tokens"] = req.MaxTokens
+	}
+	if strings.Contains(modelName, "ox-alpha") || req.ThinkingBudget > 0 {
+		payload["include_reasoning"] = true
 	}
 
 	var msgs []map[string]interface{}

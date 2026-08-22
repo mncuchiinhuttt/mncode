@@ -105,6 +105,9 @@ func (o *OpenAIProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*Com
 		if reasoning, ok := delta["reasoning_content"].(string); ok && reasoning != "" {
 			resp.Thinking += reasoning
 			_ = cb(StreamEvent{Type: EventThinking, Thinking: reasoning})
+		} else if reasoning, ok := delta["reasoning"].(string); ok && reasoning != "" {
+			resp.Thinking += reasoning
+			_ = cb(StreamEvent{Type: EventThinking, Thinking: reasoning})
 		}
 
 		if tcs, ok := delta["tool_calls"].([]interface{}); ok {

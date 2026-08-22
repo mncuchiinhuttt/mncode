@@ -68,6 +68,22 @@ func HandleSyncCommand(parts []string, s *agent.Session) {
 	url := s.Config.GetTelemetryURL()
 	fmt.Printf("\n%s Pushing session telemetry to cloud (%s)...\n", BoldCyan("[Sync]"), GrayText(url))
 
+	totalTokens, err := pushTelemetry(s, key, url)
+	if err != nil {
+		fmt.Printf("%s %v\n\n", BoldRed("[Sync Error]"), err)
+		return
+	}
+
+	s.Config.SetSetting("last_telemetry_sync_date", time.Now().Format("2006-01-02"))
+	_ = config.SaveConfig(s.Config)
+
+	fmt.Printf("%s Telemetry pushed successfully! (Tokens: %s · Status: 200 OK)\n\n",
+		BoldGreen("[Sync Success]"), BoldCyan(formatTokens(totalTokens)))
+}
+
+// pushTelemetry builds today's usage payload and POSTs it to the telemetry endpoint.
+// Returns the total token count pushed, for display by the caller.
+func pushTelemetry(s *agent.Session, key, url string) (int, error) {
 	tracker := stats.NewTracker()
 	today := tracker.GetToday()
 
@@ -83,18 +99,14 @@ func HandleSyncCommand(parts []string, s *agent.Session) {
 		}
 	}
 
-	inputTokens := int(today.InputTokens)
-	outputTokens := int(today.OutputTokens)
-	totalTokens := int(today.TotalTokens)
-
 	payload := TelemetryPayload{
 		ClientVersion:  "0.1.0-beta",
 		OS:             runtime.GOOS,
 		Arch:           runtime.GOARCH,
 		SessionCount:   1,
-		InputTokens:    inputTokens,
-		OutputTokens:   outputTokens,
-		TotalTokens:    totalTokens,
+		InputTokens:    int(today.InputTokens),
+		OutputTokens:   int(today.OutputTokens),
+		TotalTokens:    int(today.TotalTokens),
 		ThinkingTokens: 0,
 		Models:         models,
 		Tools:          toolsMap,
@@ -103,34 +115,50 @@ func HandleSyncCommand(parts []string, s *agent.Session) {
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Printf("%s %v\n\n", BoldRed("[Sync Error] Failed to encode telemetry:"), err)
-		return
+		return 0, fmt.Errorf("failed to encode telemetry: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
-		fmt.Printf("%s %v\n\n", BoldRed("[Sync Error] Failed to create request:"), err)
-		return
+		return 0, fmt.Errorf("failed to create request: %w", err)
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+key)
 
 	client := &http.Client{Timeout: 8 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("%s %v\n  (Make sure mncode-web is running at %s)\n\n",
-			BoldRed("[Sync Error] Connection failed:"), err, url)
-		return
+		return 0, fmt.Errorf("connection failed: %w (make sure mncode-web is running at %s)", err, url)
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		fmt.Printf("%s Telemetry pushed successfully! (Tokens: %s · Status: 200 OK)\n\n",
-			BoldGreen("[Sync Success]"), BoldCyan(formatTokens(payload.TotalTokens)))
-	} else {
-		fmt.Printf("%s Server returned %d: %s\n\n",
-			BoldRed("[Sync Failed]"), resp.StatusCode, string(body))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		body, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("server returned %d: %s", resp.StatusCode, string(body))
 	}
+
+	return payload.TotalTokens, nil
+}
+
+// MaybeAutoSyncDaily silently pushes today's telemetry once per calendar day,
+// if a sync key is configured. Meant to be called in a background goroutine
+// at startup so it never delays the REPL; failures are swallowed (the user
+// can still run /sync manually to see the real error).
+func MaybeAutoSyncDaily(s *agent.Session) {
+	key := s.Config.GetTelemetryKey()
+	if key == "" {
+		return
+	}
+
+	today := time.Now().Format("2006-01-02")
+	if s.Config.GetSetting("last_telemetry_sync_date", "") == today {
+		return
+	}
+
+	if _, err := pushTelemetry(s, key, s.Config.GetTelemetryURL()); err != nil {
+		return
+	}
+
+	s.Config.SetSetting("last_telemetry_sync_date", today)
+	_ = config.SaveConfig(s.Config)
 }

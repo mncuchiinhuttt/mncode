@@ -81,7 +81,21 @@ var curatedModels = []ModelChoice{
 		Description: "1M context high-speed model with minimal latency for rapid edits",
 	},
 
-	// --- OpenCode Zen Free Models ---
+	// --- OpenCode Zen Free Models & Stealth Reasoning ---
+	{
+		ID:          "ox-alpha",
+		Name:        "Ox Alpha (1M Free Reasoning)",
+		Provider:    config.ProviderOpenCode,
+		Tag:         "[OpenCode Free]",
+		Description: "Stealth 1M context unlimited reasoning model for coding & agentic workflows (100% Free)",
+	},
+	{
+		ID:          "stealth/ox-alpha",
+		Name:        "Ox Alpha (OpenRouter 1M)",
+		Provider:    config.ProviderOpenRouter,
+		Tag:         "[OpenRouter Free]",
+		Description: "Stealth Ox Alpha 1M context reasoning model via OpenRouter (100% Free)",
+	},
 	{
 		ID:          "deepseek-v4-flash-free",
 		Name:        "DeepSeek V4 Flash (Free)",
@@ -192,7 +206,7 @@ func GetAvailableModels(s *agent.Session) []ModelChoice {
 			if hasGemini {
 				result = append(result, m)
 			}
-		case "[OpenCode Free]":
+		case "[OpenCode Free]", "[OpenRouter Free]":
 			result = append(result, m)
 		case "[Anthropic API]":
 			if hasAnthropic {
