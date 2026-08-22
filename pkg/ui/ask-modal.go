@@ -46,11 +46,21 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 	title := "⚡ Need your action · Agent Decision"
 	footer := "  [↑/↓] Navigate · [1-9] Quick Select · [Enter] Choose · [Esc] Skip"
 
+	if params.IsMultiSelect {
+		title = "⚡ Need your action · Select Options (Multi-choice)"
+		footer = "  [Space/1-9] Toggle · [↑/↓] Navigate · [Enter] Confirm · [Esc] Skip"
+	}
+
 	if params.IsBrainrot {
+		if params.IsMultiSelect {
+			title = "🔥 Yo Sigma! Pick all vibes that apply 🧠"
+			footer = "  [Space/1-9] Toggle vibe · [↑/↓] Navigate · [Enter] Lock in all · [Esc] Nah skip"
+		} else {
+			title = "🔥 Yo Sigma! Lock in & pick a vibe 🧠"
+			footer = "  [↑/↓] Navigate · [1-9] Quick Rizz · [Enter] Lock in · [Esc] Nah skip"
+		}
 		customLabel = "💬 Other / Cook custom rizz response..."
 		chatLabel = "💭 Yap more about this / drop extra lore..."
-		title = "🔥 Yo Sigma! Lock in & pick a vibe 🧠"
-		footer = "  [↑/↓] Navigate · [1-9] Quick Rizz · [Enter] Lock in · [Esc] Nah skip"
 	}
 
 	// Always append Write-in & Chat options
@@ -64,17 +74,32 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 	})
 
 	if !term.IsTerminal(int(os.Stdin.Fd())) {
-		return promptSimpleQuestion(question, options)
+		return promptSimpleQuestion(question, options, params.IsMultiSelect)
 	}
 
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		return promptSimpleQuestion(question, options)
+		return promptSimpleQuestion(question, options, params.IsMultiSelect)
 	}
 	defer func() { _ = term.Restore(int(os.Stdin.Fd()), oldState) }()
 
 	currentIdx := 0
 	lastLinesCount := 0
+
+	countSelected := func() int {
+		c := 0
+		for _, o := range options {
+			if o.IsSelected && !o.IsCustom && !o.IsChatMore {
+				c++
+			}
+		}
+		return c
+	}
+
+	totalNavRows := len(options)
+	if params.IsMultiSelect {
+		totalNavRows++ // extra submit button row at bottom
+	}
 
 	render := func() {
 		width, _, err := term.GetSize(int(os.Stdout.Fd()))
@@ -111,10 +136,35 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 
 		for i, opt := range options {
 			marker := "  "
-			numBadge := fmt.Sprintf("[%d]", i+1)
 			if i == currentIdx {
 				marker = BoldPastelPink("❯ ")
-				numBadge = BoldPastelPink(fmt.Sprintf("[%d]", i+1))
+			}
+
+			var prefixBadge string
+			if params.IsMultiSelect {
+				if opt.IsCustom || opt.IsChatMore {
+					numBadge := fmt.Sprintf("[%d]", i+1)
+					if i == currentIdx {
+						numBadge = BoldPastelPink(fmt.Sprintf("[%d]", i+1))
+					}
+					prefixBadge = numBadge
+				} else {
+					checkMark := GrayText("☐")
+					if opt.IsSelected {
+						checkMark = BoldGreen("☑")
+					}
+					numBadge := fmt.Sprintf("[%d]", i+1)
+					if i == currentIdx {
+						numBadge = BoldPastelPink(fmt.Sprintf("[%d]", i+1))
+					}
+					prefixBadge = fmt.Sprintf("%s %s", numBadge, checkMark)
+				}
+			} else {
+				numBadge := fmt.Sprintf("[%d]", i+1)
+				if i == currentIdx {
+					numBadge = BoldPastelPink(fmt.Sprintf("[%d]", i+1))
+				}
+				prefixBadge = numBadge
 			}
 
 			optText := opt.Text
@@ -128,8 +178,29 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 				}
 			}
 
-			rowStr := fmt.Sprintf("%s%s %s", marker, numBadge, optText)
+			rowStr := fmt.Sprintf("%s%s %s", marker, prefixBadge, optText)
 			lines = append(lines, fmt.Sprintf("│ %s │", PadToCellWidth(rowStr, contentWidth)))
+		}
+
+		// Multi-select Submit row
+		if params.IsMultiSelect {
+			sepMid := fmt.Sprintf("│ %s │", PadToCellWidth(GrayText(strings.Repeat("─", 20)), contentWidth))
+			lines = append(lines, sepMid)
+
+			submitMarker := "  "
+			if currentIdx == len(options) {
+				submitMarker = BoldPastelPink("❯ ")
+			}
+			submitLabel := fmt.Sprintf("🟢 [Enter] Confirm & Submit (%d selected)", countSelected())
+			if params.IsBrainrot {
+				submitLabel = fmt.Sprintf("🔥 [Enter] Lock in selection (%d vibes picked)", countSelected())
+			}
+			if currentIdx == len(options) {
+				submitLabel = BoldGreen(submitLabel)
+			} else {
+				submitLabel = GrayText(submitLabel)
+			}
+			lines = append(lines, fmt.Sprintf("│ %s │", PadToCellWidth(submitMarker+submitLabel, contentWidth)))
 		}
 
 		bottomBorder := fmt.Sprintf("╰%s╯", strings.Repeat("─", cardWidth-2))
@@ -151,6 +222,31 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 
 	render()
 
+	collectMultiResults := func(extraWriteIn string) string {
+		var selectedTexts []string
+		for _, o := range options {
+			if o.IsSelected && !o.IsCustom && !o.IsChatMore {
+				selectedTexts = append(selectedTexts, o.Text)
+			}
+		}
+		if extraWriteIn != "" {
+			selectedTexts = append(selectedTexts, extraWriteIn)
+		}
+		if len(selectedTexts) == 0 && currentIdx < len(options) {
+			o := options[currentIdx]
+			if !o.IsCustom && !o.IsChatMore {
+				selectedTexts = append(selectedTexts, o.Text)
+			}
+		}
+		if len(selectedTexts) == 0 {
+			return "User selected no options."
+		}
+		if len(selectedTexts) == 1 {
+			return fmt.Sprintf("User selected: %s", selectedTexts[0])
+		}
+		return fmt.Sprintf("User selected (multi-select): [\"%s\"]", strings.Join(selectedTexts, "\", \""))
+	}
+
 	buf := make([]byte, 3)
 	for {
 		n, err := os.Stdin.Read(buf)
@@ -168,7 +264,7 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 				}
 				continue
 			case 'B': // Down
-				if currentIdx < len(options)-1 {
+				if currentIdx < totalNavRows-1 {
 					currentIdx++
 					render()
 				}
@@ -176,13 +272,72 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 			}
 		}
 
+		// Space Key -> Toggle checkbox in Multi-Select
+		if buf[0] == ' ' && params.IsMultiSelect {
+			if currentIdx < len(options) {
+				opt := &options[currentIdx]
+				if !opt.IsCustom && !opt.IsChatMore {
+					opt.IsSelected = !opt.IsSelected
+					render()
+					continue
+				}
+			}
+		}
+
 		// Quick Digit Keys 1..9
 		if n == 1 && buf[0] >= '1' && buf[0] <= '9' {
 			idx := int(buf[0] - '1')
 			if idx < len(options) {
-				currentIdx = idx
-				render()
-				// Submit selection immediately
+				if params.IsMultiSelect {
+					// In multi-select: digit toggles checkbox
+					opt := &options[idx]
+					if !opt.IsCustom && !opt.IsChatMore {
+						opt.IsSelected = !opt.IsSelected
+						currentIdx = idx
+						render()
+						continue
+					} else {
+						// Custom write-in
+						currentIdx = idx
+						render()
+						_ = term.Restore(int(os.Stdin.Fd()), oldState)
+						fmt.Print("\n\r")
+						writeIn := readCustomInput(opt.Text)
+						return collectMultiResults(writeIn)
+					}
+				} else {
+					// Single-select: immediately choose
+					currentIdx = idx
+					render()
+					selected := options[currentIdx]
+					_ = term.Restore(int(os.Stdin.Fd()), oldState)
+					fmt.Print("\n\r")
+					if selected.IsCustom || selected.IsChatMore {
+						return readCustomInput(selected.Text)
+					}
+					return fmt.Sprintf("User selected: %s", selected.Text)
+				}
+			}
+		}
+
+		// Enter Key
+		if buf[0] == '\r' || buf[0] == '\n' {
+			if params.IsMultiSelect {
+				// If on write-in option
+				if currentIdx < len(options) && (options[currentIdx].IsCustom || options[currentIdx].IsChatMore) {
+					selected := options[currentIdx]
+					_ = term.Restore(int(os.Stdin.Fd()), oldState)
+					fmt.Print("\n\r")
+					writeIn := readCustomInput(selected.Text)
+					return collectMultiResults(writeIn)
+				}
+
+				// If on regular option or submit row -> submit all checked
+				_ = term.Restore(int(os.Stdin.Fd()), oldState)
+				fmt.Print("\n\r")
+				return collectMultiResults("")
+			} else {
+				// Single select
 				selected := options[currentIdx]
 				_ = term.Restore(int(os.Stdin.Fd()), oldState)
 				fmt.Print("\n\r")
@@ -191,17 +346,6 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 				}
 				return fmt.Sprintf("User selected: %s", selected.Text)
 			}
-		}
-
-		// Enter Key
-		if buf[0] == '\r' || buf[0] == '\n' {
-			selected := options[currentIdx]
-			_ = term.Restore(int(os.Stdin.Fd()), oldState)
-			fmt.Print("\n\r")
-			if selected.IsCustom || selected.IsChatMore {
-				return readCustomInput(selected.Text)
-			}
-			return fmt.Sprintf("User selected: %s", selected.Text)
 		}
 
 		// Escape / Ctrl+C / q
@@ -226,22 +370,46 @@ func readCustomInput(promptLabel string) string {
 	return fmt.Sprintf("User write-in response: %s", line)
 }
 
-func promptSimpleQuestion(question string, options []AskQuestionOption) string {
+func promptSimpleQuestion(question string, options []AskQuestionOption, isMultiSelect bool) string {
 	fmt.Printf("\n[Question]: %s\n", question)
 	for i, opt := range options {
 		fmt.Printf("  [%d] %s\n", i+1, opt.Text)
 	}
-	fmt.Print("\nEnter choice (or type custom text): ")
+	if isMultiSelect {
+		fmt.Print("\nEnter choices separated by commas (e.g. 1, 3) or type custom text: ")
+	} else {
+		fmt.Print("\nEnter choice (or type custom text): ")
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	ans, _ := reader.ReadString('\n')
 	ans = strings.TrimSpace(ans)
-	if num, err := strconv.Atoi(ans); err == nil && num >= 1 && num <= len(options) {
-		selected := options[num-1]
-		if selected.IsCustom || selected.IsChatMore {
-			return readCustomInput(selected.Text)
+
+	if isMultiSelect {
+		parts := strings.Split(ans, ",")
+		var selected []string
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if num, err := strconv.Atoi(trimmed); err == nil && num >= 1 && num <= len(options) {
+				opt := options[num-1]
+				if !opt.IsCustom && !opt.IsChatMore {
+					selected = append(selected, opt.Text)
+				}
+			}
 		}
-		return fmt.Sprintf("User selected: %s", selected.Text)
+		if len(selected) > 0 {
+			return fmt.Sprintf("User selected (multi-select): [\"%s\"]", strings.Join(selected, "\", \""))
+		}
+	} else {
+		if num, err := strconv.Atoi(ans); err == nil && num >= 1 && num <= len(options) {
+			selected := options[num-1]
+			if selected.IsCustom || selected.IsChatMore {
+				return readCustomInput(selected.Text)
+			}
+			return fmt.Sprintf("User selected: %s", selected.Text)
+		}
 	}
+
 	if ans != "" {
 		return fmt.Sprintf("User response: %s", ans)
 	}

@@ -74,19 +74,24 @@ func (a *AskTool) Execute(ctx context.Context, args map[string]interface{}) (str
 	// Format 1: questions array
 	var structured struct {
 		Questions []struct {
-			Question      string   `json:"question"`
-			Options       []string `json:"options"`
-			IsMultiSelect bool     `json:"is_multi_select"`
+			Question           string   `json:"question"`
+			Options            []string `json:"options"`
+			IsMultiSelect      bool     `json:"is_multi_select"`
+			IsMultiSelectCamel bool     `json:"isMultiSelect"`
+			MultiSelect        bool     `json:"multi_select"`
 		} `json:"questions"`
-		Question string   `json:"Question"`
-		Options  []string `json:"Options"`
+		Question           string   `json:"Question"`
+		Options            []string `json:"Options"`
+		IsMultiSelect      bool     `json:"is_multi_select"`
+		IsMultiSelectCamel bool     `json:"isMultiSelect"`
 	}
 	_ = json.Unmarshal(argBytes, &structured)
 
 	if len(structured.Questions) > 0 {
 		var responses []string
 		for i, q := range structured.Questions {
-			ans := a.prompt(q.Question, q.Options, q.IsMultiSelect)
+			multi := q.IsMultiSelect || q.IsMultiSelectCamel || q.MultiSelect
+			ans := a.prompt(q.Question, q.Options, multi)
 			responses = append(responses, fmt.Sprintf("Q%d: %s -> %s", i+1, q.Question, ans))
 		}
 		return strings.Join(responses, "\n"), nil
@@ -114,7 +119,18 @@ func (a *AskTool) Execute(ctx context.Context, args map[string]interface{}) (str
 		}
 	}
 
-	answer := a.prompt(qText, opts, false)
+	isMulti := structured.IsMultiSelect || structured.IsMultiSelectCamel
+	if !isMulti {
+		if v, ok := args["multi_select"].(bool); ok {
+			isMulti = v
+		} else if v, ok := args["is_multi_select"].(bool); ok {
+			isMulti = v
+		} else if v, ok := args["isMultiSelect"].(bool); ok {
+			isMulti = v
+		}
+	}
+
+	answer := a.prompt(qText, opts, isMulti)
 	return answer, nil
 }
 
