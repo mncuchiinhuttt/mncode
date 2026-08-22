@@ -138,7 +138,9 @@ func OpenInteractiveModelSelector(s *agent.Session) {
 		case 13, 10, ' ':
 			chosen := modelsList[currentIdx]
 			if chosen.ID == "custom" {
-				fmt.Print("\r\n\033[J\r\n")
+				if lastLinesCount > 0 {
+					fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
+				}
 				_ = term.Restore(int(os.Stdin.Fd()), oldState)
 				promptCustomModel(s)
 				return
@@ -151,7 +153,9 @@ func OpenInteractiveModelSelector(s *agent.Session) {
 			_ = config.SaveConfig(s.Config)
 			_ = s.EnsureProvider()
 
-			fmt.Print("\r\n\033[J\r\n")
+			if lastLinesCount > 0 {
+				fmt.Printf("\r\033[%dA\033[J", lastLinesCount-1)
+			}
 			fmt.Printf("%s Switched model to %s (Provider: %s)\r\n\r\n",
 				BoldGreen("[Success]"),
 				Bold(chosen.Name),
