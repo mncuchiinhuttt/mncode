@@ -100,7 +100,7 @@ func pushTelemetry(s *agent.Session, key, url string) (int, error) {
 	}
 
 	payload := TelemetryPayload{
-		ClientVersion:  "0.1.0-beta",
+		ClientVersion:  config.CurrentVersion,
 		OS:             runtime.GOOS,
 		Arch:           runtime.GOARCH,
 		SessionCount:   1,

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"mncode/pkg/agent"
+	"mncode/pkg/config"
 )
 
 type FeedbackPayload struct {
@@ -56,7 +57,7 @@ func postFeedback(url, key, message string) error {
 	payload := FeedbackPayload{
 		Message:       message,
 		Category:      "general",
-		ClientVersion: "0.1.0-beta",
+		ClientVersion: config.CurrentVersion,
 		OS:            runtime.GOOS,
 		Arch:          runtime.GOARCH,
 	}

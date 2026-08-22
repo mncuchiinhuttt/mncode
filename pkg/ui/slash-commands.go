@@ -38,8 +38,6 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/clear"
 	} else if strings.HasPrefix("/account", cmd) && len(cmd) >= 3 {
 		cmd = "/account"
-	} else if strings.HasPrefix("/login", cmd) && len(cmd) >= 3 {
-		cmd = "/login"
 	} else if strings.HasPrefix("/model", cmd) && len(cmd) >= 3 {
 		cmd = "/model"
 	}
@@ -107,7 +105,7 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			HandleMncodeLogoutCommand(s)
 		}
 	case "/login":
-		HandleMncodeLoginCommand(parts, s)
+		fmt.Printf("\n%s You are already logged in and active in this session! (Use %s to inspect session or %s for AI providers)\n\n", BoldPastelPink("[mncode]"), BoldCyan("/status"), BoldCyan("/account"))
 	case "/btw":
 		HandleBTWCommand(parts, s)
 	case "/brainrot":
