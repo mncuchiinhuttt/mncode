@@ -1,6 +1,10 @@
 package ui
 
-import "mncode/pkg/agent"
+import (
+	"mncode/pkg/agent"
+	"mncode/pkg/config"
+	"strings"
+)
 
 type SettingType int
 
@@ -8,8 +12,6 @@ const (
 	SettingTypeBool SettingType = iota
 	SettingTypeChoice
 	SettingTypeModel
-	SettingTypeEffort
-	SettingTypeWorkflow
 )
 
 type SettingDef struct {
@@ -23,83 +25,101 @@ type SettingDef struct {
 
 func GetAllSettingsDefinitions() []SettingDef {
 	return []SettingDef{
-		{Key: "auto_compact", Label: "Auto-compact", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "continue_at_limit", Label: "Continue automatically at usage limit", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "switch_model_flagged", Label: "Switch models when a message is flagged", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "show_tips", Label: "Show tips", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "reduce_motion", Label: "Reduce motion", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "thinking_mode", Label: "Thinking mode", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "prompt_suggestions", Label: "Prompt suggestions", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "session_recap", Label: "Session recap", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "rewind_code", Label: "Rewind code (checkpoints)", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "dynamic_workflows", Label: "Dynamic workflows", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "ultra_workflow_trigger", Label: "Ultra workflow keyword trigger", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "workflow_size", Label: "Dynamic workflow size", Type: SettingTypeChoice, DefaultVal: "medium (default)", Choices: []string{"small", "medium (default)", "large", "full"}},
-		{Key: "artifacts", Label: "Artifacts", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "verbose_output", Label: "Verbose output", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "terminal_progress", Label: "Terminal progress bar", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "show_turn_duration", Label: "Show turn duration", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "default_permission", Label: "Default permission mode", Type: SettingTypeChoice, DefaultVal: "Manual (Ask)", Choices: []string{"Manual (Ask)", "Auto-Approve", "Bypass Permissions"}},
-		{Key: "worktree_base", Label: "Worktree base ref", Type: SettingTypeChoice, DefaultVal: "fresh", Choices: []string{"fresh", "main", "current"}},
-		{Key: "auto_mode_plan", Label: "Use auto mode during plan", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "respect_gitignore", Label: "Respect .gitignore in file picker", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "skip_copy_picker", Label: "Skip the /copy picker", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "copy_on_select", Label: "Copy on select", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "auto_scroll", Label: "Auto-scroll", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "open_agents_default", Label: "Open agents view by default", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "left_opens_agents", Label: "← opens agents", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "auto_update_channel", Label: "Auto-update channel", Type: SettingTypeChoice, DefaultVal: "latest", Choices: []string{"latest", "beta", "stable"}},
-		{Key: "theme", Label: "Theme", Type: SettingTypeChoice, DefaultVal: "Pastel Pink", Choices: []string{"Pastel Pink", "Dark mode", "Light mode", "Cyberpunk", "Monokai", "Tokyo Night"}},
-		{Key: "diff_style", Label: "Code diff highlight style", Type: SettingTypeChoice, DefaultVal: "Full-line Background", Choices: []string{"Full-line Background", "Syntax Text Only"}},
-		{Key: "local_notifications", Label: "Local notifications", Type: SettingTypeChoice, DefaultVal: "Auto", Choices: []string{"Auto", "Always", "Never"}},
-		{Key: "push_actions_required", Label: "Push when actions required", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "language", Label: "Language", Type: SettingTypeChoice, DefaultVal: "Default (English)", Choices: []string{"Default (English)", "Vietnamese", "Japanese", "Chinese", "Spanish", "French", "German"}},
-		{Key: "brainrot_mode", Label: "Brainrot Mode (Gen Z / Sigma / Max Rizz)", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "troll_status", Label: "Funny / Troll status messages", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "editor_mode", Label: "Editor mode", Type: SettingTypeChoice, DefaultVal: "normal", Choices: []string{"normal", "vim", "emacs"}},
-		{Key: "question_timeout", Label: "Question auto-continue timeout", Type: SettingTypeChoice, DefaultVal: "never", Choices: []string{"never", "30s", "1m", "5m"}},
-		{Key: "show_last_response_editor", Label: "Show last response in external editor", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "show_branch_name", Label: "Show current branch name", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "context_window", Label: "Context window size", Type: SettingTypeChoice, DefaultVal: "200K", Choices: []string{"200K", "300K", "500K", "1M"}},
-		{Key: "model", Label: "Model", Type: SettingTypeModel, DefaultVal: "gemini-3.7-flash-high"},
-		{Key: "auto_connect_ide", Label: "Auto-connect to IDE (external terminal)", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "chrome_default", Label: "Claude in Chrome enabled by default", Type: SettingTypeBool, DefaultVal: "false"},
-		{Key: "remote_control", Label: "Enable Remote Control for all sessions", Type: SettingTypeChoice, DefaultVal: "default", Choices: []string{"default", "always", "never"}},
-		{Key: "dialog_expiry", Label: "Dialog expiry", Type: SettingTypeChoice, DefaultVal: "default", Choices: []string{"default", "never", "1h", "24h"}},
-		{Key: "messages_other_sessions", Label: "Messages from your other sessions", Type: SettingTypeChoice, DefaultVal: "default", Choices: []string{"default", "sync", "off"}},
+		{Key: "model", Label: "Active AI Model", Type: SettingTypeModel, DefaultVal: "gemini-3.7-flash-high", Description: "Primary LLM model used for conversation and coding"},
+		{Key: "effort", Label: "Thinking Effort Budget", Type: SettingTypeChoice, DefaultVal: "high", Choices: []string{"none", "low", "medium", "high", "max", "pro-max"}, Description: "Reasoning token budget for extended thinking models"},
+		{Key: "workflow", Label: "Workflow Orchestration", Type: SettingTypeChoice, DefaultVal: "auto", Choices: []string{"auto", "ultra-workflow", "plan-first", "direct"}, Description: "Agent workflow strategy and autonomous chaining mode"},
+		{Key: "context_window", Label: "Context Window Size", Type: SettingTypeChoice, DefaultVal: "200K", Choices: []string{"200K", "300K", "500K", "1M"}, Description: "Maximum context token threshold before compression"},
+		{Key: "auto_compact", Label: "Auto-Compact Memory", Type: SettingTypeBool, DefaultVal: "true", Description: "Automatically summarize history when context exceeds 85%"},
+		{Key: "permission_mode", Label: "Tool Permission Mode", Type: SettingTypeChoice, DefaultVal: "Manual (Ask)", Choices: []string{"Manual (Ask)", "Auto-Approve", "Bypass Permissions"}, Description: "Confirmation policy for command and file tool execution"},
+		{Key: "theme", Label: "UI Color Theme", Type: SettingTypeChoice, DefaultVal: "Pastel Pink", Choices: []string{"Pastel Pink", "Dark mode", "Light mode", "Cyberpunk", "Monokai", "Tokyo Night"}, Description: "Terminal color scheme and syntax highlight palette"},
+		{Key: "diff_style", Label: "Code Diff Highlight", Type: SettingTypeChoice, DefaultVal: "Full-line Background", Choices: []string{"Full-line Background", "Syntax Text Only"}, Description: "Visual style for file modification diff blocks"},
+		{Key: "language", Label: "Language / Ngôn ngữ", Type: SettingTypeChoice, DefaultVal: "Default (English)", Choices: []string{"Default (English)", "Vietnamese", "Japanese", "Chinese", "Spanish", "French", "German"}, Description: "Natural language instructions for system prompt and responses"},
+		{Key: "brainrot_mode", Label: "Brainrot Mode (Gen Z / Sigma)", Type: SettingTypeBool, DefaultVal: "false", Description: "Toggle Gen Z 10x developer persona and funny meme commentary"},
+		{Key: "show_branch_name", Label: "Show Git Branch in Prompt", Type: SettingTypeBool, DefaultVal: "true", Description: "Display current git branch next to prompt input"},
+		{Key: "verbose_output", Label: "Verbose Debug Logging", Type: SettingTypeBool, DefaultVal: "false", Description: "Print raw LLM API payloads and tool execution debug traces"},
 	}
 }
 
 func GetSettingValue(s *agent.Session, def SettingDef) string {
-	if def.Type == SettingTypeModel {
-		return s.Config.Model
+	switch def.Key {
+	case "model":
+		if s.Config.Model != "" {
+			return s.Config.Model
+		}
+		return def.DefaultVal
+	case "effort":
+		if s.Config.Effort != "" {
+			return s.Config.Effort
+		}
+		return def.DefaultVal
+	case "workflow":
+		if s.Config.Workflow != "" {
+			return s.Config.Workflow
+		}
+		return def.DefaultVal
+	case "permission_mode":
+		if s.Config.PermissionMode == config.PermissionModeBypass {
+			return "Bypass Permissions"
+		} else if s.Config.AutoApprove || s.Config.PermissionMode == config.PermissionModeAuto {
+			return "Auto-Approve"
+		}
+		return "Manual (Ask)"
+	case "context_window":
+		return s.Config.GetContextWindowLabel()
+	default:
+		return s.Config.GetSetting(def.Key, def.DefaultVal)
 	}
-	return s.Config.GetSetting(def.Key, def.DefaultVal)
 }
 
 func ToggleOrCycleSetting(s *agent.Session, def SettingDef) {
 	if def.Type == SettingTypeBool {
 		cur := s.Config.GetSetting(def.Key, def.DefaultVal)
+		newVal := "true"
 		if cur == "true" {
-			s.Config.SetSetting(def.Key, "false")
-		} else {
-			s.Config.SetSetting(def.Key, "true")
+			newVal = "false"
 		}
+		s.Config.SetSetting(def.Key, newVal)
+
 		if def.Key == "verbose_output" {
-			s.Config.Verbose = s.Config.GetSetting("verbose_output", "false") == "true"
+			s.Config.Verbose = (newVal == "true")
 		}
+		_ = config.SaveConfig(s.Config)
 		return
 	}
 
 	if def.Type == SettingTypeChoice && len(def.Choices) > 0 {
-		cur := s.Config.GetSetting(def.Key, def.DefaultVal)
+		cur := GetSettingValue(s, def)
 		nextIdx := 0
 		for i, c := range def.Choices {
-			if c == cur {
+			if strings.EqualFold(c, cur) {
 				nextIdx = (i + 1) % len(def.Choices)
 				break
 			}
 		}
-		s.Config.SetSetting(def.Key, def.Choices[nextIdx])
+		chosen := def.Choices[nextIdx]
+		s.Config.SetSetting(def.Key, chosen)
+
+		switch def.Key {
+		case "effort":
+			s.Config.Effort = chosen
+		case "workflow":
+			s.Config.Workflow = chosen
+		case "permission_mode":
+			switch chosen {
+			case "Auto-Approve":
+				s.Config.PermissionMode = config.PermissionModeAuto
+				s.Config.AutoApprove = true
+			case "Bypass Permissions":
+				s.Config.PermissionMode = config.PermissionModeBypass
+				s.Config.AutoApprove = true
+			default:
+				s.Config.PermissionMode = config.PermissionModeAsk
+				s.Config.AutoApprove = false
+			}
+		case "context_window":
+			s.Config.ContextWindow = chosen
+		}
+
+		_ = config.SaveConfig(s.Config)
 	}
 }

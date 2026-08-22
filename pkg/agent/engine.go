@@ -28,9 +28,11 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		Images:  images,
 	})
 
-	// Auto-compact safeguard if context exceeds 85%
-	if usage := s.GetContextUsage(); usage.PercentUsed >= 85.0 && len(s.History) > 4 {
-		_, _ = s.CompactHistory(ctx)
+	// Auto-compact safeguard if enabled and context exceeds 85%
+	if s.Config.GetSetting("auto_compact", "true") == "true" {
+		if usage := s.GetContextUsage(); usage.PercentUsed >= 85.0 && len(s.History) > 4 {
+			_, _ = s.CompactHistory(ctx)
+		}
 	}
 
 	for {
