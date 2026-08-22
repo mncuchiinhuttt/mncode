@@ -165,6 +165,30 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleUpdateCommand(parts, s)
 	case "/version", "/v":
 		ShowVersionInfo()
+	case "/undo":
+		HandleUndoCommand(parts, s)
+	case "/rewind":
+		HandleRewindCommand(parts, s)
+	case "/checkpoint":
+		HandleCheckpointCommand(parts, s)
+	case "/commit":
+		HandleCommitCommand(parts, s)
+	case "/test":
+		HandleTestCommand(parts, s)
+	case "/heal":
+		HandleTestCommand([]string{"/test", "--heal"}, s)
+	case "/review":
+		HandleReviewCommand(parts, s)
+	case "/share":
+		HandleShareCommand(parts, s)
+	case "/pr":
+		HandlePRCommand(parts, s)
+	case "/doctor":
+		HandleDoctorCommand(parts, s)
+	case "/symbol", "/find-symbol":
+		HandleSymbolCommand(parts, s)
+	case "/scratch":
+		HandleScratchCommand(parts, s)
 	case "/resume", "/history":
 		HandleResumeCommand(parts, s)
 	default:
