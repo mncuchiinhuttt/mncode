@@ -5,17 +5,43 @@ import (
 	"mncode/pkg/agent"
 	"mncode/pkg/provider"
 	"mncode/pkg/skills"
+	"os/exec"
 	"strings"
 )
 
 // HandleSkillCommand handles /skill or /skills command
 func HandleSkillCommand(parts []string, s *agent.Session) {
-	if len(parts) > 1 && parts[0] != "/skills" {
-		skillQuery := strings.TrimSpace(strings.Join(parts[1:], " "))
-		ActivateSkillByName(s, skillQuery)
-		return
+	if len(parts) > 1 {
+		sub := strings.ToLower(parts[1])
+		if (sub == "install" || sub == "add") && len(parts) > 2 {
+			target := parts[2]
+			InstallSkillFromSkillsSh(s, target)
+			return
+		}
+		if sub != "list" && sub != "browse" {
+			skillQuery := strings.TrimSpace(strings.Join(parts[1:], " "))
+			ActivateSkillByName(s, skillQuery)
+			return
+		}
 	}
 	OpenInteractiveSkillsBrowser(s)
+}
+
+// InstallSkillFromSkillsSh downloads community skills from skills.sh / vercel package manager
+func InstallSkillFromSkillsSh(s *agent.Session, skillPackage string) {
+	fmt.Printf("\n%s Installing skill '%s' from skills.sh repository...\n", BoldCyan("📦 [Skill Installer]"), Bold(skillPackage))
+	cmd := exec.Command("npx", "-y", "skills", "add", skillPackage)
+	cmd.Dir = s.WorkspaceDir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("  %s Failed to install via skills CLI: %v\n  %s\n\n", BoldRed("[Error]"), err, string(out))
+		return
+	}
+	fmt.Printf("  %s %s\n\n", BoldGreen("✓"), Bold(fmt.Sprintf("Skill '%s' installed successfully!", skillPackage)))
+	// Reload catalog
+	if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
+		s.Catalog = reloaded
+	}
 }
 
 // ActivateSkillByName activates a skill and injects its instructions into the session

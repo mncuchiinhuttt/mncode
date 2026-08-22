@@ -18,10 +18,12 @@ func LoadCatalog(claudeDir string) (*Catalog, error) {
 		filepath.Join(homeDir, ".gemini", "config", "skills"),
 		filepath.Join(homeDir, ".config", "claudekit", "skills"),
 		filepath.Join(homeDir, ".claude", "skills"),
+		filepath.Join(homeDir, ".mncode", "skills"),
 		filepath.Join(homeDir, ".gemini", "antigravity-cli", "builtin", "skills"),
 	}
 	if claudeDir != "" {
 		skillDirs = append(skillDirs, filepath.Join(claudeDir, "skills"))
+		skillDirs = append(skillDirs, filepath.Join(filepath.Dir(claudeDir), ".mncode", "skills"))
 	}
 
 	for _, dir := range skillDirs {

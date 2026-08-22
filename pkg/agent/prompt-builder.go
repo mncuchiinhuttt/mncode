@@ -44,6 +44,12 @@ func (s *Session) BuildSystemPrompt() string {
 	if s.Catalog != nil && len(s.Catalog.Skills) > 0 {
 		sb.WriteString(s.Catalog.FormatSkillsCatalog())
 		sb.WriteString("\n")
+		sb.WriteString("<mandatory_skill_protocol>\n")
+		sb.WriteString("[CRITICAL SKILL-FIRST EXECUTION MANDATE]\n")
+		sb.WriteString("1. When addressing any task involving specialized domains (UI/UX, database, security audits, Docker, Clean Architecture, test suites, payments, etc.), you MUST explicitly check the available skills in <skills> and activate the relevant skill using the 'use_skill' tool (or 'view_file' on its SKILL.md).\n")
+		sb.WriteString("2. STRICT PROHIBITION: DO NOT guess, improvise, or invent custom conventions on your own when a relevant skill exists. Always follow the authoritative standards and procedures detailed in the skill.\n")
+		sb.WriteString("3. If multiple skills apply (e.g. 'ui-styling' + 'react-best-practices'), activate all applicable skills before generating code.\n")
+		sb.WriteString("</mandatory_skill_protocol>\n\n")
 	}
 
 	// Inject Subagents & Orchestration Guidelines
