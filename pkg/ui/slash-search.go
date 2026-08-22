@@ -26,7 +26,7 @@ func getMatchingSlashOptions(s *agent.Session, query string) []SlashOption {
 	if s != nil && s.Catalog != nil {
 		for _, sk := range s.Catalog.Skills {
 			baseName := strings.TrimPrefix(sk.Name, "ck:")
-			cmd := "/ck:" + baseName
+			cmd := "/" + baseName
 			if !seen[cmd] {
 				seen[cmd] = true
 				candidates = append(candidates, SlashOption{
@@ -48,12 +48,10 @@ func getMatchingSlashOptions(s *agent.Session, query string) []SlashOption {
 		desc := strings.ToLower(opt.Description)
 		score := 0
 
-		if cmdName == q || cmdName == "ck:"+q {
+		if cmdName == q {
 			score = 1000
 		} else if strings.HasPrefix(cmdName, q) {
 			score = 500 + (50 - len(cmdName))
-		} else if strings.HasPrefix(cmdName, "ck:"+q) {
-			score = 450 + (50 - len(cmdName))
 		} else if strings.Contains(cmdName, q) {
 			score = 200 + (50 - len(cmdName))
 		} else if strings.HasPrefix(desc, q) {

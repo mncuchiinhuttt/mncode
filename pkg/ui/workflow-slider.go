@@ -60,7 +60,7 @@ func OpenInteractiveWorkflowSlider(s *agent.Session) {
 
 	currentIdx := 1
 	for i, opt := range workflowOptions {
-		if strings.EqualFold(s.Config.Workflow, opt.ID) || (opt.ID == "ultra-workflow" && strings.EqualFold(s.Config.Workflow, "ultracode")) {
+		if strings.EqualFold(s.Config.Workflow, opt.ID) {
 			currentIdx = i
 			break
 		}

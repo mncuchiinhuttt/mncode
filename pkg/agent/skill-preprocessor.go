@@ -18,9 +18,19 @@ func (s *Session) PreprocessSkillTags(userInput string) string {
 	activatedAny := false
 
 	for _, word := range parts {
-		if strings.HasPrefix(word, "/ck:") || strings.HasPrefix(word, "/skill:") {
+		if strings.HasPrefix(word, "/") {
+			rawCmd := strings.ToLower(word)
+			if rawCmd == "/help" || rawCmd == "/exit" || rawCmd == "/quit" || rawCmd == "/model" ||
+				rawCmd == "/effort" || rawCmd == "/workflow" || rawCmd == "/agents" || rawCmd == "/context" ||
+				rawCmd == "/compact" || rawCmd == "/clear" || rawCmd == "/status" || rawCmd == "/config" ||
+				rawCmd == "/sync" || rawCmd == "/login" || rawCmd == "/logout" || rawCmd == "/feedback" {
+				remainingWords = append(remainingWords, word)
+				continue
+			}
+
 			skillName := strings.TrimPrefix(word, "/ck:")
 			skillName = strings.TrimPrefix(skillName, "/skill:")
+			skillName = strings.TrimPrefix(skillName, "/")
 			skillName = strings.ToLower(strings.TrimSpace(skillName))
 
 			var matched *skills.Skill

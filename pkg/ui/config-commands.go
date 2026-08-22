@@ -36,7 +36,7 @@ func HandleConfigCommand(parts []string, s *agent.Session) {
 			fmt.Println("  /config set model gemini-2.5-pro")
 			fmt.Println("  /config set provider gemini")
 			fmt.Println("  /config set effort max")
-			fmt.Println("  /config set workflow ultracode")
+			fmt.Println("  /config set workflow ultra-workflow")
 			fmt.Println("  /config set temperature 0.7")
 			fmt.Println("  /config set max_tokens 16384")
 			return

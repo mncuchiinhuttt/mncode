@@ -38,7 +38,7 @@ func PrintHeaderCard(s *agent.Session) {
 	}
 	cardWidth := width - 2
 
-	isProMax := s.Config.Workflow == "ultracode" ||
+	isProMax := s.Config.Workflow == "ultra-workflow" ||
 		strings.EqualFold(s.Config.Effort, "pro max") ||
 		strings.EqualFold(s.Config.Effort, "promax")
 

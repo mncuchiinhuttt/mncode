@@ -84,7 +84,7 @@ func OpenInteractiveSkillsBrowser(s *agent.Session) {
 		var lines []string
 		lines = append(lines, "")
 		lines = append(lines, fmt.Sprintf("   %s %s",
-			BoldCyan("ClaudeKit & Agent Skills Catalog"),
+			BoldCyan("mncode Skills Catalog"),
 			GrayText(fmt.Sprintf("(%d skills discovered)", len(allSkills)))))
 		lines = append(lines, "")
 

@@ -141,7 +141,7 @@ mncode -y
 | `/resume` | Browse and resume previous conversation sessions with history viewer |
 | `/model [name]` | Select or switch the active LLM model |
 | `/effort [level]` | Configure thinking budget (None, Low, Medium, High, Max, PRO MAX) |
-| `/workflow [mode]` | Switch agent orchestration mode (`auto`, `ultracode`, `plan-first`) |
+| `/workflow [mode]` | Switch agent orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
 | `/agents` | Open autonomous subagents & workflow monitor |
 | `/skills` | Browse, search, and activate workspace skills |
 | `/account list` | View multi-account pool health, active accounts, and cooldown status |

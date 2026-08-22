@@ -77,7 +77,15 @@ func ApplyDropdownSelection(s *agent.Session, input []rune, cursorPos int, selec
 		return newInput, newPos, true, true
 	}
 
-	if isTab || strings.HasPrefix(chosen.Primary, "/ck:") || chosen.Primary == "/btw" || chosen.Primary == "/model" {
+	isSkill := false
+	if s != nil && s.Catalog != nil {
+		cleanName := strings.TrimPrefix(chosen.Primary, "/")
+		if _, ok := s.Catalog.Skills[cleanName]; ok {
+			isSkill = true
+		}
+	}
+
+	if isTab || isSkill || chosen.Primary == "/btw" || chosen.Primary == "/model" {
 		newInput := []rune(chosen.Primary + " ")
 		return newInput, len(newInput), true, true
 	}

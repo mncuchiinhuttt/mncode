@@ -42,22 +42,20 @@ func LoadSkills(skillsDir string) (map[string]*Skill, error) {
 			}
 		}
 
+		skill.Name = strings.TrimPrefix(strings.TrimSpace(skill.Name), "ck:")
 		skill.Directory = skillDir
 		skill.FilePath = skillFile
 		skill.Body = body
 
-		// Register multiple access aliases for seamless matching
-		nameClean := strings.ToLower(strings.TrimSpace(skill.Name))
-		entryClean := strings.ToLower(strings.TrimSpace(entry.Name()))
+		// Register clean names and lowercase aliases without ck: prefix
+		nameClean := strings.ToLower(skill.Name)
+		entryClean := strings.ToLower(strings.TrimPrefix(strings.TrimSpace(entry.Name()), "ck:"))
 
 		skills[skill.Name] = &skill
 		skills[nameClean] = &skill
 		skills[entryClean] = &skill
 		skills["ck:"+entryClean] = &skill
-
-		if strings.HasPrefix(nameClean, "ck:") {
-			skills[strings.TrimPrefix(nameClean, "ck:")] = &skill
-		}
+		skills["ck:"+nameClean] = &skill
 	}
 
 	return skills, nil

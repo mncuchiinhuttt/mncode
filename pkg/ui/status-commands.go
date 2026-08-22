@@ -48,7 +48,7 @@ func ShowSessionStatus(s *agent.Session) {
 		BoldCyan("╭──"), BoldCyan(titleLeft), GrayText(strings.Repeat("─", midDashes)), BoldYellow(titleRight), BoldCyan("──╮")))
 
 	wfName := strings.ToUpper(s.Config.Workflow)
-	if wfName == "ULTRACODE" || wfName == "ULTRA-WORKFLOW" {
+	if wfName == "ULTRA-WORKFLOW" || wfName == "ULTRA WORKFLOW" {
 		wfName = "ULTRA WORKFLOW"
 	}
 	if wfName == "" {
@@ -145,7 +145,7 @@ func ShowSessionStatus(s *agent.Session) {
 
 func renderStatusStatic(s *agent.Session) {
 	wfName := strings.ToUpper(s.Config.Workflow)
-	if wfName == "ULTRACODE" || wfName == "ULTRA-WORKFLOW" {
+	if wfName == "ULTRA-WORKFLOW" || wfName == "ULTRA WORKFLOW" {
 		wfName = "ULTRA WORKFLOW"
 	}
 	fmt.Printf("\n%s\n", BoldCyan("Session Status:"))

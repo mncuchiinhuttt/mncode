@@ -84,7 +84,7 @@ func OpenInteractiveThemeSelector(s *agent.Session) {
 		rightCol[1] = fmt.Sprintf("%s  %s %s", Colorize(t.Muted, "│"), Colorize(t.Info, "func"), Colorize(t.Text, "ExecuteTask(ctx context.Context) error {"))
 
 		delText := "-    mode := \"direct\""
-		addText := "+    mode := \"ultracode\""
+		addText := "+    mode := \"ultra-workflow\""
 		if fullLineBg && t.DiffDelBg != "" {
 			padDel := rightWidth - len([]rune(delText)) - 4
 			if padDel < 0 {

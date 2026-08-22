@@ -25,7 +25,7 @@ func (t *SkillTool) Schema() map[string]interface{} {
 		"properties": map[string]interface{}{
 			"skill_name": map[string]interface{}{
 				"type":        "string",
-				"description": "The name or alias of the skill to activate (e.g. 'frontend-design', 'ck:plan', 'git', 'debug', 'ui-styling')",
+				"description": "The name or alias of the skill to activate (e.g. 'frontend-design', 'plan', 'git', 'debug', 'ui-styling')",
 			},
 		},
 		"required": []string{"skill_name"},

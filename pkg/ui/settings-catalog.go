@@ -33,7 +33,7 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "session_recap", Label: "Session recap", Type: SettingTypeBool, DefaultVal: "true"},
 		{Key: "rewind_code", Label: "Rewind code (checkpoints)", Type: SettingTypeBool, DefaultVal: "true"},
 		{Key: "dynamic_workflows", Label: "Dynamic workflows", Type: SettingTypeBool, DefaultVal: "true"},
-		{Key: "ultracode_trigger", Label: "Ultracode keyword trigger", Type: SettingTypeBool, DefaultVal: "true"},
+		{Key: "ultra_workflow_trigger", Label: "Ultra workflow keyword trigger", Type: SettingTypeBool, DefaultVal: "true"},
 		{Key: "workflow_size", Label: "Dynamic workflow size", Type: SettingTypeChoice, DefaultVal: "medium (default)", Choices: []string{"small", "medium (default)", "large", "full"}},
 		{Key: "artifacts", Label: "Artifacts", Type: SettingTypeBool, DefaultVal: "true"},
 		{Key: "verbose_output", Label: "Verbose output", Type: SettingTypeBool, DefaultVal: "false"},

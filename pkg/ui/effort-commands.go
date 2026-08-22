@@ -36,7 +36,7 @@ func HandleEffortCommand(parts []string, s *agent.Session) {
 	case "pro max", "promax", "pro", "6":
 		s.Config.Effort = "pro max"
 		s.Config.ThinkingBudget = 64000
-		s.Config.Workflow = "ultracode"
+		s.Config.Workflow = "ultra-workflow"
 	default:
 		if num, err := strconv.Atoi(arg); err == nil && num >= 0 {
 			s.Config.ThinkingBudget = num
@@ -60,7 +60,7 @@ func HandleEffortCommand(parts []string, s *agent.Session) {
 	_ = config.SaveConfig(s.Config)
 	RenderStickyHeader(s)
 
-	if s.Config.Effort == "pro max" || s.Config.Workflow == "ultra-workflow" || s.Config.Workflow == "ultracode" {
+	if s.Config.Effort == "pro max" || s.Config.Workflow == "ultra-workflow" {
 		triggerProMaxActivationAnimation()
 	} else {
 		fmt.Printf("Thinking Effort set to: %s (Workflow: %s)\n",
@@ -108,7 +108,7 @@ func HandleWorkflowCommand(parts []string, s *agent.Session) {
 	switch mode {
 	case "auto":
 		s.Config.Workflow = "auto"
-	case "ultra-workflow", "ultra", "ultracode", "pro":
+	case "ultra-workflow", "ultra", "pro":
 		s.Config.Workflow = "ultra-workflow"
 	case "plan-first":
 		s.Config.Workflow = "plan-first"

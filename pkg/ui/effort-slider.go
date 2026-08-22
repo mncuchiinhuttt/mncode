@@ -58,7 +58,7 @@ var effortOptions = []EffortOption{
 		ID:          "pro max",
 		Label:       "pro max",
 		Budget:      64000,
-		Workflow:    "ultracode",
+		Workflow:    "ultra-workflow",
 		Description: "Dynamic Workflows (Autonomous Scout -> Plan -> Code -> Test -> Review)",
 	},
 }
@@ -84,7 +84,7 @@ func OpenInteractiveEffortSlider(s *agent.Session) {
 
 	currentIdx := 2
 	for i, opt := range effortOptions {
-		if strings.EqualFold(s.Config.Effort, opt.ID) || (s.Config.Workflow == "ultracode" && opt.ID == "pro max") {
+		if strings.EqualFold(s.Config.Effort, opt.ID) || (s.Config.Workflow == "ultra-workflow" && opt.ID == "pro max") {
 			currentIdx = i
 			break
 		}
