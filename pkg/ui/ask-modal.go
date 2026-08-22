@@ -23,6 +23,7 @@ type AskQuestionParams struct {
 	Question      string
 	Options       []string
 	IsMultiSelect bool
+	IsBrainrot    bool
 }
 
 // PromptAgentQuestion opens an interactive multiple-choice & custom write-in modal
@@ -40,13 +41,25 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 		}
 	}
 
+	customLabel := "💬 Other / Type custom answer..."
+	chatLabel := "💭 Chat more about this / give extra context..."
+	title := "⚡ Need your action · Agent Decision"
+	footer := "  [↑/↓] Navigate · [1-9] Quick Select · [Enter] Choose · [Esc] Skip"
+
+	if params.IsBrainrot {
+		customLabel = "💬 Other / Cook custom rizz response..."
+		chatLabel = "💭 Yap more about this / drop extra lore..."
+		title = "🔥 Yo Sigma! Lock in & pick a vibe 🧠"
+		footer = "  [↑/↓] Navigate · [1-9] Quick Rizz · [Enter] Lock in · [Esc] Nah skip"
+	}
+
 	// Always append Write-in & Chat options
 	options = append(options, AskQuestionOption{
-		Text:     "💬 Other / Type custom answer...",
+		Text:     customLabel,
 		IsCustom: true,
 	})
 	options = append(options, AskQuestionOption{
-		Text:       "💭 Chat more about this / give extra context...",
+		Text:       chatLabel,
 		IsChatMore: true,
 	})
 
@@ -77,7 +90,6 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 		var lines []string
 		lines = append(lines, "")
 
-		title := "❓ Human-in-the-Loop · Question from Agent"
 		dashes := cardWidth - DisplayCellWidth(title) - 8
 		if dashes < 2 {
 			dashes = 2
@@ -121,7 +133,6 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 		}
 
 		bottomBorder := fmt.Sprintf("╰%s╯", strings.Repeat("─", cardWidth-2))
-		footer := "  [↑/↓] Navigate · [1-9] Quick Select · [Enter] Choose · [Esc] Skip"
 		lines = append(lines, bottomBorder, GrayText(footer))
 
 		if lastLinesCount > 0 {

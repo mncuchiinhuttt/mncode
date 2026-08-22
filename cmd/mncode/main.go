@@ -146,10 +146,12 @@ func main() {
 	toolRegistry.Register(&tools.AskTool{
 		AutoApprove: cfg.AutoApprove,
 		Prompter: func(question string, options []string, isMultiSelect bool) string {
+			isBrainrot := cfg.GetSetting("brainrot_mode", "false") == "true" || cfg.GetSetting("troll_mode", "false") == "true"
 			return ui.PromptAgentQuestion(ui.AskQuestionParams{
 				Question:      question,
 				Options:       options,
 				IsMultiSelect: isMultiSelect,
+				IsBrainrot:    isBrainrot,
 			})
 		},
 	})
