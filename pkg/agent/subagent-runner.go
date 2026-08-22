@@ -26,6 +26,9 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		systemPrompt = fmt.Sprintf("You are a specialized subagent '%s'. Your task is to investigate, analyze, or execute the assigned subtask thoroughly and return a concise, actionable report.", agentName)
 	}
 
+	worktreeBase := sr.ParentSession.Config.GetSetting("worktree_base", "current")
+	systemPrompt += fmt.Sprintf("\n[Subagent Isolation & Worktree Context: Base ref is '%s']\n", worktreeBase)
+
 	subID := fmt.Sprintf("%s-%d", agentName, time.Now().Unix()%10000)
 	if sr.ParentSession.Subagents != nil {
 		sr.ParentSession.Subagents.Register(subID, agentName, roleName, prompt)

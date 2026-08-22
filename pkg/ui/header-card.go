@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"golang.org/x/term"
 )
@@ -89,8 +90,20 @@ func PrintHeaderCard(s *agent.Session) {
 		printBoxLine(statsLine, cardWidth)
 	}
 
-	printBoxLine("", cardWidth)
-	printBoxLine(GrayText("Type '/' for instant slash menu autocomplete, or enter your message."), cardWidth)
+	if s.Config.GetSetting("show_tips", "true") == "true" {
+		tips := []string{
+			"Use /btw <question> to ask quick side questions without polluting task history.",
+			"Type /status (dismiss with Esc) to inspect live session metadata and tokens.",
+			"Type /model to switch between ox-alpha (1M context reasoning), Claude 3.7, and Gemini.",
+			"Type /workflow ultra-workflow for deep autonomous multi-agent orchestration.",
+			"Type /effort pro-max to allocate up to 64,000 thinking tokens for complex tasks.",
+			"Type /mcp to connect and inspect Model Context Protocol external servers.",
+		}
+		selectedTip := tips[time.Now().Unix()%int64(len(tips))]
+		printBoxLine(fmt.Sprintf("%s %s", BoldYellow("💡 Tip:"), GrayText(selectedTip)), cardWidth)
+	} else {
+		printBoxLine(GrayText("Type '/' for instant slash menu autocomplete, or enter your message."), cardWidth)
+	}
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()
 }

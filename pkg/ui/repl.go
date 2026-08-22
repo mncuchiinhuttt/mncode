@@ -18,8 +18,10 @@ func RunREPL(s *agent.Session) {
 
 	printBanner(s)
 
-	stopClipboard := StartClipboardWatcher()
-	defer stopClipboard()
+	if s.Config.GetSetting("copy_on_select", "true") == "true" {
+		stopClipboard := StartClipboardWatcher()
+		defer stopClipboard()
+	}
 
 	StartBackgroundVersionCheck()
 

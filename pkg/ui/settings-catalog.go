@@ -36,6 +36,11 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "language", Label: "Language / Ngôn ngữ", Type: SettingTypeChoice, DefaultVal: "Default (English)", Choices: []string{"Default (English)", "Vietnamese", "Japanese", "Chinese", "Spanish", "French", "German"}, Description: "Natural language instructions for system prompt and responses"},
 		{Key: "brainrot_mode", Label: "Brainrot Mode (Gen Z / Sigma)", Type: SettingTypeBool, DefaultVal: "false", Description: "Toggle Gen Z 10x developer persona and funny meme commentary"},
 		{Key: "show_branch_name", Label: "Show Git Branch in Prompt", Type: SettingTypeBool, DefaultVal: "true", Description: "Display current git branch next to prompt input"},
+		{Key: "show_tips", Label: "Show Productivity Tips", Type: SettingTypeBool, DefaultVal: "true", Description: "Display rotating developer tips in header and completion bars"},
+		{Key: "copy_on_select", Label: "Copy on Mouse Select", Type: SettingTypeBool, DefaultVal: "true", Description: "Auto-copy selected terminal text to OS clipboard with toast notification"},
+		{Key: "artifacts", Label: "Structured Artifacts", Type: SettingTypeBool, DefaultVal: "true", Description: "Prompt AI to generate structured markdown artifacts for plans and docs"},
+		{Key: "auto_mode_plan", Label: "Auto-Execute Plan Phase", Type: SettingTypeBool, DefaultVal: "true", Description: "Automatically proceed to implementation after planning completes"},
+		{Key: "worktree_base", Label: "Worktree Base Ref", Type: SettingTypeChoice, DefaultVal: "current", Choices: []string{"current", "main", "fresh"}, Description: "Git base reference used for subagent workspace branch isolation"},
 		{Key: "verbose_output", Label: "Verbose Debug Logging", Type: SettingTypeBool, DefaultVal: "false", Description: "Print raw LLM API payloads and tool execution debug traces"},
 	}
 }

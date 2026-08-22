@@ -103,6 +103,13 @@ func (s *Session) BuildSystemPrompt() string {
 		sb.WriteString("</plan_mode>\n\n")
 	}
 
+	// Inject Artifacts guidance if enabled
+	if s.Config.GetSetting("artifacts", "true") == "true" {
+		sb.WriteString("<artifacts>\n")
+		sb.WriteString("For substantial documents, system architectures, multi-phase technical plans, and persistent checklists, save them as markdown artifacts under ./plans/ or the project's documentation folder.\n")
+		sb.WriteString("</artifacts>\n\n")
+	}
+
 	// Core Engineering Guidelines
 	sb.WriteString("<guidelines>\n")
 	sb.WriteString("- Keep individual code files under 200 lines for optimal context management.\n")
