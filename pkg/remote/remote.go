@@ -3,11 +3,13 @@ package remote
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -335,10 +337,23 @@ func (rm *RemoteManager) pollIncoming() {
 
 		switch ev.EventType {
 		case "user_steer":
-			if prompt, ok := ev.Payload["prompt"].(string); ok && prompt != "" {
-				if rm.OnSteer != nil {
-					rm.OnSteer(prompt)
+			prompt, _ := ev.Payload["prompt"].(string)
+			imgBase64, _ := ev.Payload["image"].(string)
+
+			if imgBase64 != "" {
+				savedPath, err := saveRemoteImage(imgBase64)
+				if err == nil && savedPath != "" {
+					if prompt == "" {
+						prompt = fmt.Sprintf("Please inspect and analyze this attached image: [Image: %s]", savedPath)
+					} else {
+						prompt = fmt.Sprintf("%s\n\n[Image: %s]", prompt, savedPath)
+					}
+					fmt.Printf("\r\n\033[1;38;5;212m📸 [Mobile Image Received]\033[0m Saved to %s\r\n", savedPath)
 				}
+			}
+
+			if prompt != "" && rm.OnSteer != nil {
+				rm.OnSteer(prompt)
 			}
 		case "user_action":
 			if answer, ok := ev.Payload["answer"].(string); ok && answer != "" {
@@ -352,6 +367,38 @@ func (rm *RemoteManager) pollIncoming() {
 			}
 		}
 	}
+}
+
+func saveRemoteImage(imgBase64 string) (string, error) {
+	idx := strings.Index(imgBase64, ",")
+	raw := imgBase64
+	ext := ".jpg"
+	if idx != -1 {
+		header := strings.ToLower(imgBase64[:idx])
+		if strings.Contains(header, "png") {
+			ext = ".png"
+		} else if strings.Contains(header, "webp") {
+			ext = ".webp"
+		} else if strings.Contains(header, "gif") {
+			ext = ".gif"
+		}
+		raw = imgBase64[idx+1:]
+	}
+
+	data, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return "", err
+	}
+
+	dir := filepath.Join(".", ".mncode", "remote_images")
+	_ = os.MkdirAll(dir, 0755)
+
+	filename := fmt.Sprintf("remote_%d%s", time.Now().UnixNano()/1e6, ext)
+	targetPath := filepath.Join(dir, filename)
+	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+		return "", err
+	}
+	return targetPath, nil
 }
 
 // Close stops the remote manager and cleans up
