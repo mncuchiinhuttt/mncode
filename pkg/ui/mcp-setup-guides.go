@@ -42,7 +42,7 @@ func setupNotionMCP(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup Notion MCP Server ] ───────────────────────────────────────────────╮"))
 	fmt.Println("│ 📋 Step-by-Step Setup Instructions:                                          │")
-	fmt.Println("│   1. Open https://www.notion.so/profile/integrations                         │")
+	fmt.Println("│   1. Open https://app.notion.com/developers/connections                     │")
 	fmt.Println("│   2. Click '+ New integration', name it 'mncode', and select your workspace  │")
 	fmt.Println("│   3. Copy the 'Internal Integration Secret' (starts with secret_...)         │")
 	fmt.Println("│   4. In Notion, open pages/databases -> click '...' -> Connect to -> mncode │")
