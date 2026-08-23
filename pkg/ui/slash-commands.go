@@ -201,6 +201,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleChangelogCommand(parts, s)
 	case "/resume", "/history":
 		HandleResumeCommand(parts, s)
+	case "/remote", "/companion", "/mobile":
+		HandleRemoteCommand(parts, s)
 	default:
 		fmt.Printf("Unknown command '%s'.\n", cmd)
 		ShowSlashPalette()

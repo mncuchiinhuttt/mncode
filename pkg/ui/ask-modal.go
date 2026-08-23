@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"mncode/pkg/remote"
+
 	"golang.org/x/term"
 )
 
@@ -28,6 +30,16 @@ type AskQuestionParams struct {
 
 // PromptAgentQuestion opens an interactive multiple-choice & custom write-in modal
 func PromptAgentQuestion(params AskQuestionParams) string {
+	if rm := remote.GetGlobalRemote(); rm != nil && rm.IsActive {
+		rm.PushQuestion(remote.QuestionPayload{
+			Question:      params.Question,
+			Options:       params.Options,
+			IsMultiSelect: params.IsMultiSelect,
+			IsBrainrot:    params.IsBrainrot,
+		})
+		defer rm.PushQuestionResolved()
+	}
+
 	question := strings.TrimSpace(params.Question)
 	if question == "" {
 		question = "The agent has a question for you:"

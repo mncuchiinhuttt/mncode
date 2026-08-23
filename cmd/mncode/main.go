@@ -35,6 +35,7 @@ func main() {
 		upgradeFlag      = flag.Bool("upgrade", false, "Update mncode to latest release")
 		updateFlag       = flag.Bool("update", false, "Update mncode to latest release")
 		scanFlag         = flag.Bool("scan", false, "Deep scan and print codebase architecture map")
+		remoteFlag       = flag.Bool("remote", false, "Launch web & mobile remote companion bridge")
 	)
 	flag.Parse()
 
@@ -235,6 +236,10 @@ func main() {
 	// Only for the interactive REPL — one-shot `-e` invocations (which may
 	// themselves be a scripted `/sync`) shouldn't race a background push.
 	go ui.MaybeAutoSyncDaily(session)
+
+	if *remoteFlag {
+		ui.HandleRemoteCommand(nil, session)
+	}
 
 	ui.RunREPL(session)
 }

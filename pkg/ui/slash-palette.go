@@ -54,8 +54,9 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 39, Command: "/troll", Description: "Toggle harmless fake scare prank commands on/off"},
 	{Number: 40, Command: "/feedback", Description: "Send feedback about mncode to the team"},
 	{Number: 41, Command: "/clear", Description: "Clear terminal screen and conversation history"},
-	{Number: 42, Command: "/help", Description: "Show available slash commands"},
-	{Number: 43, Command: "/exit", Description: "Exit mncode assistant"},
+	{Number: 42, Command: "/remote", Description: "Launch web & mobile remote companion bridge with QR code"},
+	{Number: 43, Command: "/help", Description: "Show available slash commands"},
+	{Number: 44, Command: "/exit", Description: "Exit mncode assistant"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis

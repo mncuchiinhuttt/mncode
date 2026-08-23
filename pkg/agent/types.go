@@ -8,6 +8,7 @@ import (
 	"mncode/pkg/config"
 	"mncode/pkg/mcp"
 	"mncode/pkg/provider"
+	"mncode/pkg/remote"
 	"mncode/pkg/skills"
 	"mncode/pkg/tools"
 )
@@ -45,6 +46,7 @@ type Session struct {
 	CodebaseMap  *CodebaseSummary
 	MCP          *mcp.Manager
 	UI           UIEventListener
+	Remote       *remote.RemoteManager
 
 	QueueMu      sync.Mutex
 	SteerQueue   []string

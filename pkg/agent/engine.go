@@ -54,12 +54,24 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			switch ev.Type {
 			case provider.EventToken:
 				s.UI.OnToken(ev.Text)
+				if s.Remote != nil && s.Remote.IsActive {
+					s.Remote.PushTerminalOutput(ev.Text)
+				}
 			case provider.EventThinking:
 				s.UI.OnThinking(ev.Thinking)
+				if s.Remote != nil && s.Remote.IsActive {
+					s.Remote.PushTerminalOutput(ev.Thinking)
+				}
 			case provider.EventToolCallStart:
 				s.UI.OnToolCallStart(ev.ToolCall)
+				if s.Remote != nil && s.Remote.IsActive && ev.ToolCall != nil {
+					s.Remote.PushTerminalOutput(fmt.Sprintf("\n⚡ [Tool Executing] %s\n", ev.ToolCall.Name))
+				}
 			case provider.EventError:
 				s.UI.OnError(ev.Error)
+				if s.Remote != nil && s.Remote.IsActive && ev.Error != nil {
+					s.Remote.PushTerminalOutput(fmt.Sprintf("\n🛑 [Error] %v\n", ev.Error))
+				}
 			}
 			return nil
 		})
