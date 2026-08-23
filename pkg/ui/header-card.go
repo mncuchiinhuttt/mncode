@@ -4,30 +4,17 @@ import (
 	"fmt"
 	"mncode/pkg/agent"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
 	"golang.org/x/term"
 )
 
-var ansiStripRe = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
-
-func visualLen(s string) int {
-	clean := ansiStripRe.ReplaceAllString(s, "")
-	return len([]rune(clean))
-}
-
 func printBoxLine(content string, cardWidth int) {
-	vLen := visualLen(content)
-	pad := cardWidth - 4 - vLen
-	if pad < 0 {
-		pad = 0
-	}
-	fmt.Printf("%s %s%s %s\n",
+	inner := PadToCellWidth(content, cardWidth-4)
+	fmt.Printf("%s %s %s\n",
 		GrayText("│"),
-		content,
-		strings.Repeat(" ", pad),
+		inner,
 		GrayText("│"))
 }
 
@@ -50,14 +37,16 @@ func PrintHeaderCard(s *agent.Session) {
 	branch := GetGitBranchOrFolder(s.WorkspaceDir)
 
 	tag := "\033[1;38;5;218mmncode\033[0m \033[1;38;5;212mPRO\033[0m \033[1;38;5;219mMAX\033[0m"
-	tagLen := 14
 	if !isProMax {
 		tag = BoldCyan("mncode")
-		tagLen = 6
 	}
+	tagWidth := DisplayCellWidth(tag)
 
 	titleRight := fmt.Sprintf("%s · %s", modelName, branch)
-	dashCount := cardWidth - 10 - tagLen - len([]rune(titleRight))
+	titleRightWidth := DisplayCellWidth(titleRight)
+
+	// Top border structure: "╭── " (4) + tag + " " (1) + dashes + " " (1) + titleRight + " ──╮" (4) -> total fixed overhead = 10
+	dashCount := cardWidth - 10 - tagWidth - titleRightWidth
 	if dashCount < 2 {
 		dashCount = 2
 	}

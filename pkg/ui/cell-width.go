@@ -65,6 +65,10 @@ func DisplayCellWidth(str string) int {
 	return w
 }
 
+func visualLen(s string) int {
+	return DisplayCellWidth(s)
+}
+
 // PadToCellWidth pads or trims a string with spaces until it exactly equals targetWidth columns
 func PadToCellWidth(str string, targetWidth int) string {
 	curW := DisplayCellWidth(str)
