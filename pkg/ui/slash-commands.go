@@ -42,6 +42,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/model"
 	} else if strings.HasPrefix("/remote", cmd) && len(cmd) >= 3 {
 		cmd = "/remote"
+	} else if strings.HasPrefix("/benchmark", cmd) && len(cmd) >= 3 {
+		cmd = "/benchmark"
+	} else if strings.HasPrefix("/security", cmd) && len(cmd) >= 3 {
+		cmd = "/security"
+	} else if strings.HasPrefix("/seed", cmd) && len(cmd) >= 3 {
+		cmd = "/seed"
 	}
 
 	switch cmd {
@@ -205,6 +211,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleResumeCommand(parts, s)
 	case "/remote", "/companion", "/mobile":
 		HandleRemoteCommand(parts, s)
+	case "/benchmark", "/bench", "/perf":
+		HandleBenchmarkCommand(parts, s)
+	case "/security", "/audit", "/vuln":
+		HandleSecurityCommand(parts, s)
+	case "/seed", "/mock", "/mockdata":
+		HandleSeedCommand(parts, s)
 	default:
 		fmt.Printf("Unknown command '%s'.\n", cmd)
 		ShowSlashPalette()
