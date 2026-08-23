@@ -63,82 +63,79 @@ func HandleRemoteCommand(parts []string, s *agent.Session) {
 func displayRemoteCard(sess *remote.RemoteSession) {
 	qrCode := remote.GenerateTerminalQRCode(sess.PairingURL)
 
-	termWidth := 68
+	termWidth := 70
 	urlWidth := DisplayCellWidth(sess.PairingURL) + 16
-	if termWidth < urlWidth+4 {
-		termWidth = urlWidth + 4
+	if termWidth < urlWidth+6 {
+		termWidth = urlWidth + 6
 	}
 
-	borderLine := strings.Repeat("─", termWidth-2)
 	headerTitle := " 📱 mncode Remote Companion "
-	titleDisplayWidth := DisplayCellWidth(headerTitle)
-	headerDashes := termWidth - titleDisplayWidth - 4
+	titleW := DisplayCellWidth(headerTitle)
+	headerDashes := termWidth - titleW - 6
 	if headerDashes < 2 {
 		headerDashes = 2
 	}
 
 	fmt.Println()
-	fmt.Printf("%s%s%s%s%s\n", BoldCyan("╭──["), BoldPastelPink(headerTitle), BoldCyan("]"), BoldCyan(strings.Repeat("─", headerDashes)), BoldCyan("╮"))
+	// 1. Top border
+	fmt.Printf("%s%s%s%s%s\n",
+		BoldCyan("╭──["),
+		BoldPastelPink(headerTitle),
+		BoldCyan("]"),
+		BoldCyan(strings.Repeat("─", headerDashes)),
+		BoldCyan("╮"),
+	)
 
-	printBoxLine := func(content string, plainText string) {
-		visLen := DisplayCellWidth(plainText)
-		pad := termWidth - visLen - 4
-		if pad < 0 {
-			pad = 0
-		}
-		fmt.Printf("%s  %s%s  %s\n", BoldCyan("│"), content, strings.Repeat(" ", pad), BoldCyan("│"))
+	// Helper to print a line with exact padding
+	printBoxLine := func(content string) {
+		padded := PadToCellWidth(content, termWidth-6)
+		fmt.Printf("%s  %s  %s\n", BoldCyan("│"), padded, BoldCyan("│"))
 	}
 
-	printBoxLine("", "")
-	printBoxLine(
-		fmt.Sprintf("Session ID:   %s", BoldPastelPink(sess.SessionID)),
-		fmt.Sprintf("Session ID:   %s", sess.SessionID),
-	)
-	printBoxLine(
-		fmt.Sprintf("Status:       %s", BoldGreen("🟢 Live Connected & Ready for Mobile")),
-		"Status:       🟢 Live Connected & Ready for Mobile",
-	)
-	printBoxLine(
-		fmt.Sprintf("Companion:    %s", Bold(sess.PairingURL)),
-		fmt.Sprintf("Companion:    %s", sess.PairingURL),
-	)
-	printBoxLine("", "")
+	printBoxLine("")
+	printBoxLine(fmt.Sprintf("Session ID:   %s", BoldPastelPink(sess.SessionID)))
+	printBoxLine(fmt.Sprintf("Status:       %s", BoldGreen("🟢 Live Connected & Ready for Mobile")))
+	printBoxLine(fmt.Sprintf("Companion:    %s", Bold(sess.PairingURL)))
+	printBoxLine("")
 
-	fmt.Printf("%s%s%s\n", BoldCyan("├"), BoldCyan(borderLine), BoldCyan("┤"))
-	printBoxLine("", "")
-	printBoxLine(
-		"Scan QR with phone camera to steer & answer questions:",
-		"Scan QR with phone camera to steer & answer questions:",
+	// 2. Middle divider
+	fmt.Printf("%s%s%s\n",
+		BoldCyan("├"),
+		BoldCyan(strings.Repeat("─", termWidth-2)),
+		BoldCyan("┤"),
 	)
-	printBoxLine("", "")
+
+	printBoxLine("")
+	printBoxLine("Scan QR with phone camera to steer & answer questions:")
+	printBoxLine("")
 
 	if qrCode != "" {
 		lines := strings.Split(qrCode, "\n")
 		for _, l := range lines {
 			trimmed := strings.TrimRight(l, " ")
 			if trimmed != "" {
-				qrLen := DisplayCellWidth(trimmed)
-				leftPad := (termWidth - 4 - qrLen) / 2
+				qrW := DisplayCellWidth(trimmed)
+				leftPad := (termWidth - 6 - qrW) / 2
 				if leftPad < 0 {
 					leftPad = 0
 				}
-				rightPad := termWidth - 4 - qrLen - leftPad
-				if rightPad < 0 {
-					rightPad = 0
-				}
-				fmt.Printf("%s  %s%s%s  %s\n", BoldCyan("│"), strings.Repeat(" ", leftPad), trimmed, strings.Repeat(" ", rightPad), BoldCyan("│"))
+				centeredQR := strings.Repeat(" ", leftPad) + trimmed
+				printBoxLine(centeredQR)
 			}
 		}
 	} else {
-		printBoxLine(fmt.Sprintf("Open: %s", sess.PairingURL), fmt.Sprintf("Open: %s", sess.PairingURL))
+		printBoxLine(fmt.Sprintf("Open: %s", sess.PairingURL))
 	}
 
-	printBoxLine("", "")
-	printBoxLine(
-		"💡 Tip: Type steer directives or tap choices on mobile screen.",
-		"💡 Tip: Type steer directives or tap choices on mobile screen.",
+	printBoxLine("")
+	printBoxLine("💡 Tip: Type steer directives or tap choices on mobile screen.")
+	printBoxLine("")
+
+	// 3. Bottom border
+	fmt.Printf("%s%s%s\n",
+		BoldCyan("╰"),
+		BoldCyan(strings.Repeat("─", termWidth-2)),
+		BoldCyan("╯"),
 	)
-	printBoxLine("", "")
-	fmt.Printf("%s%s%s\n", BoldCyan("╰"), BoldCyan(borderLine), BoldCyan("╯"))
 	fmt.Println()
 }
