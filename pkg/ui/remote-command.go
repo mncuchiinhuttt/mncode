@@ -12,9 +12,9 @@ import (
 
 // HandleRemoteCommand starts or displays the active remote companion session
 func HandleRemoteCommand(parts []string, s *agent.Session) {
-	serverURL := s.Config.GetSetting("remote_server_url", "https://mncode-web.vercel.app")
+	serverURL := s.Config.GetSetting("remote_server_url", "")
 	if serverURL == "" {
-		serverURL = "https://mncode-web.vercel.app"
+		serverURL = s.Config.GetWebBaseURL()
 	}
 
 	apiKey := s.Config.APIKey

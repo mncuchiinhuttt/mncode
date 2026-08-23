@@ -75,7 +75,7 @@ func NewRemoteManager(serverURL, apiKey string) *RemoteManager {
 		if env := os.Getenv("MNCODE_WEB_URL"); env != "" {
 			serverURL = env
 		} else {
-			serverURL = "https://mncode-web.vercel.app"
+			serverURL = "https://mncode.mncuchiinhuttt.dev"
 		}
 	}
 	serverURL = strings.TrimRight(serverURL, "/")

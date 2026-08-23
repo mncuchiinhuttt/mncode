@@ -81,7 +81,7 @@ func (c *Config) GetWebBaseURL() string {
 	if envURL := os.Getenv("MNCODE_WEB_URL"); envURL != "" {
 		return strings.TrimRight(envURL, "/")
 	}
-	return "http://localhost:3000"
+	return "https://mncode.mncuchiinhuttt.dev"
 }
 
 func (c *Config) GetTelemetryURL() string {
