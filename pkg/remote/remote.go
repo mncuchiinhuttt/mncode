@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -71,7 +72,11 @@ func SetGlobalRemote(rm *RemoteManager) {
 // NewRemoteManager initializes a new RemoteManager
 func NewRemoteManager(serverURL, apiKey string) *RemoteManager {
 	if serverURL == "" {
-		serverURL = "https://mncode.fun"
+		if env := os.Getenv("MNCODE_WEB_URL"); env != "" {
+			serverURL = env
+		} else {
+			serverURL = "https://mncode-web.vercel.app"
+		}
 	}
 	serverURL = strings.TrimRight(serverURL, "/")
 
