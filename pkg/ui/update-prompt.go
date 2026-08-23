@@ -44,10 +44,11 @@ func CheckAndPromptStartupUpdate(s *agent.Session) {
 		}
 
 		var sb strings.Builder
+		line1 := fmt.Sprintf(" A new version of mncode is available: %s ➔ %s", GrayText(config.CurrentVersion), BoldGreen(latestTag))
+		line2 := " Would you like to update now?"
 		sb.WriteString(fmt.Sprintf("%s\r\n", BoldPastelPink("╭── [Update Available] ────────────────────────────────────────────────────────╮")))
-		sb.WriteString(fmt.Sprintf("│ A new version of mncode is available: %s ➔ %s%s│\r\n",
-			GrayText(config.CurrentVersion), BoldGreen(latestTag), strings.Repeat(" ", 22)))
-		sb.WriteString(fmt.Sprintf("│ Would you like to update now?%s│\r\n", strings.Repeat(" ", 47)))
+		sb.WriteString(fmt.Sprintf("│%s│\r\n", PadToCellWidth(line1, 78)))
+		sb.WriteString(fmt.Sprintf("│%s│\r\n", PadToCellWidth(line2, 78)))
 		sb.WriteString(fmt.Sprintf("%s\r\n\r\n", BoldPastelPink("╰──────────────────────────────────────────────────────────────────────────────╯")))
 
 		for i, opt := range options {
