@@ -66,6 +66,7 @@ var slashOptions = []SlashOption{
 	{Command: "/recap", Description: "Synthesize structured session recap & files touched", Category: "Session"},
 	{Command: "/update", Description: "Check GitHub Releases and self-update mncode to latest version", Category: "General"},
 	{Command: "/version", Description: "Show current mncode version and platform architecture", Category: "Help"},
+	{Command: "/remote", Description: "Launch web & mobile remote companion bridge with QR code", Category: "General"},
 	{Command: "/help", Description: "Show help and command palette", Category: "Help"},
 	{Command: "/exit", Description: "Exit mncode assistant", Category: "Session"},
 }

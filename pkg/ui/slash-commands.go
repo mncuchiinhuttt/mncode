@@ -40,6 +40,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/account"
 	} else if strings.HasPrefix("/model", cmd) && len(cmd) >= 3 {
 		cmd = "/model"
+	} else if strings.HasPrefix("/remote", cmd) && len(cmd) >= 3 {
+		cmd = "/remote"
 	}
 
 	switch cmd {
