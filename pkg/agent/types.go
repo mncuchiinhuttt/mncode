@@ -51,6 +51,21 @@ type Session struct {
 	QueueMu      sync.Mutex
 	SteerQueue   []string
 	MessageQueue []string
+	IsProcessing bool
+}
+
+// IsExecuting reports whether the agent loop is actively processing a turn
+func (s *Session) IsExecuting() bool {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	return s.IsProcessing
+}
+
+// SetExecuting updates the active processing flag
+func (s *Session) SetExecuting(val bool) {
+	s.QueueMu.Lock()
+	defer s.QueueMu.Unlock()
+	s.IsProcessing = val
 }
 
 // EnqueueSteer adds high-priority steering guidance into the active agent loop

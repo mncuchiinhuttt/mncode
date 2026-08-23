@@ -7,10 +7,55 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"unicode/utf8"
 
 	"golang.org/x/term"
 )
+
+type stdinReadChunk struct {
+	data []byte
+	err  error
+}
+
+var (
+	remoteInputInjectChan = make(chan string, 16)
+	stdinReaderChan       = make(chan stdinReadChunk, 128)
+	stdinReaderStarted    = false
+	stdinReaderMu         sync.Mutex
+)
+
+func initStdinReader() {
+	stdinReaderMu.Lock()
+	defer stdinReaderMu.Unlock()
+	if stdinReaderStarted {
+		return
+	}
+	stdinReaderStarted = true
+	go func() {
+		for {
+			buf := make([]byte, 4096)
+			n, err := os.Stdin.Read(buf)
+			if n > 0 {
+				chunk := make([]byte, n)
+				copy(chunk, buf[:n])
+				stdinReaderChan <- stdinReadChunk{data: chunk}
+			}
+			if err != nil {
+				stdinReaderChan <- stdinReadChunk{err: err}
+				return
+			}
+		}
+	}()
+}
+
+// InjectRemotePrompt injects a prompt sent from the mobile companion directly into the REPL prompt loop
+func InjectRemotePrompt(prompt string) {
+	select {
+	case remoteInputInjectChan <- prompt:
+	default:
+	}
+}
 
 // ReadInlinePrompt reads user prompt with chat frame, native scrolling & macOS editing shortcuts
 func ReadInlinePrompt(s *agent.Session) (string, bool) {
@@ -63,17 +108,36 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 	stopIdleWatcher := StartBrainrotIdleWatcher(s, func() { render() })
 	defer stopIdleWatcher()
 
+	initStdinReader()
 	render()
 
-	buf := make([]byte, 4096)
 	for {
-		n, err := os.Stdin.Read(buf)
-		if err != nil || n == 0 {
-			break
+		var buf []byte
+		var n int
+		var rawStr string
+
+		select {
+		case remotePrompt := <-remoteInputInjectChan:
+			trimmed := strings.TrimSpace(remotePrompt)
+			if trimmed == "" {
+				continue
+			}
+			if renderedBefore {
+				fmt.Print("\033[1A\r\033[J")
+			}
+			fmt.Printf("\r\033[K%s %s\r\n", BoldCyan("❯❯ [📱 Remote]:"), Bold(trimmed))
+			return trimmed, true
+
+		case chunk := <-stdinReaderChan:
+			if chunk.err != nil || len(chunk.data) == 0 {
+				return "", false
+			}
+			buf = chunk.data
+			n = len(buf)
+			rawStr = string(buf)
 		}
 
 		ResetBrainrotActivity(func() { render() })
-		rawStr := string(buf[:n])
 
 		// 1. Image Paste via Ctrl+V
 		if n == 1 && buf[0] == 22 {

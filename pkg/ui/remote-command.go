@@ -37,8 +37,12 @@ func HandleRemoteCommand(parts []string, s *agent.Session) {
 
 		// Setup event handlers
 		rm.OnSteer = func(prompt string) {
-			s.EnqueueSteer(prompt)
-			fmt.Printf("\n%s %s\n", BoldYellow("⚡ [Remote Steer Received]:"), prompt)
+			if s.IsExecuting() {
+				s.EnqueueSteer(prompt)
+				fmt.Printf("\n%s %s\n", BoldYellow("⚡ [Remote Steer Received]:"), prompt)
+			} else {
+				InjectRemotePrompt(prompt)
+			}
 		}
 
 		rm.OnCancel = func() {

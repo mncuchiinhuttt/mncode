@@ -11,6 +11,9 @@ import (
 
 // ProcessUserInput executes an agent conversation turn with full tool-calling ReAct loop
 func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error {
+	s.SetExecuting(true)
+	defer s.SetExecuting(false)
+
 	if err := s.EnsureProvider(); err != nil {
 		return err
 	}
