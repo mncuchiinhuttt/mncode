@@ -136,10 +136,18 @@ func (rm *RemoteManager) InitSession(ctx context.Context, workspaceName string) 
 		return nil, fmt.Errorf("failed to create session: %s", res.Error)
 	}
 
+	cleanURL := res.PairingURL
+	if strings.Contains(cleanURL, "?") {
+		cleanURL = strings.Split(cleanURL, "?")[0]
+	}
+	if cleanURL == "" {
+		cleanURL = fmt.Sprintf("%s/remote/%s", rm.ServerURL, res.SessionID)
+	}
+
 	session := &RemoteSession{
 		SessionID:   res.SessionID,
 		SecretToken: res.SecretToken,
-		PairingURL:  res.PairingURL,
+		PairingURL:  cleanURL,
 	}
 
 	rm.Mu.Lock()

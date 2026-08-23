@@ -59,29 +59,82 @@ func HandleRemoteCommand(parts []string, s *agent.Session) {
 func displayRemoteCard(sess *remote.RemoteSession) {
 	qrCode := remote.GenerateTerminalQRCode(sess.PairingURL)
 
+	termWidth := 68
+	urlWidth := DisplayCellWidth(sess.PairingURL) + 16
+	if termWidth < urlWidth+4 {
+		termWidth = urlWidth + 4
+	}
+
+	borderLine := strings.Repeat("─", termWidth-2)
+	headerTitle := " 📱 mncode Remote Companion "
+	titleDisplayWidth := DisplayCellWidth(headerTitle)
+	headerDashes := termWidth - titleDisplayWidth - 4
+	if headerDashes < 2 {
+		headerDashes = 2
+	}
+
 	fmt.Println()
-	fmt.Println(BoldCyan("╭── [ 📱 mncode Remote Companion Active ] ─────────────────────────╮"))
-	fmt.Printf("│  Session ID:   %s\n", BoldPastelPink(sess.SessionID))
-	fmt.Printf("│  Status:       %s\n", BoldGreen("🟢 Live Connected & Ready for Mobile"))
-	fmt.Printf("│  Remote URL:   %s\n", Bold(sess.PairingURL))
-	fmt.Println("├──────────────────────────────────────────────────────────────────┤")
-	fmt.Println("│  Scan QR Code with your phone camera to control CLI remotely:    │")
-	fmt.Println("│                                                                  │")
+	fmt.Printf("%s%s%s%s%s\n", BoldCyan("╭──["), BoldPastelPink(headerTitle), BoldCyan("]"), BoldCyan(strings.Repeat("─", headerDashes)), BoldCyan("╮"))
+
+	printBoxLine := func(content string, plainText string) {
+		visLen := DisplayCellWidth(plainText)
+		pad := termWidth - visLen - 4
+		if pad < 0 {
+			pad = 0
+		}
+		fmt.Printf("%s  %s%s  %s\n", BoldCyan("│"), content, strings.Repeat(" ", pad), BoldCyan("│"))
+	}
+
+	printBoxLine("", "")
+	printBoxLine(
+		fmt.Sprintf("Session ID:   %s", BoldPastelPink(sess.SessionID)),
+		fmt.Sprintf("Session ID:   %s", sess.SessionID),
+	)
+	printBoxLine(
+		fmt.Sprintf("Status:       %s", BoldGreen("🟢 Live Connected & Ready for Mobile")),
+		"Status:       🟢 Live Connected & Ready for Mobile",
+	)
+	printBoxLine(
+		fmt.Sprintf("Companion:    %s", Bold(sess.PairingURL)),
+		fmt.Sprintf("Companion:    %s", sess.PairingURL),
+	)
+	printBoxLine("", "")
+
+	fmt.Printf("%s%s%s\n", BoldCyan("├"), BoldCyan(borderLine), BoldCyan("┤"))
+	printBoxLine("", "")
+	printBoxLine(
+		"Scan QR with phone camera to steer & answer questions:",
+		"Scan QR with phone camera to steer & answer questions:",
+	)
+	printBoxLine("", "")
 
 	if qrCode != "" {
 		lines := strings.Split(qrCode, "\n")
 		for _, l := range lines {
-			if strings.TrimSpace(l) != "" {
-				fmt.Printf("│  %s\n", l)
+			trimmed := strings.TrimRight(l, " ")
+			if trimmed != "" {
+				qrLen := DisplayCellWidth(trimmed)
+				leftPad := (termWidth - 4 - qrLen) / 2
+				if leftPad < 0 {
+					leftPad = 0
+				}
+				rightPad := termWidth - 4 - qrLen - leftPad
+				if rightPad < 0 {
+					rightPad = 0
+				}
+				fmt.Printf("%s  %s%s%s  %s\n", BoldCyan("│"), strings.Repeat(" ", leftPad), trimmed, strings.Repeat(" ", rightPad), BoldCyan("│"))
 			}
 		}
 	} else {
-		fmt.Printf("│  Open: %s\n", sess.PairingURL)
+		printBoxLine(fmt.Sprintf("Open: %s", sess.PairingURL), fmt.Sprintf("Open: %s", sess.PairingURL))
 	}
 
-	fmt.Println("│                                                                  │")
-	fmt.Println("│  💡 Tip: You can type live steer directives or answer questions  │")
-	fmt.Println("│         from your phone while lying in bed or away from desk!     │")
-	fmt.Println(BoldCyan("╰──────────────────────────────────────────────────────────────────╯"))
+	printBoxLine("", "")
+	printBoxLine(
+		"💡 Tip: Type steer directives or tap choices on mobile screen.",
+		"💡 Tip: Type steer directives or tap choices on mobile screen.",
+	)
+	printBoxLine("", "")
+	fmt.Printf("%s%s%s\n", BoldCyan("╰"), BoldCyan(borderLine), BoldCyan("╯"))
 	fmt.Println()
 }
