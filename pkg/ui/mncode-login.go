@@ -4,11 +4,13 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"html"
 	"net"
 	"net/http"
 	"net/url"
 	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"mncode/pkg/agent"
@@ -142,20 +144,105 @@ func openBrowser(targetURL string) error {
 	return cmd.Start()
 }
 
+// callbackPage renders the local-server landing the browser lands on after the
+// web bridge hands back the sync key. Styled after the mncode-web RMIT
+// aesthetic (dark void, pink/cyan HUD, terminal log) so the handoff feels like
+// one continuous product.
 func callbackPage(ok bool, errMsg string) string {
-	title, body := "You're logged in!", "You can close this tab and return to your terminal."
-	color := "#ec4899"
-	if !ok {
-		title, body, color = "Login failed", errMsg, "#e11d48"
-	}
-	return fmt.Sprintf(`<!doctype html>
-<html><head><meta charset="utf-8"><title>mncode</title>
+	page := `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mncode — CLI Pairing</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #fdf7fb; color: #1c1420;
-         display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-  .card { text-align: center; padding: 2.5rem; border-radius: 1rem; border: 1px solid #f5d7e8; max-width: 26rem; }
-  h1 { color: %s; margin: 0 0 0.5rem; font-size: 1.25rem; }
-  p { color: #746b82; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px;
+         background:#090a0f; color:#f4f4f2; overflow:hidden;
+         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  .orb { position:fixed; border-radius:999px; filter:blur(90px); pointer-events:none; }
+  .orb.pink { top:-120px; left:20%; width:520px; height:520px;
+              background:radial-gradient(circle, rgba(244,114,182,.16), transparent 70%); }
+  .orb.cyan { bottom:-140px; right:15%; width:480px; height:480px;
+              background:radial-gradient(circle, rgba(56,189,248,.12), transparent 70%); }
+  .dots { position:fixed; inset:0; pointer-events:none;
+          background-image:radial-gradient(rgba(255,255,255,.10) 1px, transparent 1px);
+          background-size:22px 22px; opacity:.35; }
+  .card { position:relative; width:min(26rem, 100%); border:1px solid rgba(255,255,255,.14);
+          background:#10121a; box-shadow:0 32px 80px rgba(0,0,0,.6); }
+  .strip { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 18px;
+           border-bottom:1px solid rgba(255,255,255,.08); background:#151823; }
+  .eyebrow { display:flex; align-items:center; gap:8px; color:#f472b6; font-size:11px; font-weight:700;
+             letter-spacing:.14em; text-transform:uppercase; border-left:2px solid #f472b6; padding-left:8px; }
+  .beacon { width:6px; height:6px; border-radius:999px; background:#10b981;
+            box-shadow:0 0 8px rgba(16,185,129,.7); animation:beacon 2s ease-in-out infinite; }
+  .ver { font-size:10px; color:#71717a; letter-spacing:.1em; }
+  .inner { padding:36px 32px 30px; text-align:center; }
+  .icon { width:52px; height:52px; margin:0 auto 20px; display:flex; align-items:center; justify-content:center;
+          font-size:20px; font-weight:700; color:#fff; }
+  .icon.ok { background:#f472b6; box-shadow:0 12px 32px rgba(244,114,182,.35); }
+  .icon.err { background:#fb7185; box-shadow:0 12px 32px rgba(251,113,133,.35); }
+  .kicker { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; font-size:11px; letter-spacing:.14em;
+            text-transform:uppercase; color:#a1a1aa; margin-bottom:14px; }
+  .kicker b { color:#f4f4f2; font-weight:600; }
+  .kicker .pink { color:#f472b6; font-weight:700; }
+  .pipe { color:rgba(161,161,170,.4); }
+  h1 { margin:0; font-size:24px; font-weight:200; letter-spacing:-.02em; }
+  h1 b { font-weight:700; }
+  .log { margin:24px 0 0; text-align:left; border:1px solid rgba(255,255,255,.08); background:#151823;
+         padding:14px 16px; font-size:12px; line-height:1.9; overflow-x:auto; }
+  .ok { color:#34d399; }
+  .err { color:#fb7185; }
+  .cursor { display:inline-block; width:7px; height:13px; background:#f472b6; margin-left:5px;
+            vertical-align:middle; animation:blink 1s steps(1) infinite; }
+  .steps { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:22px; }
+  .step { display:flex; align-items:center; gap:6px; font-size:10px; letter-spacing:.08em;
+          text-transform:uppercase; color:#f4f4f2; font-weight:700; }
+  .step.dim { color:#71717a; }
+  .chip { width:20px; height:20px; font-size:9px; display:flex; align-items:center; justify-content:center; }
+  .chip.done { border:1px solid #f472b6; background:#f472b6; color:#fff; }
+  .chip.todo { border:1px solid rgba(255,255,255,.16); color:#71717a; }
+  .chip.fail { border:1px solid #fb7185; color:#fb7185; }
+  .bar { width:40px; height:1px; background:#f472b6; }
+  .bar.dim { background:rgba(255,255,255,.16); }
+  @keyframes blink { 0%,49% { opacity:1; } 50%,100% { opacity:0; } }
+  @keyframes beacon { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.45; transform:scale(.82); } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; } }
 </style></head>
-<body><div class="card"><h1>%s</h1><p>%s</p></div></body></html>`, color, title, body)
+<body>
+  <div class="orb pink"></div><div class="orb cyan"></div><div class="dots"></div>
+  <div class="card">
+    <div class="strip">
+      <span class="eyebrow"><span class="beacon"></span>[ CLI Pairing Bridge ]</span>
+      <span class="ver">v0.1.3.1</span>
+    </div>
+    <div class="inner">
+      <div class="icon %ICON%">%ICON_TEXT%</div>
+      <div class="kicker"><b>Sync Key</b><span class="pipe">|</span><b>Localhost</b><span class="pipe">|</span><span class="pink">E2E</span></div>
+      <h1>%TITLE%</h1>
+      <div class="log">%LOG%</div>
+      <div class="steps">%STEPS%</div>
+    </div>
+  </div>
+</body></html>`
+
+	const successSteps = `<div class="step"><span class="chip done">&#10003;</span>Auth</div><div class="bar"></div>
+      <div class="step"><span class="chip done">&#10003;</span>Keygen</div><div class="bar"></div>
+      <div class="step"><span class="chip done">&#10003;</span>Redirect</div>`
+	const failSteps = `<div class="step"><span class="chip fail">!</span>Auth</div><div class="bar dim"></div>
+      <div class="step dim"><span class="chip todo">02</span>Keygen</div><div class="bar dim"></div>
+      <div class="step dim"><span class="chip todo">03</span>Redirect</div>`
+
+	page = strings.Replace(page, "%ICON%", map[bool]string{true: "ok", false: "err"}[ok], 1)
+	page = strings.Replace(page, "%ICON_TEXT%", map[bool]string{true: "&gt;_", false: "!"}[ok], 1)
+	page = strings.Replace(page, "%TITLE%", map[bool]string{
+		true:  `You&#39;re <b>logged in!</b>`,
+		false: `Login <b style="color:#fb7185">failed.</b>`,
+	}[ok], 1)
+	page = strings.Replace(page, "%LOG%", map[bool]string{
+		true: `<div class="ok">&gt; session verified</div>
+        <div class="ok">&gt; sync key issued</div>
+        <div>&gt; returning to your terminal…<span class="cursor"></span></div>`,
+		false: `<div class="err">! ` + html.EscapeString(errMsg) + `</div>
+        <div class="cursor" style="background:#fb7185"></div>`,
+	}[ok], 1)
+	page = strings.Replace(page, "%STEPS%", map[bool]string{true: successSteps, false: failSteps}[ok], 1)
+	return page
 }
