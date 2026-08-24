@@ -9,7 +9,7 @@ import (
 	"mncode/pkg/agent"
 )
 
-type whoAmIResponse struct {
+type WhoAmIResponse struct {
 	Success bool `json:"success"`
 	User    struct {
 		Name  string `json:"name"`
@@ -18,8 +18,10 @@ type whoAmIResponse struct {
 	IsAdmin bool `json:"isAdmin"`
 }
 
-// fetchWhoAmI resolves the web account linked to the configured sync key.
-func fetchWhoAmI(s *agent.Session) (*whoAmIResponse, error) {
+// FetchWhoAmI resolves the web account linked to the configured sync key.
+// It is shared by the CLI and desktop clients so both surfaces use the same
+// mnc_live API-key identity contract.
+func FetchWhoAmI(s *agent.Session) (*WhoAmIResponse, error) {
 	key := s.Config.GetTelemetryKey()
 	if key == "" {
 		return nil, fmt.Errorf("no sync key configured")
@@ -43,7 +45,7 @@ func fetchWhoAmI(s *agent.Session) (*whoAmIResponse, error) {
 		return nil, fmt.Errorf("server returned %d", resp.StatusCode)
 	}
 
-	var result whoAmIResponse
+	var result WhoAmIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}

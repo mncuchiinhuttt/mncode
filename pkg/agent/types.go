@@ -28,6 +28,19 @@ type UIEventListener interface {
 	Flush()
 }
 
+type UsageEventListener interface {
+	OnUsage(inputTokens, outputTokens, thinkingTokens int)
+}
+
+func notifyUsage(ui UIEventListener, inputTokens, outputTokens, thinkingTokens int) {
+	if ui == nil || inputTokens <= 0 && outputTokens <= 0 && thinkingTokens <= 0 {
+		return
+	}
+	if listener, ok := ui.(UsageEventListener); ok {
+		listener.OnUsage(inputTokens, outputTokens, thinkingTokens)
+	}
+}
+
 // Session represents a single conversational agent session
 type Session struct {
 	ID           string
@@ -41,12 +54,12 @@ type Session struct {
 	Tracker      interface {
 		Record(model, accountID string, inputTokens, outputTokens int)
 	}
-	History      []provider.Message
-	Subagents    *SubagentRegistry
-	CodebaseMap  *CodebaseSummary
-	MCP          *mcp.Manager
-	UI           UIEventListener
-	Remote       *remote.RemoteManager
+	History     []provider.Message
+	Subagents   *SubagentRegistry
+	CodebaseMap *CodebaseSummary
+	MCP         *mcp.Manager
+	UI          UIEventListener
+	Remote      *remote.RemoteManager
 
 	QueueMu      sync.Mutex
 	SteerQueue   []string

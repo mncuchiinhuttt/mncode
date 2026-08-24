@@ -83,6 +83,7 @@ Please research the codebase and create a production-grade multi-phase implement
 			}
 			return planDir, err
 		}
+		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
 			inTokens := resp.InputTokens

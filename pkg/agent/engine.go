@@ -85,6 +85,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			}
 			return err
 		}
+		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.UI != nil {
 			s.UI.Flush()

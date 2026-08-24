@@ -33,6 +33,9 @@ func (g *GeminiProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*Com
 			if ct, ok := usage["candidatesTokenCount"].(float64); ok {
 				resp.OutputTokens = int(ct)
 			}
+			if tt, ok := usage["thoughtsTokenCount"].(float64); ok {
+				resp.ThinkingTokens = int(tt)
+			}
 		}
 
 		candidates, _ := chunk["candidates"].([]interface{})

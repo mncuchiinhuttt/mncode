@@ -104,7 +104,7 @@ func ShowSessionStatus(s *agent.Session) {
 
 	if s.Config.GetTelemetryKey() == "" {
 		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Account:"), GrayText("local guest")))
-	} else if who, err := fetchWhoAmI(s); err != nil {
+	} else if who, err := FetchWhoAmI(s); err != nil {
 		lines = append(lines, fmt.Sprintf("  %-16s %s", GrayText("Account:"), GrayText("connected (offline cache)")))
 	} else {
 		label := fmt.Sprintf("%s <%s>", who.User.Name, who.User.Email)

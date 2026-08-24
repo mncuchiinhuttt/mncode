@@ -156,6 +156,17 @@ var Themes = map[string]Theme{
 
 var ThemeList = []string{"pastel-pink", "pastel-pink-light", "dark", "light", "cyberpunk", "monokai", "tokyo-night"}
 
+// GetThemeCatalog exposes theme metadata to other clients such as the desktop app.
+func GetThemeCatalog() []Theme {
+	result := make([]Theme, 0, len(ThemeList))
+	for _, id := range ThemeList {
+		if theme, ok := Themes[id]; ok {
+			result = append(result, theme)
+		}
+	}
+	return result
+}
+
 var currentTheme = Themes["pastel-pink"]
 
 func GetCurrentTheme() Theme {

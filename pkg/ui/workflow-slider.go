@@ -44,6 +44,12 @@ var (
 	workflowStarts  = []int{5, 24, 40, 59}
 )
 
+// GetWorkflowOptions exposes the same workflow catalog used by /workflow.
+// The returned slice is a copy so desktop clients cannot mutate CLI state.
+func GetWorkflowOptions() []WorkflowOption {
+	return append([]WorkflowOption(nil), workflowOptions...)
+}
+
 // OpenInteractiveWorkflowSlider opens the Claude Code styled Workflow spectrum slider
 func OpenInteractiveWorkflowSlider(s *agent.Session) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {

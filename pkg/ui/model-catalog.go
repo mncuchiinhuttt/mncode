@@ -11,6 +11,7 @@ type ModelChoice struct {
 	ID          string
 	Name        string
 	Provider    config.ProviderType
+	ProviderID  string
 	Tag         string
 	Description string
 }
@@ -190,6 +191,50 @@ var curatedModels = []ModelChoice{
 	},
 }
 
+// openAIModelCatalog mirrors the text/coding models in the official OpenAI
+// catalog. Specialized audio, image, embedding, and moderation-only models
+// are intentionally excluded because the coding agent uses text generation.
+var openAIModelCatalog = []ModelChoice{
+	{ID: "gpt-5.6", Name: "GPT-5.6", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI latest flagship alias for complex reasoning and coding"},
+	{ID: "gpt-5.6-sol", Name: "GPT-5.6 Sol", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI frontier model for complex professional work"},
+	{ID: "gpt-5.6-terra", Name: "GPT-5.6 Terra", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI model balancing intelligence and cost"},
+	{ID: "gpt-5.6-luna", Name: "GPT-5.6 Luna", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI efficient model for high-volume workloads"},
+	{ID: "gpt-5.5", Name: "GPT-5.5", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI model for coding and professional work"},
+	{ID: "gpt-5.5-pro", Name: "GPT-5.5 Pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI higher-compute GPT-5.5 variant"},
+	{ID: "gpt-5.4", Name: "GPT-5.4", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI model for coding and professional work"},
+	{ID: "gpt-5.4-pro", Name: "GPT-5.4 Pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI higher-compute GPT-5.4 variant"},
+	{ID: "gpt-5.4-mini", Name: "GPT-5.4 mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI efficient model for coding, computer use, and subagents"},
+	{ID: "gpt-5.4-nano", Name: "GPT-5.4 nano", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI low-cost model for simple workloads"},
+	{ID: "gpt-5.3-codex", Name: "GPT-5.3 Codex", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI agentic coding model"},
+	{ID: "gpt-5.2", Name: "GPT-5.2", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI frontier model for professional work"},
+	{ID: "gpt-5.2-pro", Name: "GPT-5.2 Pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI higher-compute GPT-5.2 variant"},
+	{ID: "gpt-5.1", Name: "GPT-5.1", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI model for coding and agentic tasks"},
+	{ID: "gpt-5", Name: "GPT-5", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI reasoning model for coding and agentic tasks"},
+	{ID: "gpt-5-mini", Name: "GPT-5 mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI efficient reasoning model"},
+	{ID: "gpt-5-nano", Name: "GPT-5 nano", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI fastest low-cost reasoning model"},
+	{ID: "gpt-5-pro", Name: "GPT-5 Pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI higher-compute GPT-5 variant"},
+	{ID: "o3-pro", Name: "o3-pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI higher-compute reasoning model"},
+	{ID: "o3", Name: "o3", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI reasoning model for complex tasks"},
+	{ID: "gpt-4.1", Name: "GPT-4.1", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI non-reasoning model for coding"},
+	{ID: "gpt-4.1-mini", Name: "GPT-4.1 mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API]", Description: "OpenAI smaller, faster GPT-4.1 variant"},
+	{ID: "gpt-4.1-nano", Name: "GPT-4.1 nano", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI low-cost GPT-4.1 variant"},
+	{ID: "gpt-5.2-codex", Name: "GPT-5.2 Codex", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI long-horizon coding model"},
+	{ID: "gpt-5.1-codex", Name: "GPT-5.1 Codex", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI coding model"},
+	{ID: "gpt-5.1-codex-max", Name: "GPT-5.1 Codex Max", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI long-running Codex model"},
+	{ID: "gpt-5.1-codex-mini", Name: "GPT-5.1 Codex mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated efficient Codex model"},
+	{ID: "gpt-5-codex", Name: "GPT-5 Codex", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI agentic coding model"},
+	{ID: "codex-mini-latest", Name: "Codex mini latest", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated fast reasoning model optimized for Codex CLI"},
+	{ID: "o4-mini", Name: "o4-mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated fast, cost-efficient reasoning model"},
+	{ID: "o1-pro", Name: "o1-pro", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated higher-compute reasoning model"},
+	{ID: "o1", Name: "o1", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated OpenAI reasoning model"},
+	{ID: "o1-mini", Name: "o1-mini", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated smaller reasoning model"},
+	{ID: "o1-preview", Name: "o1 Preview", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated preview reasoning model"},
+	{ID: "gpt-4.5-preview", Name: "GPT-4.5 Preview", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated GPT-4.5 preview model"},
+	{ID: "gpt-4-turbo", Name: "GPT-4 Turbo", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated high-intelligence GPT-4 model"},
+	{ID: "gpt-4", Name: "GPT-4", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated high-intelligence GPT model"},
+	{ID: "gpt-3.5-turbo", Name: "GPT-3.5 Turbo", Provider: config.ProviderOpenAI, Tag: "[OpenAI API · Deprecated]", Description: "Deprecated legacy GPT model"},
+}
+
 // GetAvailableModels filters models to only show authenticated providers, free tiers, and current model
 func GetAvailableModels(s *agent.Session) []ModelChoice {
 	hasAntigravity := false
@@ -209,11 +254,14 @@ func GetAvailableModels(s *agent.Session) []ModelChoice {
 	hasAnthropic := os.Getenv("ANTHROPIC_API_KEY") != "" || (s != nil && s.Config.Provider == config.ProviderAnthropic && s.Config.APIKey != "")
 	hasOpenAI := hasCodex || os.Getenv("OPENAI_API_KEY") != "" || (s != nil && s.Config.Provider == config.ProviderOpenAI && s.Config.APIKey != "")
 	hasOpenRouter := os.Getenv("OPENROUTER_API_KEY") != "" || (s != nil && s.Config.Provider == config.ProviderOpenRouter && s.Config.APIKey != "")
-	hasGemini := hasAntigravity || os.Getenv("GEMINI_API_KEY") != ""
+	hasGemini := hasAntigravity || os.Getenv("GEMINI_API_KEY") != "" || (s != nil && (s.Config.Provider == config.ProviderAntigravity || s.Config.Provider == config.ProviderGemini) && s.Config.APIKey != "")
 
 	var result []ModelChoice
 
-	for _, m := range curatedModels {
+	allModels := make([]ModelChoice, 0, len(curatedModels)+len(openAIModelCatalog))
+	allModels = append(allModels, curatedModels...)
+	allModels = append(allModels, openAIModelCatalog...)
+	for _, m := range allModels {
 		switch m.Tag {
 		case "[Antigravity]":
 			if hasGemini {
@@ -235,6 +283,10 @@ func GetAvailableModels(s *agent.Session) []ModelChoice {
 			}
 		case "[Manual Entry]":
 			result = append(result, m)
+		default:
+			if strings.HasPrefix(m.Tag, "[OpenAI API") && hasOpenAI {
+				result = append(result, m)
+			}
 		}
 	}
 
@@ -255,6 +307,25 @@ func GetAvailableModels(s *agent.Session) []ModelChoice {
 				Description: "Currently active configured model",
 			}
 			result = append([]ModelChoice{customItem}, result...)
+		}
+	}
+
+	if s != nil && s.Config != nil {
+		for _, custom := range s.Config.CustomProviders {
+			for _, model := range custom.Models {
+				if strings.TrimSpace(model.ID) == "" {
+					continue
+				}
+				name := model.Name
+				if name == "" {
+					name = model.ID
+				}
+				result = append(result, ModelChoice{
+					ID: model.ID, Name: name, Provider: config.ProviderCustom,
+					ProviderID: custom.ID, Tag: "[" + custom.Name + "]",
+					Description: "Custom model from " + custom.Name,
+				})
+			}
 		}
 	}
 

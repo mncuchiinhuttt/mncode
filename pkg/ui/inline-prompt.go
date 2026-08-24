@@ -359,6 +359,4 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 		render()
 	}
 
-	finalInput := ResolvePastedContent(string(input))
-	return finalInput, true
 }

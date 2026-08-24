@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+type antigravityUsageMetadata struct {
+	PromptTokenCount     int `json:"promptTokenCount"`
+	CandidatesTokenCount int `json:"candidatesTokenCount"`
+	ThoughtsTokenCount   int `json:"thoughtsTokenCount"`
+}
+
 func (a *AntigravityProvider) buildGeminiRequest(req *CompletionRequest) map[string]interface{} {
 	payload := map[string]interface{}{}
 
@@ -43,7 +49,7 @@ func (a *AntigravityProvider) buildGeminiRequest(req *CompletionRequest) map[str
 		for _, tr := range m.ToolResults {
 			parts = append(parts, map[string]interface{}{
 				"functionResponse": map[string]interface{}{
-					"name": tr.Name,
+					"name":     tr.Name,
 					"response": map[string]interface{}{"content": tr.Content},
 				},
 			})
@@ -71,6 +77,7 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 	scanner := bufio.NewScanner(r)
 	fullText := strings.Builder{}
 	var toolCalls []ToolCall
+	inputTokens, outputTokens, thinkingTokens := 0, 0, 0
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -84,7 +91,8 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 
 		var chunk struct {
 			Response *struct {
-				Candidates []struct {
+				UsageMetadata antigravityUsageMetadata `json:"usageMetadata"`
+				Candidates    []struct {
 					Content struct {
 						Parts []struct {
 							Text                  string                 `json:"text"`
@@ -96,7 +104,8 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 					} `json:"content"`
 				} `json:"candidates"`
 			} `json:"response"`
-			Candidates []struct {
+			UsageMetadata antigravityUsageMetadata `json:"usageMetadata"`
+			Candidates    []struct {
 				Content struct {
 					Parts []struct {
 						Text                  string                 `json:"text"`
@@ -111,6 +120,27 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			continue
+		}
+		if chunk.UsageMetadata.PromptTokenCount > 0 {
+			inputTokens = chunk.UsageMetadata.PromptTokenCount
+		}
+		if chunk.UsageMetadata.CandidatesTokenCount > 0 {
+			outputTokens = chunk.UsageMetadata.CandidatesTokenCount
+		}
+		if chunk.UsageMetadata.ThoughtsTokenCount > 0 {
+			thinkingTokens = chunk.UsageMetadata.ThoughtsTokenCount
+		}
+		if chunk.Response != nil {
+			usage := chunk.Response.UsageMetadata
+			if usage.PromptTokenCount > 0 {
+				inputTokens = usage.PromptTokenCount
+			}
+			if usage.CandidatesTokenCount > 0 {
+				outputTokens = usage.CandidatesTokenCount
+			}
+			if usage.ThoughtsTokenCount > 0 {
+				thinkingTokens = usage.ThoughtsTokenCount
+			}
 		}
 
 		candidates := chunk.Candidates
@@ -150,7 +180,10 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 
 	_ = cb(StreamEvent{Type: EventDone})
 	return &CompletionResponse{
-		Content:   fullText.String(),
-		ToolCalls: toolCalls,
+		Content:        fullText.String(),
+		ToolCalls:      toolCalls,
+		InputTokens:    inputTokens,
+		OutputTokens:   outputTokens,
+		ThinkingTokens: thinkingTokens,
 	}, nil
 }

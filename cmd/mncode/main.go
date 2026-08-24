@@ -176,6 +176,24 @@ func main() {
 		UI:           termUI,
 	}
 
+	// Prompt trust if workspace has untrusted MCP servers
+	if mcpMgr.IsWorkspaceLvl && !mcpMgr.IsTrusted && len(mcpMgr.Config.MCPServers) > 0 {
+		fmt.Printf("\n%s Workspace contains %d MCP server(s) in %s\n",
+			ui.BoldYellow("[Security Notice]"), len(mcpMgr.Config.MCPServers), mcpMgr.ConfigPath)
+		for name, s := range mcpMgr.Config.MCPServers {
+			fmt.Printf("  • %s: %s %s\n", ui.Bold(name), s.Command, strings.Join(s.Args, " "))
+		}
+		choice := ui.PromptAgentQuestion(ui.AskQuestionParams{
+			Question:      "Trust and enable MCP servers in this workspace?",
+			Options:       []string{"Trust & Enable", "Disable for now"},
+			IsMultiSelect: false,
+		})
+		if choice == "Trust & Enable" {
+			_ = mcp.TrustWorkspace(cfg.WorkspaceDir)
+			mcpMgr.IsTrusted = true
+		}
+	}
+
 	// Start MCP servers in background and register tools
 	go func() {
 		ctx := context.Background()

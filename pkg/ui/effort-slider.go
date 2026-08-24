@@ -68,6 +68,12 @@ var (
 	effortStarts  = []int{3, 13, 26, 38, 51, 63}
 )
 
+// GetEffortOptions exposes the same reasoning catalog used by /effort.
+// The returned slice is a copy so desktop clients cannot mutate CLI state.
+func GetEffortOptions() []EffortOption {
+	return append([]EffortOption(nil), effortOptions...)
+}
+
 // OpenInteractiveEffortSlider opens the Claude Code styled Effort spectrum slider
 func OpenInteractiveEffortSlider(s *agent.Session) {
 	if !term.IsTerminal(int(os.Stdin.Fd())) {

@@ -80,6 +80,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			}
 			return targetFilePath, err
 		}
+		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
 			inTokens := resp.InputTokens

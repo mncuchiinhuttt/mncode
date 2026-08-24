@@ -20,6 +20,25 @@ func NewProvider(cfg *config.Config) (Provider, error) {
 		return NewOpenCodeProvider(apiKey, baseURL), nil
 	}
 
+	if cfg.Provider == config.ProviderCustom {
+		custom, ok := cfg.GetCustomProvider(cfg.CustomProviderID)
+		if !ok {
+			return nil, fmt.Errorf("custom provider %q is not configured", cfg.CustomProviderID)
+		}
+		apiKey := cfg.APIKey
+		if apiKey == "" {
+			apiKey = custom.APIKey
+		}
+		switch custom.APIFormat {
+		case config.APIFormatAnthropic:
+			return NewAnthropicProvider(apiKey, custom.BaseURL), nil
+		case config.APIFormatResponses:
+			return NewResponsesProvider(apiKey, custom.BaseURL), nil
+		default:
+			return NewOpenAIProvider(apiKey, custom.BaseURL), nil
+		}
+	}
+
 	if cfg.APIKey == "" {
 		return nil, fmt.Errorf("no API key found. Please set ANTHROPIC_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY in .env or environment")
 	}

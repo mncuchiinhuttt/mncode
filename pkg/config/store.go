@@ -104,6 +104,12 @@ func LoadUserConfig(cfg *Config) error {
 	if saved.OpenCodeAPIKey != "" {
 		cfg.OpenCodeAPIKey = saved.OpenCodeAPIKey
 	}
+	if saved.CustomProviderID != "" {
+		cfg.CustomProviderID = saved.CustomProviderID
+	}
+	if saved.CustomProviders != nil {
+		cfg.CustomProviders = saved.CustomProviders
+	}
 	if saved.TelemetryKey != "" {
 		cfg.TelemetryKey = saved.TelemetryKey
 	}

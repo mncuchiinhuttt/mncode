@@ -85,9 +85,10 @@ type CompletionRequest struct {
 
 // CompletionResponse is the final response from LLM
 type CompletionResponse struct {
-	Content      string
-	Thinking     string
-	ToolCalls    []ToolCall
-	InputTokens  int
-	OutputTokens int
+	Content        string
+	Thinking       string
+	ToolCalls      []ToolCall
+	InputTokens    int
+	OutputTokens   int
+	ThinkingTokens int
 }

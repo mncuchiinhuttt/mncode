@@ -73,6 +73,14 @@ var slashOptions = []SlashOption{
 	{Command: "/exit", Description: "Exit mncode assistant", Category: "Session"},
 }
 
+// GetSlashOptions returns the CLI slash command catalog for desktop clients.
+// Return a copy so callers cannot mutate the interactive selector's source list.
+func GetSlashOptions() []SlashOption {
+	options := make([]SlashOption, len(slashOptions))
+	copy(options, slashOptions)
+	return options
+}
+
 // OpenInteractiveSlashMenu opens an arrow-navigable, searchable menu for slash commands
 func OpenInteractiveSlashMenu(s *agent.Session) {
 	templates := &promptui.SelectTemplates{

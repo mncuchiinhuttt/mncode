@@ -15,7 +15,29 @@ const (
 	ProviderOpenRouter  ProviderType = "openrouter"
 	ProviderOpenCode    ProviderType = "opencode"
 	ProviderAntigravity ProviderType = "antigravity"
+	ProviderCustom      ProviderType = "custom"
 )
+
+const (
+	APIFormatAnthropic       = "anthropic-messages"
+	APIFormatChatCompletions = "chat-completions"
+	APIFormatResponses       = "responses"
+)
+
+type CustomModel struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	ContextWindow int    `json:"contextWindow,omitempty"`
+}
+
+type CustomProvider struct {
+	ID        string        `json:"id"`
+	Name      string        `json:"name"`
+	BaseURL   string        `json:"baseUrl"`
+	APIFormat string        `json:"apiFormat"`
+	APIKey    string        `json:"apiKey,omitempty"`
+	Models    []CustomModel `json:"models,omitempty"`
+}
 
 type PermissionMode string
 
@@ -28,28 +50,30 @@ const (
 
 // Config represents the application configuration
 type Config struct {
-	Provider       ProviderType      `json:"provider"`
-	Model          string            `json:"model"`
-	APIKey         string            `json:"apiKey"`
-	BaseURL        string            `json:"baseUrl"`
-	ThinkingBudget int               `json:"thinkingBudget"`
-	MaxTokens      int               `json:"maxTokens"`
-	Temperature    float64           `json:"temperature"`
-	AutoApprove    bool              `json:"autoApprove"`
-	PermissionMode PermissionMode    `json:"permissionMode"`
-	Verbose        bool              `json:"verbose"`
-	WorkspaceDir   string            `json:"workspaceDir"`
-	ClaudeDir      string            `json:"claudeDir"`
-	CodingLevel    int               `json:"codingLevel"`
-	Effort         string            `json:"effort"`
-	Workflow       string            `json:"workflow"`
-	ContextWindow  string            `json:"contextWindow,omitempty"`
-	ThinkingLang   string            `json:"thinkingLang"`
-	ResponseLang   string            `json:"responseLang"`
-	TelemetryKey   string            `json:"telemetryKey,omitempty"`
-	TelemetryURL   string            `json:"telemetryUrl,omitempty"`
-	OpenCodeAPIKey string            `json:"opencodeApiKey,omitempty"`
-	Settings       map[string]string `json:"settings,omitempty"`
+	Provider         ProviderType              `json:"provider"`
+	CustomProviderID string                    `json:"customProviderId,omitempty"`
+	Model            string                    `json:"model"`
+	APIKey           string                    `json:"apiKey"`
+	BaseURL          string                    `json:"baseUrl"`
+	ThinkingBudget   int                       `json:"thinkingBudget"`
+	MaxTokens        int                       `json:"maxTokens"`
+	Temperature      float64                   `json:"temperature"`
+	AutoApprove      bool                      `json:"autoApprove"`
+	PermissionMode   PermissionMode            `json:"permissionMode"`
+	Verbose          bool                      `json:"verbose"`
+	WorkspaceDir     string                    `json:"workspaceDir"`
+	ClaudeDir        string                    `json:"claudeDir"`
+	CodingLevel      int                       `json:"codingLevel"`
+	Effort           string                    `json:"effort"`
+	Workflow         string                    `json:"workflow"`
+	ContextWindow    string                    `json:"contextWindow,omitempty"`
+	ThinkingLang     string                    `json:"thinkingLang"`
+	ResponseLang     string                    `json:"responseLang"`
+	TelemetryKey     string                    `json:"telemetryKey,omitempty"`
+	TelemetryURL     string                    `json:"telemetryUrl,omitempty"`
+	OpenCodeAPIKey   string                    `json:"opencodeApiKey,omitempty"`
+	CustomProviders  map[string]CustomProvider `json:"customProviders,omitempty"`
+	Settings         map[string]string         `json:"settings,omitempty"`
 }
 
 // GetOpenCodeAPIKey returns configured OpenCode API key from config, settings, or env
@@ -67,6 +91,14 @@ func (c *Config) GetOpenCodeAPIKey() string {
 		return c.APIKey
 	}
 	return ""
+}
+
+func (c *Config) GetCustomProvider(id string) (CustomProvider, bool) {
+	if c == nil || c.CustomProviders == nil {
+		return CustomProvider{}, false
+	}
+	provider, ok := c.CustomProviders[id]
+	return provider, ok
 }
 
 // GetWebBaseURL returns the origin of the mncode web app (dashboard, sync,
@@ -152,18 +184,19 @@ func (c *Config) SetSetting(key, val string) {
 // DefaultConfig returns the default configuration values
 func DefaultConfig() *Config {
 	return &Config{
-		Provider:       ProviderAnthropic,
-		Model:          "claude-3-7-sonnet-20250219",
-		ThinkingBudget: 8192,
-		MaxTokens:      8192,
-		Temperature:    1.0,
-		AutoApprove:    false,
-		Verbose:        false,
-		WorkspaceDir:   ".",
-		ClaudeDir:      ".claude",
-		CodingLevel:    -1,
-		Effort:         "high",
-		Workflow:       "auto",
+		Provider:        ProviderAnthropic,
+		Model:           "claude-3-7-sonnet-20250219",
+		ThinkingBudget:  8192,
+		MaxTokens:       8192,
+		Temperature:     1.0,
+		AutoApprove:     false,
+		Verbose:         false,
+		WorkspaceDir:    ".",
+		ClaudeDir:       ".claude",
+		CodingLevel:     -1,
+		Effort:          "high",
+		Workflow:        "auto",
+		CustomProviders: make(map[string]CustomProvider),
 	}
 }
 

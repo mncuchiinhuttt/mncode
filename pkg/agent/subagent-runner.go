@@ -83,6 +83,7 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 			lastErr = fmt.Errorf("subagent %s error on turn %d: %w", agentName, turn+1, err)
 			break
 		}
+		notifyUsage(sr.ParentSession.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if subSession.Tracker != nil {
 			inTokens := resp.InputTokens

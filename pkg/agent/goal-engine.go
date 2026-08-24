@@ -72,6 +72,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			}
 			return err
 		}
+		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
 			inTokens := resp.InputTokens

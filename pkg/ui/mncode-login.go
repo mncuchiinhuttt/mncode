@@ -105,7 +105,10 @@ func HandleMncodeLoginCommand(parts []string, s *agent.Session) bool {
 		}
 		s.Config.TelemetryKey = res.key
 		s.Config.SetSetting("telemetry_key", res.key)
-		_ = config.SaveConfig(s.Config)
+		if err := config.SaveConfig(s.Config); err != nil {
+			fmt.Printf("%s Could not save the sync key: %v\n", BoldRed("[Login Failed]"), err)
+			return false
+		}
 		fmt.Printf("%s Logged in — sync key saved.\n", BoldGreen("[Success]"))
 		fmt.Println(GrayText("  Run /status to confirm, /sync to push usage, /feedback to send feedback."))
 		fmt.Println()

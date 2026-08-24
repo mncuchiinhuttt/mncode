@@ -25,16 +25,76 @@ type Client struct {
 	closed  bool
 }
 
+func sanitizedEnv(customEnv map[string]string) []string {
+	// Whitelist of benign system environment variables
+	allowedSystemKeys := map[string]bool{
+		"PATH":             true,
+		"HOME":             true,
+		"USER":             true,
+		"LOGNAME":          true,
+		"SHELL":            true,
+		"TMPDIR":           true,
+		"TEMP":             true,
+		"TMP":              true,
+		"LANG":             true,
+		"LC_ALL":           true,
+		"LC_CTYPE":         true,
+		"SYSTEMROOT":       true,
+		"WINDIR":           true,
+		"APPDATA":          true,
+		"LOCALAPPDATA":     true,
+		"PROGRAMFILES":     true,
+		"PROGRAMFILES(X86)": true,
+		"COMMONPROGRAMFILES": true,
+		"NODE_PATH":        true,
+		"NVM_BIN":          true,
+		"NVM_DIR":          true,
+		"GOPATH":           true,
+		"GOROOT":           true,
+		"CARGO_HOME":       true,
+		"RUSTUP_HOME":      true,
+	}
+
+	envMap := make(map[string]string)
+
+	for _, item := range os.Environ() {
+		parts := strings.SplitN(item, "=", 2)
+		if len(parts) == 2 {
+			k := parts[0]
+			upperK := strings.ToUpper(k)
+			// Filter out API keys, tokens, and credentials by default
+			if strings.Contains(upperK, "KEY") ||
+				strings.Contains(upperK, "SECRET") ||
+				strings.Contains(upperK, "TOKEN") ||
+				strings.Contains(upperK, "PASSWORD") ||
+				strings.Contains(upperK, "AUTH") {
+				continue
+			}
+			if allowedSystemKeys[upperK] {
+				envMap[k] = parts[1]
+			}
+		}
+	}
+
+	// Apply explicitly declared server environment variables
+	for k, v := range customEnv {
+		envMap[k] = v
+	}
+
+	var result []string
+	for k, v := range envMap {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
+	}
+	return result
+}
+
 func NewClient(name string, cfg ServerConfig) (*Client, error) {
 	if cfg.Command == "" {
 		return nil, fmt.Errorf("empty command for MCP server '%s'", name)
 	}
 
 	cmd := exec.Command(cfg.Command, cfg.Args...)
-	cmd.Env = os.Environ()
-	for k, v := range cfg.Env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-	}
+	cmd.Env = sanitizedEnv(cfg.Env)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
