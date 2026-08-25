@@ -18,6 +18,15 @@ func HandleSkillCommand(parts []string, s *agent.Session) {
 			InstallSkillFromSkillsSh(s, target)
 			return
 		}
+		if sub == "market" || sub == "marketplace" {
+			PrintCuratedMarketplace()
+			return
+		}
+		if sub == "remove" || sub == "uninstall" && len(parts) > 2 {
+			target := parts[2]
+			RemoveInstalledSkill(s, target)
+			return
+		}
 		if sub != "list" && sub != "browse" {
 			skillQuery := strings.TrimSpace(strings.Join(parts[1:], " "))
 			ActivateSkillByName(s, skillQuery)
@@ -27,8 +36,48 @@ func HandleSkillCommand(parts []string, s *agent.Session) {
 	OpenInteractiveSkillsBrowser(s)
 }
 
-// InstallSkillFromSkillsSh downloads community skills from skills.sh / vercel package manager
+// PrintCuratedMarketplace lists the curated marketplace catalog with install hints.
+func PrintCuratedMarketplace() {
+	fmt.Printf("\n%s Curated skills (install with %s):\n\n", BoldCyan("🛒 [Marketplace]"), Bold("/skills install <slug>"))
+	market, err := skills.GetMarketplace()
+	if err != nil {
+		fmt.Printf("  %s Could not load the marketplace: %v\n\n", BoldRed("[Error]"), err)
+		return
+	}
+	for _, skill := range market.AvailableSkills {
+		status := ""
+		if skill.Installed {
+			status = fmt.Sprintf("  %s", BoldGreen("installed"))
+		}
+		fmt.Printf("  %s  %s — %s%s\n", Bold(skill.Slug), Bold(skill.Name), skill.Category, status)
+		fmt.Printf("    %s\n", skill.Description)
+	}
+	fmt.Printf("\n  %s Skills install into ~/.mncode/skills and are shared with the Desktop app.\n\n", GrayText("Tip:"))
+}
+
+// RemoveInstalledSkill deletes a user-installed skill from ~/.mncode/skills.
+func RemoveInstalledSkill(s *agent.Session, slug string) {
+	if err := skills.DeleteInstalledSkill(slug); err != nil {
+		fmt.Printf("\n%s %v\n\n", BoldRed("[Error]"), err)
+		return
+	}
+	fmt.Printf("\n%s Removed '%s'.\n\n", BoldGreen("✓"), Bold(slug))
+	if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
+		s.Catalog = reloaded
+	}
+}
+
+// InstallSkillFromSkillsSh installs a skill: curated catalog slugs install
+// into ~/.mncode/skills; anything else falls back to the skills.sh CLI.
 func InstallSkillFromSkillsSh(s *agent.Session, skillPackage string) {
+	if installed, err := skills.InstallMarketplaceSkill(skillPackage); err == nil {
+		fmt.Printf("\n%s Installed curated skill '%s' (%s)\n", BoldCyan("📦 [Skill Installer]"), Bold(installed.Name), installed.Category)
+		fmt.Printf("  %s Saved to ~/.mncode/skills/%s — shared with the Desktop app.\n\n", BoldGreen("✓"), installed.Slug)
+		if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
+			s.Catalog = reloaded
+		}
+		return
+	}
 	fmt.Printf("\n%s Installing skill '%s' from skills.sh repository...\n", BoldCyan("📦 [Skill Installer]"), Bold(skillPackage))
 	cmd := exec.Command("npx", "-y", "skills", "add", skillPackage)
 	cmd.Dir = s.WorkspaceDir
