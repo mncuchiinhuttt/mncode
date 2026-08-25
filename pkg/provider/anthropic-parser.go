@@ -40,10 +40,10 @@ func formatAnthropicMessage(m Message) map[string]interface{} {
 	}
 	for _, tr := range m.ToolResults {
 		content = append(content, map[string]interface{}{
-			"type":         "tool_result",
-			"tool_use_id":  tr.ToolCallID,
-			"content":      tr.Content,
-			"is_error":     tr.IsError,
+			"type":        "tool_result",
+			"tool_use_id": tr.ToolCallID,
+			"content":     tr.Content,
+			"is_error":    tr.IsError,
 		})
 	}
 

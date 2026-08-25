@@ -120,5 +120,14 @@ func LoadUserConfig(cfg *Config) error {
 		cfg.Settings = saved.Settings
 	}
 
+	// Token saver: route through a local headroom proxy when enabled, the CLI
+	// is installed, and the user has no custom base URL. Spawns the proxy on
+	// demand if it is not running yet.
+	if cfg.BaseURL == "" &&
+		cfg.GetSetting("token_saver_headroom", "false") == "true" &&
+		HeadroomInstalled() {
+		cfg.BaseURL = EnsureHeadroomProxy()
+	}
+
 	return nil
 }

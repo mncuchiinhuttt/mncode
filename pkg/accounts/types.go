@@ -18,17 +18,17 @@ const (
 
 // Account represents a single logged-in account/credential
 type Account struct {
-	ID           string          `json:"id"`
-	Email        string          `json:"email"`
-	Provider     AccountProvider `json:"provider"`
-	AccessToken  string          `json:"accessToken"`
-	RefreshToken string          `json:"refreshToken,omitempty"`
-	ExpiresAt    time.Time       `json:"expiresAt"`
-	IsActive     bool            `json:"isActive"`
-	CooldownUntil time.Time      `json:"cooldownUntil,omitempty"`
-	UsageCount   int64           `json:"usageCount"`
-	LastError    string          `json:"lastError,omitempty"`
-	CreatedAt    time.Time       `json:"createdAt"`
+	ID            string          `json:"id"`
+	Email         string          `json:"email"`
+	Provider      AccountProvider `json:"provider"`
+	AccessToken   string          `json:"accessToken"`
+	RefreshToken  string          `json:"refreshToken,omitempty"`
+	ExpiresAt     time.Time       `json:"expiresAt"`
+	IsActive      bool            `json:"isActive"`
+	CooldownUntil time.Time       `json:"cooldownUntil,omitempty"`
+	UsageCount    int64           `json:"usageCount"`
+	LastError     string          `json:"lastError,omitempty"`
+	CreatedAt     time.Time       `json:"createdAt"`
 }
 
 // IsAvailable checks if the account is not expired and not in cooldown

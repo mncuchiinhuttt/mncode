@@ -21,10 +21,10 @@ var (
 		"Max rizz compiler standing by: Feed me code to cook! 🍲",
 	}
 
-	idleMu             sync.Mutex
-	activeIdleRizz     string
-	lastActivityTime   = time.Now()
-	idleRizzIndex      = 0
+	idleMu           sync.Mutex
+	activeIdleRizz   string
+	lastActivityTime = time.Now()
+	idleRizzIndex    = 0
 )
 
 // GetActiveIdleRizz returns the current idle rizz line if active

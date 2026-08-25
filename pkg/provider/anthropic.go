@@ -62,9 +62,9 @@ func (a *AnthropicProvider) Stream(ctx context.Context, req *CompletionRequest, 
 
 func (a *AnthropicProvider) buildPayload(req *CompletionRequest) map[string]interface{} {
 	payload := map[string]interface{}{
-		"model":       req.Model,
-		"max_tokens":  req.MaxTokens,
-		"stream":      true,
+		"model":      req.Model,
+		"max_tokens": req.MaxTokens,
+		"stream":     true,
 	}
 	if req.SystemPrompt != "" {
 		payload["system"] = req.SystemPrompt

@@ -118,7 +118,7 @@ func (g *GeminiProvider) buildPayload(req *CompletionRequest) map[string]interfa
 		for _, tr := range m.ToolResults {
 			parts = append(parts, map[string]interface{}{
 				"functionResponse": map[string]interface{}{
-					"name": tr.Name,
+					"name":     tr.Name,
 					"response": map[string]interface{}{"content": tr.Content},
 				},
 			})

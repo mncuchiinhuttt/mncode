@@ -14,10 +14,10 @@ import (
 
 // AskQuestionOption represents a selectable option
 type AskQuestionOption struct {
-	Text        string
-	IsCustom    bool
-	IsChatMore  bool
-	IsSelected  bool
+	Text       string
+	IsCustom   bool
+	IsChatMore bool
+	IsSelected bool
 }
 
 // AskQuestionParams represents parameters for an interactive agent question

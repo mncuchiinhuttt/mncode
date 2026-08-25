@@ -143,7 +143,18 @@ func (s *Session) BuildSystemPrompt() string {
 }
 
 func appendPersonalization(sb *strings.Builder, cfg *config.Config) {
-	if instructions := strings.TrimSpace(cfg.GetSetting("custom_instructions", "")); instructions != "" {
+	instructions := strings.TrimSpace(cfg.GetSetting("custom_instructions", ""))
+	// Token-saving disciplines are injected at prompt-build time so the user's
+	// stored custom instructions are never modified.
+	if directives := config.TokenSaverDirectives(cfg); len(directives) > 0 {
+		block := strings.Join(directives, "\n\n")
+		if instructions == "" {
+			instructions = block
+		} else {
+			instructions += "\n\n" + block
+		}
+	}
+	if instructions != "" {
 		sb.WriteString("<custom_instructions>\n")
 		sb.WriteString("The user supplied these persistent instructions. Follow them when they do not conflict with system, safety, or task-specific requirements:\n")
 		sb.WriteString(instructions)

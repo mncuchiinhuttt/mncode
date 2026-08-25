@@ -15,44 +15,44 @@ import (
 )
 
 type Client struct {
-	Name    string
-	Config  ServerConfig
-	cmd     *exec.Cmd
-	stdin   io.WriteCloser
-	stdout  *bufio.Reader
-	mu      sync.Mutex
-	reqID   int64
-	closed  bool
+	Name   string
+	Config ServerConfig
+	cmd    *exec.Cmd
+	stdin  io.WriteCloser
+	stdout *bufio.Reader
+	mu     sync.Mutex
+	reqID  int64
+	closed bool
 }
 
 func sanitizedEnv(customEnv map[string]string) []string {
 	// Whitelist of benign system environment variables
 	allowedSystemKeys := map[string]bool{
-		"PATH":             true,
-		"HOME":             true,
-		"USER":             true,
-		"LOGNAME":          true,
-		"SHELL":            true,
-		"TMPDIR":           true,
-		"TEMP":             true,
-		"TMP":              true,
-		"LANG":             true,
-		"LC_ALL":           true,
-		"LC_CTYPE":         true,
-		"SYSTEMROOT":       true,
-		"WINDIR":           true,
-		"APPDATA":          true,
-		"LOCALAPPDATA":     true,
-		"PROGRAMFILES":     true,
-		"PROGRAMFILES(X86)": true,
+		"PATH":               true,
+		"HOME":               true,
+		"USER":               true,
+		"LOGNAME":            true,
+		"SHELL":              true,
+		"TMPDIR":             true,
+		"TEMP":               true,
+		"TMP":                true,
+		"LANG":               true,
+		"LC_ALL":             true,
+		"LC_CTYPE":           true,
+		"SYSTEMROOT":         true,
+		"WINDIR":             true,
+		"APPDATA":            true,
+		"LOCALAPPDATA":       true,
+		"PROGRAMFILES":       true,
+		"PROGRAMFILES(X86)":  true,
 		"COMMONPROGRAMFILES": true,
-		"NODE_PATH":        true,
-		"NVM_BIN":          true,
-		"NVM_DIR":          true,
-		"GOPATH":           true,
-		"GOROOT":           true,
-		"CARGO_HOME":       true,
-		"RUSTUP_HOME":      true,
+		"NODE_PATH":          true,
+		"NVM_BIN":            true,
+		"NVM_DIR":            true,
+		"GOPATH":             true,
+		"GOROOT":             true,
+		"CARGO_HOME":         true,
+		"RUSTUP_HOME":        true,
 	}
 
 	envMap := make(map[string]string)
