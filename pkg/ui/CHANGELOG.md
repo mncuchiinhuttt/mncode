@@ -1,3 +1,40 @@
+## Release v0.1.4 (2026-08-28)
+
+### 🚀 New Features
+- feat: add browser control and agent runtime hardening (b8085f3)
+- feat(skills): curated skills marketplace in the CLI — /skills marketplace lists, /skills install installs into ~/.mncode/skills, /skills remove (fc346a3)
+- feat(token-saver): shared token-saving directives, settings catalog entries, headroom proxy base-url override, and prompt-build injection (a17312b)
+- feat(ui): redesign localhost login callback page with RMIT dark void aesthetic (HUD strip, terminal log, step rail) (9f4edaa)
+- feat: add /benchmark, /security, and /seed developer superpower commands (e2b03d7)
+- feat(remote): add support for mobile camera snapshots & multimodal image analysis (e3ffe3b)
+- feat(remote): finalize default remote_server_url fallback and release binaries (68d4e87)
+- feat(remote): add /remote companion command with QR pairing and SSE live steer integration (v0.1.2.8-beta) (30367e7)
+- feat(ui): add multi-select checkbox mode with space toggle to human-in-the-loop modal (80c225b)
+- feat(ui): refine human-in-the-loop modal styling with action-driven and rizz brainrot titles (2b8b61e)
+- feat: human-in-the-loop interactive question modal & live execution steering (4fccbc6)
+- feat(accounts): persist and auto-restore last active account on CLI startup (1f5f263)
+- feat(release): bump to v0.1.2-beta with Git conflict resolver, database explorer, web share, and 25+ skills (4544511)
+- feat: connect /share directly with mncode-web and add 25+ specialized engineering skills (b344c0f)
+- feat(skills): add security-audit, clean-architecture, performance-optimization, api-design, docker-kubernetes and enforce mandatory skill-first agent protocol (9555684)
+
+### 🐛 Bug Fixes
+- fix(security): sanitize MCP env, add workspace trust, and enhance agent workflows (100564a)
+- fix(update): fix update prompt box alignment with PadToCellWidth and sync version to v0.1.3-beta (92f3249)
+- fix(ui): fix emoji cell width calculation in header card box alignment (6dd35ef)
+- fix(ui): normalize terminal output to CRLF preventing raw mode staircase indentation (7e7e697)
+- fix(ui): mathematical pixel-perfect alignment for remote companion card (964405e)
+- fix(remote): inject remote prompt into REPL loop when idle & deduplicate logs (077118c)
+- fix(ui): compact QR code and pixel-perfect aligned remote companion card (9f93328)
+- fix(remote): use https://mncode.mncuchiinhuttt.dev as default cloud bridge URL (aebb808)
+- fix(ui): add /remote to interactive slash selector and dropdown autocomplete (86c9655)
+- fix(tools): enforce process-group timeouts and auto-cap long-running server commands to prevent infinite hanging (7237ff4)
+- fix(ui): prevent background copy watcher from re-rendering prompt bar during tool execution and fix tool args unmarshaling (0ae8bfa)
+- fix(provider): route Antigravity to daily-cloudcode-pa endpoint and preserve thoughtSignature on Gemini tool calls (6e0214d)
+- fix(provider): isolate baseUrl per provider to prevent OpenCode URL leak into Antigravity requests (1303096)
+
+### 📝 Documentation
+- docs: update Notion MCP URL to https://app.notion.com/developers/connections (a938c44)
+
 ## Release v0.1.3.1-beta (2026-08-28)
 
 ### 🚀 New Features
