@@ -3,11 +3,30 @@ package agent
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"mncode/pkg/config"
 	"mncode/pkg/provider"
 )
+
+// agentTurnLimit returns a bounded ReAct iteration count. The setting is
+// intentionally capped so a malformed config cannot disable the safety guard.
+func agentTurnLimit(cfg *config.Config) int {
+	const defaultLimit = 25
+	const maxLimit = 100
+	if cfg == nil {
+		return defaultLimit
+	}
+	value, err := strconv.Atoi(strings.TrimSpace(cfg.GetSetting("max_agent_turns", "25")))
+	if err != nil || value <= 0 {
+		return defaultLimit
+	}
+	if value > maxLimit {
+		return maxLimit
+	}
+	return value
+}
 
 // ProcessUserInput executes an agent conversation turn with full tool-calling ReAct loop
 func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error {
@@ -38,7 +57,9 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		}
 	}
 
-	for {
+	maxTurns := agentTurnLimit(s.Config)
+	completed := false
+	for turn := 0; turn < maxTurns; turn++ {
 		toolDefs := s.getToolDefinitions()
 		req := &provider.CompletionRequest{
 			SystemPrompt:   s.BuildSystemPrompt(),
@@ -113,6 +134,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 
 		// If no tools requested, turn is complete
 		if len(resp.ToolCalls) == 0 {
+			completed = true
 			break
 		}
 
@@ -138,6 +160,17 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 				Content: fmt.Sprintf("[User Steering Directive (High Priority)]:\n%s", steerText),
 			})
 		}
+	}
+
+	if !completed {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		err := fmt.Errorf("agent turn reached the maximum of %d iterations; send a new prompt to continue", maxTurns)
+		if s.UI != nil {
+			s.UI.OnError(err)
+		}
+		return err
 	}
 
 	_ = s.Save()
@@ -180,7 +213,16 @@ func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) pr
 		}
 	}
 
-	if s.UI != nil && !s.Config.AutoApprove {
+	if !s.Config.AutoApprove {
+		if s.UI == nil {
+			content := "Tool execution denied: approval is required but no approval UI is attached."
+			return provider.ToolResult{
+				ToolCallID: tc.ID,
+				Name:       tc.Name,
+				Content:    content,
+				IsError:    true,
+			}
+		}
 		if !s.UI.ConfirmToolExecution(tc) {
 			res := provider.ToolResult{
 				ToolCallID: tc.ID,

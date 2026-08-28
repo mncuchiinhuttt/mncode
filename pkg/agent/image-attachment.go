@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"mncode/pkg/provider"
+	"mncode/pkg/tools"
 )
 
 var (
@@ -50,14 +51,26 @@ func ExtractImagesFromInput(workspaceDir, userInput string) (string, []provider.
 	return cleanInput, images
 }
 
+const maxImageAttachmentBytes = 10 << 20
+
 func loadImageData(workspaceDir, relPath string) (provider.ImageData, bool) {
 	fullPath := relPath
-	if !filepath.IsAbs(fullPath) && workspaceDir != "" {
-		fullPath = filepath.Join(workspaceDir, relPath)
+	if workspaceDir != "" {
+		resolved, err := tools.ResolveWorkspacePath(workspaceDir, relPath, false)
+		if err != nil {
+			return provider.ImageData{}, false
+		}
+		fullPath = resolved
+	} else if !filepath.IsAbs(fullPath) {
+		fullPath = filepath.Clean(fullPath)
 	}
 
+	info, err := os.Stat(fullPath)
+	if err != nil || info.IsDir() || info.Size() > maxImageAttachmentBytes {
+		return provider.ImageData{}, false
+	}
 	data, err := os.ReadFile(fullPath)
-	if err != nil || len(data) == 0 {
+	if err != nil || len(data) == 0 || len(data) > maxImageAttachmentBytes {
 		return provider.ImageData{}, false
 	}
 

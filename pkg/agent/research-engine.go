@@ -42,6 +42,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 	})
 
 	maxTurns := 18
+	completed := false
 	for turn := 0; turn < maxTurns; turn++ {
 		toolDefs := s.getToolDefinitions()
 
@@ -101,6 +102,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 		s.History = append(s.History, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			completed = true
 			break
 		}
 
@@ -115,6 +117,17 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			ToolResults: results,
 		}
 		s.History = append(s.History, toolMsg)
+	}
+
+	if !completed {
+		if err := ctx.Err(); err != nil {
+			return targetFilePath, err
+		}
+		err := fmt.Errorf("research reached the maximum of %d iterations before completion", maxTurns)
+		if s.UI != nil {
+			s.UI.OnError(err)
+		}
+		return targetFilePath, err
 	}
 
 	return targetFilePath, nil

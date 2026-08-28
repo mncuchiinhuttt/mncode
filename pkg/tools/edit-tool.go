@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -56,9 +55,11 @@ func (e *EditTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return "", fmt.Errorf("TargetFile and TargetContent are required")
 	}
 
-	if !filepath.IsAbs(path) && e.BaseDir != "" {
-		path = filepath.Join(e.BaseDir, path)
+	resolvedPath, err := resolveWorkspacePath(e.BaseDir, path, false)
+	if err != nil {
+		return "", err
 	}
+	path = resolvedPath
 
 	data, err := os.ReadFile(path)
 	if err != nil {

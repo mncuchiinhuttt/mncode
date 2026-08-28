@@ -29,13 +29,14 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "effort", Label: "Thinking Effort Budget", Type: SettingTypeChoice, DefaultVal: "high", Choices: []string{"none", "low", "medium", "high", "max", "pro-max"}, Description: "Reasoning token budget for extended thinking models"},
 		{Key: "workflow", Label: "Workflow Orchestration", Type: SettingTypeChoice, DefaultVal: "auto", Choices: []string{"auto", "ultra-workflow", "plan-first", "direct"}, Description: "Agent workflow strategy and autonomous chaining mode"},
 		{Key: "context_window", Label: "Context Window Size", Type: SettingTypeChoice, DefaultVal: "200K", Choices: []string{"200K", "300K", "500K", "1M"}, Description: "Maximum context token threshold before compression"},
+		{Key: "max_agent_turns", Label: "Maximum Agent Turns", Type: SettingTypeChoice, DefaultVal: "25", Choices: []string{"10", "25", "40", "60", "100"}, Description: "Hard safety cap for one normal ReAct conversation turn"},
 		{Key: "auto_compact", Label: "Auto-Compact Memory", Type: SettingTypeBool, DefaultVal: "true", Description: "Automatically summarize history when context exceeds 85%"},
 		{Key: "token_saver_concise", Label: "Token Saver: Concise Responses", Type: SettingTypeBool, DefaultVal: "false", Description: "Inject a brevity directive — shorter, denser answers on every turn"},
 		{Key: "token_saver_compress_output", Label: "Token Saver: Compress Command Output", Type: SettingTypeBool, DefaultVal: "false", Description: "Instruct the agent to filter and truncate long command output with head, tail, and grep"},
 		{Key: "token_saver_targeted_edits", Label: "Token Saver: Targeted Edits", Type: SettingTypeBool, DefaultVal: "false", Description: "Prefer search-and-replace edits over full-file rewrites — far fewer output tokens"},
 		{Key: "token_saver_rtk", Label: "Token Saver: RTK Shell Compression", Type: SettingTypeBool, DefaultVal: "false", Description: "Prefix dev commands with the rtk CLI for 60-90% smaller outputs (requires rtk installed)"},
 		{Key: "token_saver_headroom", Label: "Token Saver: Headroom Proxy", Type: SettingTypeBool, DefaultVal: "false", Description: "Route requests through a local headroom proxy that compresses context (requires headroom installed)"},
-		{Key: "permission_mode", Label: "Tool Permission Mode", Type: SettingTypeChoice, DefaultVal: "Manual (Ask)", Choices: []string{"Manual (Ask)", "Auto-Approve", "Bypass Permissions"}, Description: "Confirmation policy for command and file tool execution"},
+		{Key: "permission_mode", Label: "Tool Permission Mode", Type: SettingTypeChoice, DefaultVal: "Manual (Ask)", Choices: []string{"Manual (Ask)", "Auto-Approve", "Plan mode", "Bypass Permissions"}, Description: "Confirmation policy for command and file tool execution"},
 		{Key: "theme", Label: "UI Color Theme", Type: SettingTypeChoice, DefaultVal: "Pastel Pink", Choices: []string{"Pastel Pink", "Dark mode", "Light mode", "Cyberpunk", "Monokai", "Tokyo Night"}, Description: "Terminal color scheme and syntax highlight palette"},
 		{Key: "diff_style", Label: "Code Diff Highlight", Type: SettingTypeChoice, DefaultVal: "Full-line Background", Choices: []string{"Full-line Background", "Syntax Text Only"}, Description: "Visual style for file modification diff blocks"},
 		{Key: "language", Label: "Language / Ngôn ngữ", Type: SettingTypeChoice, DefaultVal: "Default (English)", Choices: []string{"Default (English)", "Vietnamese", "Japanese", "Chinese", "Spanish", "French", "German"}, Description: "Natural language instructions for system prompt and responses"},
@@ -45,7 +46,10 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "copy_on_select", Label: "Copy on Mouse Select", Type: SettingTypeBool, DefaultVal: "true", Description: "Auto-copy selected terminal text to OS clipboard with toast notification"},
 		{Key: "artifacts", Label: "Structured Artifacts", Type: SettingTypeBool, DefaultVal: "true", Description: "Prompt AI to generate structured markdown artifacts for plans and docs"},
 		{Key: "auto_mode_plan", Label: "Auto-Execute Plan Phase", Type: SettingTypeBool, DefaultVal: "true", Description: "Automatically proceed to implementation after planning completes"},
-		{Key: "worktree_base", Label: "Worktree Base Ref", Type: SettingTypeChoice, DefaultVal: "current", Choices: []string{"current", "main", "fresh"}, Description: "Git base reference used for subagent workspace branch isolation"},
+		{Key: "browser_control_enabled", Label: "Browser Control", Type: SettingTypeBool, DefaultVal: "false", Description: "Allow the agent to drive the isolated Chrome browser via control_browser"},
+		{Key: "browser_headless", Label: "Browser Headless Mode", Type: SettingTypeBool, DefaultVal: "false", Description: "Run the controlled browser without a visible window"},
+		{Key: "browser_ignore_cert_errors", Label: "Browser Ignore Certificate Errors", Type: SettingTypeBool, DefaultVal: "false", Description: "Ignore TLS certificate errors in the controlled browser for local testing only"},
+		{Key: "worktree_base", Label: "Worktree Base Ref", Type: SettingTypeChoice, DefaultVal: "current", Choices: []string{"current", "main", "fresh"}, Description: "Subagent isolation: 'current' shares your live workspace, 'main'/'fresh' spawn a real git worktree + branch so subagents can't race your edits"},
 		{Key: "troll_mode", Label: "Troll Mode (Harmless Pranks)", Type: SettingTypeBool, DefaultVal: "false", Description: "Display occasional funny fake scare commands before executing safe tools"},
 		{Key: "interrupt_mode", Label: "Default Message Action", Type: SettingTypeChoice, DefaultVal: "queue", Choices: []string{"queue", "steer"}, Description: "Default behavior for messages: queue after turn (default) vs steer ongoing thought"},
 		{Key: "verbose_output", Label: "Verbose Debug Logging", Type: SettingTypeBool, DefaultVal: "false", Description: "Print raw LLM API payloads and tool execution debug traces"},
@@ -72,6 +76,8 @@ func GetSettingValue(s *agent.Session, def SettingDef) string {
 	case "permission_mode":
 		if s.Config.PermissionMode == config.PermissionModeBypass {
 			return "Bypass Permissions"
+		} else if s.Config.PermissionMode == config.PermissionModePlan {
+			return "Plan mode"
 		} else if s.Config.AutoApprove || s.Config.PermissionMode == config.PermissionModeAuto {
 			return "Auto-Approve"
 		}
@@ -121,6 +127,9 @@ func ToggleOrCycleSetting(s *agent.Session, def SettingDef) {
 			case "Auto-Approve":
 				s.Config.PermissionMode = config.PermissionModeAuto
 				s.Config.AutoApprove = true
+			case "Plan mode":
+				s.Config.PermissionMode = config.PermissionModePlan
+				s.Config.AutoApprove = false
 			case "Bypass Permissions":
 				s.Config.PermissionMode = config.PermissionModeBypass
 				s.Config.AutoApprove = true

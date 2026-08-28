@@ -45,6 +45,7 @@ Please research the codebase and create a production-grade multi-phase implement
 	})
 
 	maxTurns := 12
+	completed := false
 	for turn := 0; turn < maxTurns; turn++ {
 		toolDefs := s.getToolDefinitions()
 
@@ -104,6 +105,7 @@ Please research the codebase and create a production-grade multi-phase implement
 		s.History = append(s.History, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			completed = true
 			break
 		}
 
@@ -118,6 +120,17 @@ Please research the codebase and create a production-grade multi-phase implement
 			ToolResults: results,
 		}
 		s.History = append(s.History, toolMsg)
+	}
+
+	if !completed {
+		if err := ctx.Err(); err != nil {
+			return planDir, err
+		}
+		err := fmt.Errorf("plan generation reached the maximum of %d iterations before completion", maxTurns)
+		if s.UI != nil {
+			s.UI.OnError(err)
+		}
+		return planDir, err
 	}
 
 	return planDir, nil

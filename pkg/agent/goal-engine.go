@@ -32,6 +32,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 	maxGoalTurns := 25
 	totalToolCalls := 0
 	turnCount := 0
+	completed := false
 
 	for turn := 0; turn < maxGoalTurns; turn++ {
 		turnCount++
@@ -93,6 +94,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 		s.History = append(s.History, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			completed = true
 			break
 		}
 
@@ -108,6 +110,17 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			ToolResults: results,
 		}
 		s.History = append(s.History, toolMsg)
+	}
+
+	if !completed {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		err := fmt.Errorf("goal reached the maximum of %d iterations before completion", maxGoalTurns)
+		if s.UI != nil {
+			s.UI.OnError(err)
+		}
+		return err
 	}
 
 	elapsed := time.Since(startTime).Seconds()

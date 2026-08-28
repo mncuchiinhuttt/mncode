@@ -53,6 +53,11 @@ func (b *BashTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	if cwd == "" {
 		cwd = b.DefaultCwd
 	}
+	resolvedCwd, err := resolveWorkspacePath(b.DefaultCwd, cwd, false)
+	if err != nil {
+		return "", err
+	}
+	cwd = resolvedCwd
 
 	timeoutMs := 30000 // 30s default
 	for _, key := range []string{"TimeoutMs", "timeout_ms", "Timeout", "timeout", "WaitMsBeforeAsync", "wait_ms"} {

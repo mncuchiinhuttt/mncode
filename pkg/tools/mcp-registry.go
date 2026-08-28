@@ -2,6 +2,8 @@ package tools
 
 import (
 	"context"
+	"strings"
+
 	"mncode/pkg/mcp"
 )
 
@@ -11,13 +13,19 @@ func RegisterMCPTools(registry *Registry, mgr *mcp.Manager, ctx context.Context)
 		return 0
 	}
 
+	for _, tool := range registry.All() {
+		if strings.HasPrefix(tool.Name(), "mcp_") {
+			registry.Unregister(tool.Name())
+		}
+	}
+
 	count := 0
 	statuses := mgr.GetStatus(ctx)
 	for _, st := range statuses {
 		if !st.Connected {
 			continue
 		}
-		client := mgr.Clients[st.Name]
+		client := mgr.GetClient(st.Name)
 		if client == nil {
 			continue
 		}

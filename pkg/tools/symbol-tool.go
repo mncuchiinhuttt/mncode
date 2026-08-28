@@ -53,9 +53,12 @@ func (t *SymbolTool) Execute(ctx context.Context, args map[string]interface{}) (
 	}
 
 	searchPath, _ := args["SearchPath"].(string)
-	targetDir := t.WorkspaceDir
-	if searchPath != "" {
-		targetDir = filepath.Join(t.WorkspaceDir, searchPath)
+	if searchPath == "" {
+		searchPath = "."
+	}
+	targetDir, err := resolveWorkspacePath(t.WorkspaceDir, searchPath, false)
+	if err != nil {
+		return "", err
 	}
 
 	symbols := FindSymbolsInDir(targetDir, query, t.WorkspaceDir)

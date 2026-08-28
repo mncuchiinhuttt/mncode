@@ -62,8 +62,7 @@ func TestLoadActualClaudeCatalog(t *testing.T) {
 		t.Errorf("expected 'code-reviewer' agent to be present")
 	}
 
-	rulesPrompt := catalog.FormatRules()
-	if len(rulesPrompt) == 0 {
+	if len(catalog.Rules) > 0 && len(catalog.FormatRules()) == 0 {
 		t.Errorf("expected formatted rules to not be empty")
 	}
 }

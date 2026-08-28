@@ -58,12 +58,13 @@ func (g *GrepTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return "", fmt.Errorf("Query and SearchPath are required")
 	}
 
-	if !filepath.IsAbs(searchPath) && g.BaseDir != "" {
-		searchPath = filepath.Join(g.BaseDir, searchPath)
+	resolvedPath, err := resolveWorkspacePath(g.BaseDir, searchPath, false)
+	if err != nil {
+		return "", err
 	}
+	searchPath = resolvedPath
 
 	var pattern *regexp.Regexp
-	var err error
 	patStr := query
 	if !isRegex {
 		patStr = regexp.QuoteMeta(query)

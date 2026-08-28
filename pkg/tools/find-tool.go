@@ -46,10 +46,13 @@ func (f *FindTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	pattern, _ := args["Pattern"].(string)
 	searchDir, _ := args["SearchDirectory"].(string)
 	if searchDir == "" {
-		searchDir = f.BaseDir
-	} else if !filepath.IsAbs(searchDir) && f.BaseDir != "" {
-		searchDir = filepath.Join(f.BaseDir, searchDir)
+		searchDir = "."
 	}
+	resolvedDir, err := resolveWorkspacePath(f.BaseDir, searchDir, false)
+	if err != nil {
+		return "", err
+	}
+	searchDir = resolvedDir
 
 	maxDepth := 10
 	if md, ok := args["MaxDepth"].(float64); ok && md > 0 {
@@ -59,7 +62,7 @@ func (f *FindTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	var matches []string
 	baseSlashCount := strings.Count(filepath.Clean(searchDir), string(filepath.Separator))
 
-	err := filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || len(matches) >= 50 {
 			return nil
 		}

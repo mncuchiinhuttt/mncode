@@ -50,9 +50,11 @@ func (w *WriteTool) Execute(ctx context.Context, args map[string]interface{}) (s
 		return "", fmt.Errorf("TargetFile is required")
 	}
 
-	if !filepath.IsAbs(path) && w.BaseDir != "" {
-		path = filepath.Join(w.BaseDir, path)
+	resolvedPath, err := resolveWorkspacePath(w.BaseDir, path, true)
+	if err != nil {
+		return "", err
 	}
+	path = resolvedPath
 
 	if _, err := os.Stat(path); err == nil && !overwrite {
 		return "", fmt.Errorf("file %s already exists; specify Overwrite=true to replace it", path)
