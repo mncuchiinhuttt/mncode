@@ -1,3 +1,15 @@
+## Release v0.1.4-beta (2026-08-28)
+
+### Added
+- Beta channel build for isolated browser control through Chrome/CDP.
+- Curated skills marketplace with shared CLI/Desktop installs.
+- Token-saving controls, capped thinking, compressed command output, RTK, and Headroom integration.
+- Safer agent runtime boundaries: bounded loops, workspace trust, private credential/session files, safe image paths, and approval-gated tools.
+- Git worktree isolation for delegated agent work and remote companion camera/image support.
+
+### Fixed
+- Provider routing, update handling, terminal output alignment, remote pairing, and interactive approval flows.
+
 ## Release v0.1.4 (2026-08-28)
 
 ### 🚀 New Features
