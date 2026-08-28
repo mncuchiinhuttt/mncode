@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	CurrentVersion = "v0.1.4"
+	CurrentVersion = "v0.1.4-beta"
 	GithubRepo     = "mncuchiinhuttt/mncode"
 )
 
