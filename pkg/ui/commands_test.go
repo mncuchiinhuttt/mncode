@@ -96,7 +96,7 @@ func TestChangelogCommand(t *testing.T) {
 	cfg := config.DefaultConfig()
 	s := &agent.Session{
 		ID:           "test-session",
-		WorkspaceDir: ".",
+		WorkspaceDir: t.TempDir(),
 		Config:       cfg,
 	}
 	HandleChangelogCommand([]string{"/changelog"}, s)
