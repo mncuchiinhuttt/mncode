@@ -113,7 +113,11 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			HandleMncodeLogoutCommand(s)
 		}
 	case "/login":
-		fmt.Printf("\n%s You are already logged in and active in this session! (Use %s to inspect session or %s for AI providers)\n\n", BoldPastelPink("[mncode]"), BoldCyan("/status"), BoldCyan("/account"))
+		if s.Config.GetTelemetryKey() == "" {
+			HandleMncodeLoginCommand(parts, s)
+		} else {
+			fmt.Printf("\n%s You are already logged in and active in this session! (Use %s to inspect session or %s for AI providers)\n\n", BoldPastelPink("[mncode]"), BoldCyan("/status"), BoldCyan("/account"))
+		}
 	case "/btw":
 		HandleBTWCommand(parts, s)
 	case "/brainrot":

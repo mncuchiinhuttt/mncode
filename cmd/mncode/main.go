@@ -143,7 +143,7 @@ func main() {
 	}
 
 	// 5. Initialize Tools, MCP & UI
-	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove)
+	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove, cfg)
 	toolRegistry.Register(&tools.AskTool{
 		AutoApprove: cfg.AutoApprove,
 		Prompter: func(question string, options []string, isMultiSelect bool) string {

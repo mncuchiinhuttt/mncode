@@ -15,7 +15,7 @@ type SubagentRunner struct {
 }
 
 // Run executes a subagent with a dedicated sub-session and multi-turn tool execution
-func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (string, error) {
+func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (output string, returnErr error) {
 	subDef, ok := sr.ParentSession.Catalog.Agents[agentName]
 	systemPrompt := ""
 	roleName := agentName
@@ -27,9 +27,8 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 	}
 
 	worktreeBase := sr.ParentSession.Config.GetSetting("worktree_base", "current")
-	systemPrompt += fmt.Sprintf("\n[Subagent Isolation & Worktree Context: Base ref is '%s']\n", worktreeBase)
 
-	subID := fmt.Sprintf("%s-%d", agentName, time.Now().Unix()%10000)
+	subID := fmt.Sprintf("%s-%d", agentName, time.Now().UnixNano())
 	if sr.ParentSession.Subagents != nil {
 		sr.ParentSession.Subagents.Register(subID, agentName, roleName, prompt)
 	}
@@ -38,11 +37,35 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		sr.ParentSession.UI.OnSubagentStart(agentName, roleName, prompt)
 	}
 
+	// Git worktree isolation: when worktree_base is "main" or "fresh" and the
+	// workspace is a git repo, the subagent gets its own worktree + branch so
+	// it can never race the user's own uncommitted edits or a sibling
+	// subagent's concurrent file changes. Falls back to sharing the parent's
+	// workspace directly (prior behavior) if isolation isn't applicable.
+	effectiveWorkspaceDir := sr.ParentSession.WorkspaceDir
+	worktree, worktreeErr := CreateSubagentWorktree(sr.ParentSession.WorkspaceDir, subID, worktreeBase)
+	if worktreeErr != nil {
+		systemPrompt += fmt.Sprintf("\n[Subagent Isolation: requested worktree base '%s' but isolation is unavailable (%v) — operating directly on the shared workspace instead.]\n", worktreeBase, worktreeErr)
+	} else if worktree != nil {
+		effectiveWorkspaceDir = worktree.Path
+		defer func() {
+			if cleanupErr := worktree.Cleanup(sr.ParentSession.WorkspaceDir); cleanupErr != nil {
+				if returnErr == nil {
+					returnErr = cleanupErr
+				}
+				output = strings.TrimSpace(output + fmt.Sprintf("\n\n[Worktree cleanup failed; recover changes from %s: %v]", worktree.Path, cleanupErr))
+			}
+		}()
+		systemPrompt += fmt.Sprintf("\n[Subagent Isolation & Worktree Context: operating in an isolated git worktree on branch '%s', checked out from '%s'. Changes here do not affect the user's working directory until merged.]\n", worktree.Branch, worktree.BaseRef)
+	} else {
+		systemPrompt += fmt.Sprintf("\n[Subagent Isolation & Worktree Context: Base ref is '%s' (no isolation — operating on the shared workspace).]\n", worktreeBase)
+	}
+
 	// Subagent tool registry
-	subTools := tools.DefaultRegistry(sr.ParentSession.WorkspaceDir, true)
+	subTools := tools.DefaultRegistry(effectiveWorkspaceDir, true, sr.ParentSession.Config)
 	subSession := &Session{
 		ID:           subID,
-		WorkspaceDir: sr.ParentSession.WorkspaceDir,
+		WorkspaceDir: effectiveWorkspaceDir,
 		Config:       sr.ParentSession.Config,
 		Provider:     sr.ParentSession.Provider,
 		Tools:        subTools,
@@ -52,7 +75,7 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		Tracker:      sr.ParentSession.Tracker,
 		Subagents:    sr.ParentSession.Subagents,
 		History:      nil,
-		UI:           nil, // Silent subagent
+		UI:           newSubagentUI(sr.ParentSession.UI),
 	}
 
 	// Multi-turn ReAct Loop for Subagent (up to 10 iterations)
@@ -64,6 +87,7 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 	maxTurns := 10
 	var finalContent strings.Builder
 	var lastErr error
+	completed := false
 
 	for turn := 0; turn < maxTurns; turn++ {
 		req := &provider.CompletionRequest{
@@ -114,6 +138,7 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		subSession.History = append(subSession.History, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			completed = true
 			break
 		}
 
@@ -129,9 +154,20 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (st
 		}
 	}
 
+	if !completed && lastErr == nil {
+		if err := ctx.Err(); err != nil {
+			lastErr = err
+		} else {
+			lastErr = fmt.Errorf("subagent %s reached the maximum of %d iterations before completion", agentName, maxTurns)
+		}
+	}
+
 	resultText := strings.TrimSpace(finalContent.String())
 	if resultText == "" && lastErr == nil {
 		resultText = fmt.Sprintf("Subagent %s completed assigned task.", agentName)
+	}
+	if worktree != nil {
+		resultText = strings.TrimSpace(resultText + fmt.Sprintf("\n\n[Isolated worktree preserved on branch %s. Review or merge this branch from the parent repository.]", worktree.Branch))
 	}
 
 	statsSuffix := ""

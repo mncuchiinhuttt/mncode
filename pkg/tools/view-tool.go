@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -49,9 +48,11 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return "", fmt.Errorf("AbsolutePath is required")
 	}
 
-	if !filepath.IsAbs(path) && v.BaseDir != "" {
-		path = filepath.Join(v.BaseDir, path)
+	resolvedPath, err := resolveWorkspacePath(v.BaseDir, path, false)
+	if err != nil {
+		return "", err
 	}
+	path = resolvedPath
 
 	file, err := os.Open(path)
 	if err != nil {

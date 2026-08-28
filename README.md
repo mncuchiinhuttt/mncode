@@ -30,8 +30,8 @@
   - Full support for **`ox-alpha` / `stealth/ox-alpha`** (1,048,576 context tokens reasoning model with 131k output tokens).
   - Extended thinking budgets (`/effort` up to **PRO MAX 64,000 tokens**) for Claude 3.7 Sonnet, Gemini 3.7 Flash Thinking, and o3-mini.
 - 🔌 **Model Context Protocol (MCP) Integration**:
-  - Full MCP client support with interactive server manager (`/mcp`).
-  - Connect stdio & SSE MCP servers with dynamic tool discovery, lazy loading, and eager execution.
+  - MCP client support over stdio with interactive server manager (`/mcp`).
+  - Dynamic tool discovery from connected servers with explicit restart/reload controls; HTTP/SSE transports are not enabled yet.
 - 🌐 **Web Platform & Analytics Hub Sync**:
   - Connect with [`mncode-web`](https://github.com/mncuchiinhuttt/mncode-web) via API Key or CLI login (`/login web`).
   - Automatic daily telemetry synchronization (token consumption, model distribution, request volume).

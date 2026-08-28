@@ -11,6 +11,7 @@ import (
 // LoadCatalog scans all global and workspace directories for skills, agents, and rules
 func LoadCatalog(claudeDir string) (*Catalog, error) {
 	cat := NewCatalog()
+	installBuiltinAgents(cat)
 	homeDir, _ := os.UserHomeDir()
 
 	// 1. Skill Discovery Paths (Workspace overrides Global)

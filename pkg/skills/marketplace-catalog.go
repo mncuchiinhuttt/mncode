@@ -29,12 +29,6 @@ var freeMarketplaceSkills = []marketplaceSkillDefinition{
 		MarketURL: "https://mcpmarket.com/tools/skills/gh-issues-auto-fixer",
 	},
 	{
-		Slug: "discord-integration", Name: "Discord Integration",
-		Description: "Manage Discord messages, reactions, and channel workflows from the agent.",
-		Category:    "Collaboration Tools", Repository: "openclaw/openclaw", SkillPath: "skills/discord",
-		MarketURL: "https://mcpmarket.com/tools/skills/discord-integration",
-	},
-	{
 		Slug: "react-code-fix-linter", Name: "React Code Fix & Linter",
 		Description: "Run focused React formatting, linting, and code-quality fixes before commits.",
 		Category:    "Developer Tools", Repository: "facebook/react", SkillPath: ".claude/skills/fix",

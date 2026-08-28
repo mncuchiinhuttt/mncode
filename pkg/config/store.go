@@ -14,7 +14,10 @@ func GetConfigFilePath() (string, error) {
 		return "", err
 	}
 	dir := filepath.Join(home, ".mncode")
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	if err := os.Chmod(dir, 0o700); err != nil {
 		return "", err
 	}
 	return filepath.Join(dir, "config.json"), nil
@@ -30,7 +33,34 @@ func SaveConfig(cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filePath, data, 0644)
+
+	dir := filepath.Dir(filePath)
+	tmp, err := os.CreateTemp(dir, ".config.json.tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+
+	if err := tmp.Chmod(0o600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, filePath); err != nil {
+		return err
+	}
+	return os.Chmod(filePath, 0o600)
 }
 
 // LoadUserConfig loads saved settings from ~/.mncode/config.json on top of existing config

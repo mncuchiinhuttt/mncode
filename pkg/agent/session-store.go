@@ -28,7 +28,8 @@ func GetSessionsDir() string {
 		home = "."
 	}
 	dir := filepath.Join(home, ".mncode", "sessions")
-	_ = os.MkdirAll(dir, 0755)
+	_ = os.MkdirAll(dir, 0o700)
+	_ = os.Chmod(dir, 0o700)
 	return dir
 }
 
@@ -71,8 +72,12 @@ func (s *Session) Save() error {
 		return err
 	}
 
-	filePath := filepath.Join(dir, fmt.Sprintf("%s.json", s.ID))
-	return os.WriteFile(filePath, data, 0644)
+	fileName, err := safeSessionFilename(s.ID)
+	if err != nil {
+		return err
+	}
+	filePath := filepath.Join(dir, fileName)
+	return writePrivateFile(filePath, data)
 }
 
 func ListSavedSessions() ([]*SavedSession, error) {
@@ -117,10 +122,11 @@ func GetLatestSavedSession() (*SavedSession, error) {
 
 func LoadSavedSession(id string) (*SavedSession, error) {
 	dir := GetSessionsDir()
-	if !strings.HasSuffix(id, ".json") {
-		id = id + ".json"
+	fileName, err := safeSessionFilename(id)
+	if err != nil {
+		return nil, err
 	}
-	data, err := os.ReadFile(filepath.Join(dir, id))
+	data, err := os.ReadFile(filepath.Join(dir, fileName))
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +135,58 @@ func LoadSavedSession(id string) (*SavedSession, error) {
 		return nil, err
 	}
 	return &s, nil
+}
+
+func safeSessionFilename(id string) (string, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return "", fmt.Errorf("session id is required")
+	}
+	if strings.ContainsAny(id, "/\\") || strings.Contains(id, "..") {
+		return "", fmt.Errorf("invalid session id")
+	}
+	if !strings.HasSuffix(id, ".json") {
+		id += ".json"
+	}
+	if filepath.Base(id) != id || len(id) > 255 {
+		return "", fmt.Errorf("invalid session id")
+	}
+	return id, nil
+}
+
+func writePrivateFile(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	if err := os.Chmod(dir, 0o700); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".session.json.tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	if err := tmp.Chmod(0o600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		return err
+	}
+	return os.Chmod(path, 0o600)
 }
 
 func (s *Session) Restore(saved *SavedSession) {

@@ -114,6 +114,14 @@ func configureAndConnectMCP(s *agent.Session, name string, cfg mcp.ServerConfig)
 
 func promptForToken(promptStr string) string {
 	fmt.Print(BoldCyan(promptStr))
+	fd := int(os.Stdin.Fd())
+	if term.IsTerminal(fd) {
+		line, err := term.ReadPassword(fd)
+		fmt.Println()
+		if err == nil {
+			return strings.TrimSpace(string(line))
+		}
+	}
 	reader := bufio.NewReader(os.Stdin)
 	line, _ := reader.ReadString('\n')
 	return strings.TrimSpace(line)

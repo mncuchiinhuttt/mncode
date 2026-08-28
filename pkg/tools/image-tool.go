@@ -10,7 +10,6 @@ import (
 	_ "image/png"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -49,9 +48,9 @@ func (v *ViewImageTool) Execute(ctx context.Context, args map[string]interface{}
 		return "", fmt.Errorf("path is required")
 	}
 
-	fullPath := relPath
-	if !filepath.IsAbs(fullPath) && v.BaseDir != "" {
-		fullPath = filepath.Join(v.BaseDir, relPath)
+	fullPath, err := resolveWorkspacePath(v.BaseDir, relPath, false)
+	if err != nil {
+		return "", err
 	}
 
 	fileInfo, err := os.Stat(fullPath)

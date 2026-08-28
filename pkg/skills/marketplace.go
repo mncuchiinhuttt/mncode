@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // MarketplaceSkill is a skill entry for the marketplace or installed lists.
@@ -35,7 +36,7 @@ type SkillsMarketplace struct {
 func GetMarketplace() (SkillsMarketplace, error) {
 	system, user := installedSkills()
 	installed := make(map[string]bool)
-	for _, skill := range append(append([]MarketplaceSkill{}, system...), user...) {
+	for _, skill := range user {
 		installed[strings.ToLower(skill.Name)] = true
 		installed[skill.Slug] = true
 	}
@@ -137,7 +138,7 @@ func findMarketplaceSkill(slug string) (marketplaceSkillDefinition, bool) {
 }
 
 func downloadSkill(definition marketplaceSkillDefinition) ([]byte, error) {
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	var lastErr error
 	for _, branch := range []string{"main", "master"} {
 		path := strings.Trim(definition.SkillPath, "/")

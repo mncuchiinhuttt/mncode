@@ -75,6 +75,7 @@ func showConfigList(s *agent.Session) {
 	fmt.Printf("  %-18s %s\n", "workflow", BoldCyan(strings.ToUpper(cfg.Workflow)))
 	fmt.Printf("  %-18s %d tokens\n", "thinking_budget", cfg.ThinkingBudget)
 	fmt.Printf("  %-18s %d tokens\n", "max_tokens", cfg.MaxTokens)
+	fmt.Printf("  %-18s %s\n", "max_agent_turns", cfg.GetSetting("max_agent_turns", "25"))
 	fmt.Printf("  %-18s %.2f\n", "temperature", cfg.Temperature)
 	fmt.Printf("  %-18s %v\n", "auto_approve", cfg.AutoApprove)
 	fmt.Printf("  %-18s %s\n", "workspace", cfg.WorkspaceDir)
@@ -112,10 +113,14 @@ func getConfigValue(key string, s *agent.Session) {
 		fmt.Printf("thinking_budget = %d\n", cfg.ThinkingBudget)
 	case "max_tokens":
 		fmt.Printf("max_tokens = %d\n", cfg.MaxTokens)
+	case "max_agent_turns":
+		fmt.Printf("max_agent_turns = %s\n", cfg.GetSetting("max_agent_turns", "25"))
 	case "temperature", "temp":
 		fmt.Printf("temperature = %.2f\n", cfg.Temperature)
 	case "auto_approve":
 		fmt.Printf("auto_approve = %v\n", cfg.AutoApprove)
+	case "browser_control_enabled", "browser_headless", "browser_ignore_cert_errors":
+		fmt.Printf("%s = %s\n", strings.ToLower(key), cfg.GetSetting(strings.ToLower(key), "false"))
 	case "base_url":
 		fmt.Printf("base_url = %s\n", cfg.BaseURL)
 	default:
@@ -153,6 +158,13 @@ func setConfigValue(key, value string, s *agent.Session) {
 			fmt.Println("Invalid max_tokens integer value.")
 			return
 		}
+	case "max_agent_turns":
+		if v, err := strconv.Atoi(value); err == nil && v >= 1 && v <= 100 {
+			cfg.SetSetting("max_agent_turns", strconv.Itoa(v))
+		} else {
+			fmt.Println("Invalid max_agent_turns value (1 to 100).")
+			return
+		}
 	case "temperature", "temp":
 		if v, err := strconv.ParseFloat(value, 64); err == nil && v >= 0.0 && v <= 2.0 {
 			cfg.Temperature = v
@@ -162,6 +174,16 @@ func setConfigValue(key, value string, s *agent.Session) {
 		}
 	case "auto_approve":
 		cfg.AutoApprove = (strings.ToLower(value) == "true" || value == "1" || value == "yes")
+	case "browser_control_enabled", "browser_headless", "browser_ignore_cert_errors":
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "true", "1", "yes":
+			cfg.SetSetting(k, "true")
+		case "false", "0", "no":
+			cfg.SetSetting(k, "false")
+		default:
+			fmt.Printf("Invalid %s value (true or false).\n", k)
+			return
+		}
 	case "opencode_api_key", "opencode_key":
 		cfg.OpenCodeAPIKey = value
 		cfg.SetSetting("opencode_api_key", value)
@@ -180,7 +202,7 @@ func setConfigValue(key, value string, s *agent.Session) {
 		cfg.BaseURL = value
 		_ = s.EnsureProvider()
 	default:
-		fmt.Printf("Unknown config key '%s'. Available: model, provider, effort, workflow, thinking_budget, max_tokens, temperature, auto_approve, base_url, opencode_api_key, api_key\n", key)
+		fmt.Printf("Unknown config key '%s'. Available: model, provider, effort, workflow, thinking_budget, max_tokens, max_agent_turns, temperature, auto_approve, browser_control_enabled, browser_headless, browser_ignore_cert_errors, base_url, opencode_api_key, api_key\n", key)
 		return
 	}
 

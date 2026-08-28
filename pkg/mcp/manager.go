@@ -198,6 +198,14 @@ func (m *Manager) IsConnected(name string) bool {
 	return ok && client != nil
 }
 
+// GetClient returns the current client for a server without exposing an
+// unsynchronized map read to callers.
+func (m *Manager) GetClient(name string) *Client {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.Clients[name]
+}
+
 func (m *Manager) StartAll(ctx context.Context) {
 	m.mu.RLock()
 	isWs := m.IsWorkspaceLvl

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -37,10 +36,13 @@ func (l *ListTool) Schema() map[string]interface{} {
 func (l *ListTool) Execute(ctx context.Context, args map[string]interface{}) (string, error) {
 	dir, _ := args["DirectoryPath"].(string)
 	if dir == "" {
-		dir = l.BaseDir
-	} else if !filepath.IsAbs(dir) && l.BaseDir != "" {
-		dir = filepath.Join(l.BaseDir, dir)
+		dir = "."
 	}
+	resolvedDir, err := resolveWorkspacePath(l.BaseDir, dir, false)
+	if err != nil {
+		return "", err
+	}
+	dir = resolvedDir
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
