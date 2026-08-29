@@ -56,13 +56,13 @@ func OpenInteractiveMCPMenu(s *agent.Session) {
 				Action:      func() { setupGitHubMCP(s) },
 			},
 			{
-				Title:       "📝 Notion MCP Server",
+				Title:       "[DOC] Notion MCP Server",
 				Status:      notionStatus,
 				Description: "Read/write workspace pages, databases & knowledge blocks",
 				Action:      func() { setupNotionMCP(s) },
 			},
 			{
-				Title:       "🔄 Reload & Test All MCP Servers",
+				Title:       "[RELOAD] Reload & Test All MCP Servers",
 				Status:      "",
 				Description: "Restart server processes and reload tool catalog",
 				Action: func() {
@@ -70,7 +70,7 @@ func OpenInteractiveMCPMenu(s *agent.Session) {
 				},
 			},
 			{
-				Title:       "🗑️  Disconnect / Remove an MCP Server",
+				Title:       "[DELETE]  Disconnect / Remove an MCP Server",
 				Status:      "",
 				Description: "Remove GitHub or Notion tokens from ~/.mncode/mcp.json",
 				Action:      func() { selectAndRemoveMCP(s) },

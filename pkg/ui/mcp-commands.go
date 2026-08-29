@@ -165,7 +165,7 @@ func showMCPStatus(s *agent.Session) {
 			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
 		}
 	} else if ghConfigured {
-		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s", BoldCyan("GitHub MCP"), BoldRed("🔴 "+gh.Error)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s", BoldCyan("GitHub MCP"), BoldRed("[ERR] "+gh.Error)), cardWidth)
 	} else {
 		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s · Run: %s", BoldCyan("GitHub MCP"), GrayText("[DISABLED] Not Configured"), BoldCyan("/mcp github <token>")), cardWidth)
 	}
@@ -175,7 +175,7 @@ func showMCPStatus(s *agent.Session) {
 	// 2. Notion MCP
 	notion, notionConfigured := statusMap["notion"]
 	if notionConfigured && notion.Connected {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s (%d tools)", BoldCyan("Notion MCP"), BoldGreen("[ACTIVE] Connected"), len(notion.Tools)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s (%d tools)", BoldCyan("Notion MCP"), BoldGreen("[ACTIVE] Connected"), len(notion.Tools)), cardWidth)
 		if len(notion.Tools) > 0 {
 			var names []string
 			for _, t := range notion.Tools {
@@ -184,9 +184,9 @@ func showMCPStatus(s *agent.Session) {
 			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
 		}
 	} else if notionConfigured {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s", BoldCyan("Notion MCP"), BoldRed("🔴 "+notion.Error)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s", BoldCyan("Notion MCP"), BoldRed("[ERR] "+notion.Error)), cardWidth)
 	} else {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s · Run: %s", BoldCyan("Notion MCP"), GrayText("[DISABLED] Not Configured"), BoldCyan("/mcp notion <token>")), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s · Run: %s", BoldCyan("Notion MCP"), GrayText("[DISABLED] Not Configured"), BoldCyan("/mcp notion <token>")), cardWidth)
 	}
 
 	printMCPRow("", cardWidth)
