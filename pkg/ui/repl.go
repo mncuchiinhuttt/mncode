@@ -61,8 +61,13 @@ func RunREPL(s *agent.Session) {
 		if err != nil && err != context.Canceled {
 			fmt.Printf("\n%s %v\n", BoldRed("Error:"), err)
 		}
+		if s.Config.GetSetting("sound_enabled", "true") == "true" {
+			fmt.Print("\a")
+		}
+		if s.Config.GetSetting("notifications_enabled", "true") == "true" {
+			fmt.Print("\033]777;notify;mncode;Task completed\007")
+		}
 		fmt.Println()
-
 		// Process any queued messages sequentially
 		for {
 			queued := s.DrainMessageQueue()

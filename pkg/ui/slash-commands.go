@@ -48,8 +48,11 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/security"
 	} else if strings.HasPrefix("/seed", cmd) && len(cmd) >= 3 {
 		cmd = "/seed"
+	} else if strings.HasPrefix("/search", cmd) && len(cmd) >= 3 {
+		cmd = "/search"
+	} else if strings.HasPrefix("/export", cmd) && len(cmd) >= 3 {
+		cmd = "/export"
 	}
-
 	switch cmd {
 	case "/help", "/?":
 		ShowSlashPalette()
@@ -104,6 +107,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		ShowUsageStats(s)
 	case "/quota", "/limits":
 		ShowQuotaDashboard(s)
+	case "/search", "/search-setup":
+		HandleSearchCommand(parts, s)
 	case "/account", "/accounts":
 		HandleAccountCommand(parts, s)
 	case "/logout":
@@ -193,6 +198,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleReviewCommand(parts, s)
 	case "/share":
 		HandleShareCommand(parts, s)
+	case "/export", "/trajectory", "/sharegpt", "/export-training":
+		HandleTrajectoryExportCommand(parts, s)
 	case "/pr":
 		HandlePRCommand(parts, s)
 	case "/doctor":

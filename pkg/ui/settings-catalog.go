@@ -49,9 +49,13 @@ func GetAllSettingsDefinitions() []SettingDef {
 		{Key: "browser_control_enabled", Label: "Browser Control", Type: SettingTypeBool, DefaultVal: "false", Description: "Allow the agent to drive the isolated Chrome browser via control_browser"},
 		{Key: "browser_headless", Label: "Browser Headless Mode", Type: SettingTypeBool, DefaultVal: "false", Description: "Run the controlled browser without a visible window"},
 		{Key: "browser_ignore_cert_errors", Label: "Browser Ignore Certificate Errors", Type: SettingTypeBool, DefaultVal: "false", Description: "Ignore TLS certificate errors in the controlled browser for local testing only"},
+		{Key: "search_engine", Label: "Web Search Engine", Type: SettingTypeChoice, DefaultVal: "auto", Choices: []string{"auto", "antigravity", "brave", "tavily", "duckduckgo"}, Description: "Search backend for search_web tool (auto detects available API keys & Google OAuth)"},
 		{Key: "worktree_base", Label: "Worktree Base Ref", Type: SettingTypeChoice, DefaultVal: "current", Choices: []string{"current", "main", "fresh"}, Description: "Subagent isolation: 'current' shares your live workspace, 'main'/'fresh' spawn a real git worktree + branch so subagents can't race your edits"},
 		{Key: "troll_mode", Label: "Troll Mode (Harmless Pranks)", Type: SettingTypeBool, DefaultVal: "false", Description: "Display occasional funny fake scare commands before executing safe tools"},
 		{Key: "interrupt_mode", Label: "Default Message Action", Type: SettingTypeChoice, DefaultVal: "queue", Choices: []string{"queue", "steer"}, Description: "Default behavior for messages: queue after turn (default) vs steer ongoing thought"},
+		{Key: "sound_enabled", Label: "Audio Feedback / Chime", Type: SettingTypeBool, DefaultVal: "true", Description: "Play audio bell or chime when agent completes a turn or asks a question"},
+		{Key: "notifications_enabled", Label: "Desktop OS Notifications", Type: SettingTypeBool, DefaultVal: "true", Description: "Send system desktop notification when a long-running turn or subagent completes"},
+		{Key: "sound_volume", Label: "Audio Volume Level", Type: SettingTypeChoice, DefaultVal: "60", Choices: []string{"20", "40", "60", "80", "100"}, Description: "Volume percentage for audio cues and chimes"},
 		{Key: "verbose_output", Label: "Verbose Debug Logging", Type: SettingTypeBool, DefaultVal: "false", Description: "Print raw LLM API payloads and tool execution debug traces"},
 	}
 }
@@ -73,6 +77,8 @@ func GetSettingValue(s *agent.Session, def SettingDef) string {
 			return s.Config.Workflow
 		}
 		return def.DefaultVal
+	case "search_engine":
+		return s.Config.GetSearchEngine()
 	case "permission_mode":
 		if s.Config.PermissionMode == config.PermissionModeBypass {
 			return "Bypass Permissions"
@@ -139,6 +145,8 @@ func ToggleOrCycleSetting(s *agent.Session, def SettingDef) {
 			}
 		case "context_window":
 			s.Config.ContextWindow = chosen
+		case "search_engine":
+			s.Config.SearchEngine = strings.ToLower(chosen)
 		}
 
 		_ = config.SaveConfig(s.Config)

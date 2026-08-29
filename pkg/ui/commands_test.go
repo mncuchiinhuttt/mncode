@@ -1,9 +1,11 @@
 package ui
 
 import (
+	"strings"
+	"testing"
+
 	"mncode/pkg/agent"
 	"mncode/pkg/config"
-	"testing"
 )
 
 func TestSemanticCommitMessage(t *testing.T) {
@@ -100,4 +102,12 @@ func TestChangelogCommand(t *testing.T) {
 		Config:       cfg,
 	}
 	HandleChangelogCommand([]string{"/changelog"}, s)
+}
+
+func TestFormatKeyStatusDoesNotRevealCredential(t *testing.T) {
+	const secret = "BSA_super-secret-value"
+	status := formatKeyStatus(secret)
+	if strings.Contains(status, secret) || strings.Contains(status, "BSA_") {
+		t.Fatalf("formatKeyStatus() leaked credential: %q", status)
+	}
 }
