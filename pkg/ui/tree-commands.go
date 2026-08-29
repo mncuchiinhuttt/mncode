@@ -98,25 +98,25 @@ func getFileIcon(name string) string {
 	ext := filepath.Ext(name)
 	switch ext {
 	case ".go":
-		return "🐹"
+		return "[Go]"
 	case ".ts", ".tsx":
-		return "🔷"
+		return "[TS]"
 	case ".js", ".jsx":
-		return "🟨"
+		return "[JS]"
 	case ".json":
 		return "[PLAN]"
 	case ".md":
 		return "[FILE]"
 	case ".py":
-		return "🐍"
+		return "[Py]"
 	case ".rs":
-		return "🦀"
+		return "[Rs]"
 	case ".sql":
 		return "[DB]"
 	case ".svg", ".png", ".jpg":
-		return "🖼️"
+		return "[Img]"
 	case ".sh":
-		return "🐚"
+		return "[Sh]"
 	default:
 		return "[FILE]"
 	}
