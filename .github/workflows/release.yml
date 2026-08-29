@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write
 
+env:
+  RELEASE_MANIFEST_KEY_ID: mncode-release-2026
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -30,24 +33,19 @@ jobs:
           - os: windows
             arch: amd64
             name: mncode-windows-amd64.exe
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-
       - name: Build Binary
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
-        run: |
-          go build -ldflags="-s -w" -o dist/${{ matrix.name }} ./cmd/mncode
-
+        run: go build -ldflags="-s -w" -o dist/${{ matrix.name }} ./cmd/mncode
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -62,10 +60,38 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-
+      - name: Create signed CLI release manifest
+        env:
+          RELEASE_SIGNING_PRIVATE_KEY: ${{ secrets.MN_CODE_RELEASE_PRIVATE_KEY }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_MANIFEST_KEY_ID: mncode-release-2026
+        run: |
+          test -n "$RELEASE_SIGNING_PRIVATE_KEY" || { echo 'MN_CODE_RELEASE_PRIVATE_KEY is required to publish a release'; exit 1; }
+          cat > "$RUNNER_TEMP/sign-release-manifest.go" <<'EOF'
+          package main
+          import ("crypto/ed25519"; "crypto/sha256"; "encoding/base64"; "encoding/hex"; "encoding/json"; "fmt"; "io/fs"; "os"; "path/filepath"; "sort"; "strings"; "time")
+          type asset struct { Name string `json:"name"`; URL string `json:"url"`; Size int64 `json:"size"`; SHA256 string `json:"sha256"` }
+          type payload struct { SchemaVersion int `json:"schemaVersion"`; Version string `json:"version"`; Channel string `json:"channel"`; IssuedAt string `json:"issuedAt"`; ExpiresAt string `json:"expiresAt"`; Assets []asset `json:"assets"` }
+          type manifest struct { SchemaVersion int `json:"schemaVersion"`; Version string `json:"version"`; Channel string `json:"channel"`; IssuedAt string `json:"issuedAt"`; ExpiresAt string `json:"expiresAt"`; KeyID string `json:"keyID"`; Signature string `json:"signature"`; Assets []asset `json:"assets"` }
+          func main() {
+            if len(os.Args) != 3 { panic("usage: sign-release-manifest <assets-dir> <output>") }
+            tag, repo, keyID := os.Getenv("RELEASE_TAG"), os.Getenv("RELEASE_REPOSITORY"), os.Getenv("RELEASE_MANIFEST_KEY_ID")
+            private, err := base64.StdEncoding.DecodeString(os.Getenv("RELEASE_SIGNING_PRIVATE_KEY")); if err != nil { panic(err) }
+            if len(private) == ed25519.SeedSize { private = ed25519.NewKeyFromSeed(private) }; if len(private) != ed25519.PrivateKeySize { panic("release signing key must be base64 Ed25519 seed or private key") }
+            channel := "stable"; if strings.Contains(strings.ToLower(tag), "beta") || strings.Contains(strings.ToLower(tag), "alpha") { channel = "beta" }
+            issued, expires, assets := time.Now().UTC(), time.Now().UTC().Add(7*24*time.Hour), []asset{}
+            err = filepath.WalkDir(os.Args[1], func(path string, entry fs.DirEntry, walkErr error) error { if walkErr != nil { return walkErr }; if entry.IsDir() { return nil }; data, e := os.ReadFile(path); if e != nil { return e }; sum := sha256.Sum256(data); assets = append(assets, asset{filepath.Base(path), fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", repo, tag, filepath.Base(path)), int64(len(data)), hex.EncodeToString(sum[:])}); return nil }); if err != nil { panic(err) }
+            sort.Slice(assets, func(i,j int) bool { return assets[i].Name < assets[j].Name }); p := payload{1,tag,channel,issued.Format(time.RFC3339),expires.Format(time.RFC3339),assets}; canonical, err := json.Marshal(p); if err != nil { panic(err) }; sig := ed25519.Sign(ed25519.PrivateKey(private), canonical); encoded, err := json.MarshalIndent(manifest{1,tag,channel,p.IssuedAt,p.ExpiresAt,keyID,base64.StdEncoding.EncodeToString(sig),assets},"","  "); if err != nil { panic(err) }; if err := os.WriteFile(os.Args[2],append(encoded,'\n'),0600); err != nil { panic(err) }
+          }
+          EOF
+          GO111MODULE=off go run "$RUNNER_TEMP/sign-release-manifest.go" release-assets mncode-cli-manifest.json
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: release-assets/**/*
+          files: |
+            release-assets/**
+            mncode-cli-manifest.json
           generate_release_notes: true
+          fail_on_unmatched_files: true
