@@ -13,7 +13,7 @@ import (
 // HandleScanCommand executes full codebase scanning, architectural analysis & context priming
 func HandleScanCommand(parts []string, s *agent.Session) {
 	fmt.Println()
-	fmt.Printf("%s Deep scanning codebase architecture, modules & symbols...\n", BoldCyan("🔍 [Scan]"))
+	fmt.Printf("%s Deep scanning codebase architecture, modules & symbols...\n", BoldCyan("[SEARCH] [Scan]"))
 
 	startTime := time.Now()
 	summary, err := agent.ScanCodebase(s.WorkspaceDir)
@@ -65,7 +65,7 @@ func RenderScanResultCard(summary *agent.CodebaseSummary, elapsed time.Duration)
 	printScanRow(fmt.Sprintf("%s %s", Bold("Languages:  "), strings.Join(langItems, " · ")), cardWidth)
 
 	printScanRow("", cardWidth)
-	printScanRow(BoldMagenta("📁 Key Module & Package Architecture:"), cardWidth)
+	printScanRow(BoldMagenta("[DIR] Key Module & Package Architecture:"), cardWidth)
 
 	for i, pkg := range summary.Packages {
 		if i >= 8 {
@@ -84,7 +84,7 @@ func RenderScanResultCard(summary *agent.CodebaseSummary, elapsed time.Duration)
 
 	printScanRow("", cardWidth)
 	printScanRow(fmt.Sprintf("%s %s",
-		BoldGreen("✓ Context Status:"),
+		BoldGreen("[OK] Context Status:"),
 		Bold("Architectural map primed into AI memory for zero-delay understanding.")), cardWidth)
 
 	printScanRow(GrayText("╰"+strings.Repeat("─", cardWidth-2)+"╯"), cardWidth)

@@ -27,7 +27,7 @@ func HandleTreeCommand(parts []string, s *agent.Session) {
 	if rel == "." || rel == "" {
 		rel = filepath.Base(s.WorkspaceDir)
 	}
-	fmt.Printf("%s %s %s\n", BoldPastelPink("🌲"), Bold(rel), GrayText(fmt.Sprintf("(depth %d)", maxDepth)))
+	fmt.Printf("%s %s %s\n", BoldPastelPink("[TREE]"), Bold(rel), GrayText(fmt.Sprintf("(depth %d)", maxDepth)))
 	fmt.Println(GrayText(strings.Repeat("─", 50)))
 
 	totalFiles, totalDirs := 0, 0
@@ -104,20 +104,20 @@ func getFileIcon(name string) string {
 	case ".js", ".jsx":
 		return "🟨"
 	case ".json":
-		return "📋"
+		return "[PLAN]"
 	case ".md":
-		return "📄"
+		return "[FILE]"
 	case ".py":
 		return "🐍"
 	case ".rs":
 		return "🦀"
 	case ".sql":
-		return "🗄️"
+		return "[DB]"
 	case ".svg", ".png", ".jpg":
 		return "🖼️"
 	case ".sh":
 		return "🐚"
 	default:
-		return "📄"
+		return "[FILE]"
 	}
 }
