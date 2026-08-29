@@ -35,7 +35,7 @@ func HandleDiffCommand(parts []string, s *agent.Session) {
 	trimmedStatus := strings.TrimSpace(string(statusOut))
 	if trimmedStatus == "" {
 		fmt.Println()
-		fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Working tree clean — no uncommitted changes in workspace."))
+		fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Working tree clean — no uncommitted changes in workspace."))
 		fmt.Println()
 		return
 	}
@@ -61,7 +61,7 @@ func HandleDiffCommand(parts []string, s *agent.Session) {
 	// 3. Render Header Banner
 	topBorder := fmt.Sprintf("%s %s %s",
 		BoldPastelPink("╭── ["),
-		BoldCyan(fmt.Sprintf("🔍 %s", diffTitle)),
+		BoldCyan(fmt.Sprintf("[SEARCH] %s", diffTitle)),
 		BoldPastelPink("] "+strings.Repeat("─", cardWidth-visualLen(diffTitle)-12)+"╮"))
 
 	fmt.Println()

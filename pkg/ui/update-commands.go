@@ -19,7 +19,7 @@ func StartBackgroundVersionCheck() {
 		time.Sleep(1 * time.Second)
 		latest, hasUpdate, err := config.CheckLatestVersion()
 		if err == nil && hasUpdate {
-			cachedUpdateNotice = fmt.Sprintf("💡 Update available: %s ➔ %s. Type '/update' to upgrade!",
+			cachedUpdateNotice = fmt.Sprintf("[INFO] Update available: %s -> %s. Type '/update' to upgrade!",
 				config.CurrentVersion, BoldGreen(latest))
 		}
 	}()
@@ -40,11 +40,11 @@ func HandleUpdateCommand(parts []string, s *agent.Session) {
 	}
 
 	if !hasUpdate {
-		fmt.Printf("%s You are already on the latest version (%s)!\n\n", BoldGreen("✓"), Bold(config.CurrentVersion))
+		fmt.Printf("%s You are already on the latest version (%s)!\n\n", BoldGreen("[OK]"), Bold(config.CurrentVersion))
 		return
 	}
 
-	fmt.Printf("%s New version found: %s (Current: %s)\n", BoldGreen("✓"), BoldGreen(latestTag), config.CurrentVersion)
+	fmt.Printf("%s New version found: %s (Current: %s)\n", BoldGreen("[OK]"), BoldGreen(latestTag), config.CurrentVersion)
 	fmt.Printf("Downloading and installing update for %s/%s...\n", runtime.GOOS, runtime.GOARCH)
 
 	err = config.PerformSelfUpdate(latestTag)
@@ -55,7 +55,7 @@ func HandleUpdateCommand(parts []string, s *agent.Session) {
 	}
 
 	cachedUpdateNotice = ""
-	fmt.Printf("\n%s Successfully updated mncode to %s!\n", BoldGreen("✓ [Success]"), BoldGreen(latestTag))
+	fmt.Printf("\n%s Successfully updated mncode to %s!\n", BoldGreen("[OK] [Success]"), BoldGreen(latestTag))
 	fmt.Println("Please restart mncode to apply the new version.")
 }
 

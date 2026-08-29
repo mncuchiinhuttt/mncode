@@ -27,7 +27,7 @@ func HandleUndoCommand(parts []string, s *agent.Session) {
 		return
 	}
 	fmt.Println()
-	fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold(msg))
+	fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold(msg))
 	fmt.Printf("  %s %s\n", GrayText("Status:"), GrayText("Workspace files restored and last turn removed from active memory."))
 	fmt.Println()
 }
@@ -60,7 +60,7 @@ func HandleRewindCommand(parts []string, s *agent.Session) {
 		completed++
 	}
 	if completed == turns {
-		fmt.Printf("  %s %s\n\n", BoldGreen("✓"), Bold(fmt.Sprintf("Rewound %d turn(s) successfully.", completed)))
+		fmt.Printf("  %s %s\n\n", BoldGreen("[OK]"), Bold(fmt.Sprintf("Rewound %d turn(s) successfully.", completed)))
 	} else {
 		fmt.Printf("  %s Rewound %d of %d turn(s).\n\n", BoldYellow("!"), completed, turns)
 	}
@@ -209,7 +209,7 @@ func HandleCheckpointCommand(parts []string, s *agent.Session) {
 				fmt.Printf("\n%s No checkpoints found in .mncode/checkpoints/\n\n", GrayText("[Checkpoints]"))
 				return
 			}
-			fmt.Printf("\n%s (%d snapshots):\n", BoldCyan("📸 Saved Checkpoints"), len(list))
+			fmt.Printf("\n%s (%d snapshots):\n", BoldCyan("[PHOTO] Saved Checkpoints"), len(list))
 			for _, cp := range list {
 				fmt.Printf("  • %-20s %s (%s)\n",
 					Bold(cp.ID),
@@ -241,7 +241,7 @@ func HandleCheckpointCommand(parts []string, s *agent.Session) {
 				return
 			}
 			fmt.Printf("\n%s Checkpoint created and finalized: %s (%s; %d owned path(s))\n\n",
-				BoldGreen("✓"), Bold(cp.ID), summary, len(ownedPaths))
+				BoldGreen("[OK]"), Bold(cp.ID), summary, len(ownedPaths))
 			return
 		}
 	}

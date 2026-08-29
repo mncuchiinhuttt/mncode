@@ -21,7 +21,7 @@ func HandleCommitCommand(parts []string, s *agent.Session) {
 
 	trimmed := strings.TrimSpace(string(out))
 	if trimmed == "" {
-		fmt.Printf("\n%s Nothing to commit, working tree clean.\n\n", BoldGreen("✓"))
+		fmt.Printf("\n%s Nothing to commit, working tree clean.\n\n", BoldGreen("[OK]"))
 		return
 	}
 
@@ -61,17 +61,17 @@ func HandleCommitCommand(parts []string, s *agent.Session) {
 	}
 
 	fmt.Println()
-	fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Semantic Commit Created:"))
+	fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Semantic Commit Created:"))
 	fmt.Printf("    %s %s\n", BoldCyan("Message:"), Colorize(GetCurrentTheme().Primary, commitMsg))
 
 	if shouldPush {
-		fmt.Printf("  %s Pushing to remote...\n", BoldCyan("🚀"))
+		fmt.Printf("  %s Pushing to remote...\n", BoldCyan("[LAUNCH]"))
 		pushCmd := exec.Command("git", "push")
 		pushCmd.Dir = s.WorkspaceDir
 		if pOut, pErr := pushCmd.CombinedOutput(); pErr != nil {
-			fmt.Printf("  %s Push failed: %s\n", BoldRed("✗"), string(pOut))
+			fmt.Printf("  %s Push failed: %s\n", BoldRed("[FAIL]"), string(pOut))
 		} else {
-			fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Successfully pushed to remote!"))
+			fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Successfully pushed to remote!"))
 		}
 	}
 	fmt.Println()

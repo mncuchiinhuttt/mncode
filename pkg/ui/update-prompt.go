@@ -44,7 +44,7 @@ func CheckAndPromptStartupUpdate(s *agent.Session) {
 		}
 
 		var sb strings.Builder
-		line1 := fmt.Sprintf(" A new version of mncode is available: %s ➔ %s", GrayText(config.CurrentVersion), BoldGreen(latestTag))
+		line1 := fmt.Sprintf(" A new version of mncode is available: %s -> %s", GrayText(config.CurrentVersion), BoldGreen(latestTag))
 		line2 := " Would you like to update now?"
 		sb.WriteString(fmt.Sprintf("%s\r\n", BoldPastelPink("╭── [Update Available] ────────────────────────────────────────────────────────╮")))
 		sb.WriteString(fmt.Sprintf("│%s│\r\n", PadToCellWidth(line1, 78)))
