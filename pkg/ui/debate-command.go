@@ -30,55 +30,78 @@ func handleDebateCommand(args string, session *agent.Session) {
 		return
 	}
 
+	fmt.Println("\n\033[1;36m═══ AI Agent Debate Arena Setup ═══\033[0m")
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Step 1: Ask if user wants to assign explicit roles or run a free peer debate
+	// ─────────────────────────────────────────────────────────────────────────────
+	fmt.Println("\n\033[1mStep 1: Do you want to assign explicit roles to each agent?\033[0m")
+	fmt.Println("  1) \033[1;32mNo\033[0m  - Free Peer Debate (Mặc định: Thảo luận bàn tròn tự do giữa các model)")
+	fmt.Println("  2) \033[1;36mYes\033[0m - Structured Role Debate (Phân role: Đề xuất ➔ Phản biện vạch lỗi ➔ Trọng tài)")
+	fmt.Print("Choose style [1-2, default 1]: ")
+	styleChoice := strings.TrimSpace(readLineRaw())
+
+	hasRoles := styleChoice == "2" || strings.EqualFold(styleChoice, "yes") || strings.EqualFold(styleChoice, "y")
+
+	var modelProposer, modelCritic, modelJudge string
+	var freeModels []string
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Step 2: Choose Agents / Models based on selected style
+	// ─────────────────────────────────────────────────────────────────────────────
+	fmt.Println("\n\033[1mStep 2: Choose Debater Models\033[0m")
+	for i, m := range popularDebateModels {
+		fmt.Printf("   %d) %-34s \033[2m(%s)\033[0m\n", i+1, m.name, m.id)
+	}
+
+	if hasRoles {
+		// Structured Role Selection
+		fmt.Print("\nChoose Proposer Model [1-8, default 1: Claude Sonnet 4.6]: ")
+		modelProposer = pickDebateModel(readLineRaw(), "claude-sonnet-4-6")
+
+		fmt.Print("Choose Critic Model [1-8, default 2: DeepSeek R1]: ")
+		modelCritic = pickDebateModel(readLineRaw(), "deepseek-reasoner")
+
+		fmt.Print("Choose Judge / Decider Model [1-8, default 5: Claude Opus 4.6]: ")
+		modelJudge = pickDebateModel(readLineRaw(), "claude-opus-4-6-thinking")
+	} else {
+		// Free Peer Debate Selection (Select 2 debaters)
+		fmt.Print("\nChoose First Debater [1-8, default 1: Claude Sonnet 4.6]: ")
+		m1 := pickDebateModel(readLineRaw(), "claude-sonnet-4-6")
+
+		fmt.Print("Choose Second Debater [1-8, default 2: DeepSeek R1]: ")
+		m2 := pickDebateModel(readLineRaw(), "deepseek-reasoner")
+
+		freeModels = []string{m1, m2}
+		modelProposer = m1
+		modelCritic = m2
+		modelJudge = m1
+	}
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Step 3: Enter the Task / Question to debate
+	// ─────────────────────────────────────────────────────────────────────────────
 	task := strings.TrimSpace(args)
 	if task == "" {
-		fmt.Print("\n\033[1;36m⚔️  Enter problem / architecture topic to debate:\033[0m\n> ")
+		fmt.Println("\n\033[1mStep 3: Enter problem / architecture topic to debate:\033[0m")
+		fmt.Print("> ")
 		task = strings.TrimSpace(readLineRaw())
 		if task == "" {
 			fmt.Println("\033[33m[Cancelled] No debate topic provided.\033[0m")
 			return
 		}
+	} else {
+		fmt.Printf("\n\033[1mStep 3: Debate Topic:\033[0m %s\n", task)
 	}
 
-	fmt.Println("\n\033[1;36m═══ AI Agent Debate Arena Setup ═══\033[0m")
-	fmt.Println("\033[2mSelect debater models to argue and stress-test the solution.\033[0m")
-	fmt.Println()
-	// 1. Proposer Model Selection
-	fmt.Println("\033[1;33m1. Select Proposer Model (Author of Solution):\033[0m")
-	for i, m := range popularDebateModels {
-		fmt.Printf("   %d) %-34s \033[2m(%s)\033[0m\n", i+1, m.name, m.id)
-	}
-	fmt.Print("Choose Proposer [1-8, default 1: Claude Sonnet 4.6]: ")
-	propChoice := strings.TrimSpace(readLineRaw())
-	modelProposer := pickDebateModel(propChoice, "claude-sonnet-4-6")
-
-	// 2. Critic Model Selection
-	fmt.Println("\n\033[1;31m2. Select Critic Model (Devil's Advocate / Stress-Tester):\033[0m")
-	for i, m := range popularDebateModels {
-		fmt.Printf("   %d) %-34s \033[2m(%s)\033[0m\n", i+1, m.name, m.id)
-	}
-	fmt.Print("Choose Critic [1-8, default 2: DeepSeek R1]: ")
-	critChoice := strings.TrimSpace(readLineRaw())
-	modelCritic := pickDebateModel(critChoice, "deepseek-reasoner")
-
-	// 3. Judge / Decider Selection
-	fmt.Println("\n\033[1;36m3. Select Judge / Decider Model (Synthesizes Final Consensus):\033[0m")
-	for i, m := range popularDebateModels {
-		fmt.Printf("   %d) %-34s \033[2m(%s)\033[0m\n", i+1, m.name, m.id)
-	}
-	fmt.Print("Choose Judge [1-8, default 5: Claude Opus 4.6]: ")
-	judgeChoice := strings.TrimSpace(readLineRaw())
-	modelJudge := pickDebateModel(judgeChoice, "claude-opus-4-6-thinking")
-
-	// 4. Create Dynamic Debate Combo
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Step 4: Construct and Launch the Dynamic Debate Arena
+	// ─────────────────────────────────────────────────────────────────────────────
 	now := time.Now()
-	debateCombo := combos.Combo{
-		ID:              fmt.Sprintf("arena-debate-%d", now.UnixNano()),
-		Name:            fmt.Sprintf("Debate Arena: %s vs %s", modelProposer, modelCritic),
-		Description:     fmt.Sprintf("Adversarial debate on: %s", task),
-		Mode:            combos.ModeDebate,
-		MaxDebateRounds: 2,
-		Members: []combos.ComboMember{
+	var members []combos.ComboMember
+
+	if hasRoles {
+		members = []combos.ComboMember{
 			{
 				ID:            "prop-1",
 				Role:          "Architect / Proposer",
@@ -103,7 +126,43 @@ func handleDebateCommand(args string, session *agent.Session) {
 				FallbackModel: "gemini-3.7-flash-high",
 				PromptOverlay: "Review the full debate transcript. Reconcile valid critiques into an authoritative final architecture and implementation deliverable.",
 			},
-		},
+		}
+	} else {
+		members = []combos.ComboMember{
+			{
+				ID:            "peer-1",
+				Role:          fmt.Sprintf("Peer Debater A (%s)", freeModels[0]),
+				BaseAgent:     "coder",
+				Model:         freeModels[0],
+				FallbackModel: "gemini-3.7-flash-high",
+				PromptOverlay: "Provide your deep perspective and solution for the problem. Critique other models' viewpoints constructively.",
+			},
+			{
+				ID:            "peer-2",
+				Role:          fmt.Sprintf("Peer Debater B (%s)", freeModels[1]),
+				BaseAgent:     "coder",
+				Model:         freeModels[1],
+				FallbackModel: "gemini-3.7-flash-high",
+				PromptOverlay: "Provide your alternative perspective, challenge assumptions, and highlight trade-offs in the other model's approach.",
+			},
+			{
+				ID:            "peer-synth",
+				Role:          "Consensus Synthesizer",
+				BaseAgent:     "coder",
+				Model:         freeModels[0],
+				FallbackModel: "gemini-3.7-flash-high",
+				PromptOverlay: "Synthesize the best ideas from both peer perspectives into a unified, actionable deliverable.",
+			},
+		}
+	}
+
+	debateCombo := combos.Combo{
+		ID:              fmt.Sprintf("arena-debate-%d", now.UnixNano()),
+		Name:            fmt.Sprintf("Debate Arena: %s vs %s", modelProposer, modelCritic),
+		Description:     fmt.Sprintf("Debate on: %s", task),
+		Mode:            combos.ModeDebate,
+		MaxDebateRounds: 2,
+		Members:         members,
 	}
 
 	store, _ := combos.NewStore(session.WorkspaceDir)
