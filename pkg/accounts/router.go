@@ -62,36 +62,42 @@ func (r *Router) GetNextAccount(provider AccountProvider) (*Account, error) {
 	return selected, nil
 }
 
-// ReportFailure marks an account on cooldown upon encountering rate limits (429) or auth errors (401)
+// ReportFailure marks an account on cooldown for retryable provider failures.
 func (r *Router) ReportFailure(accountID string, statusCode int, errMsg string) {
+	if statusCode != 0 && statusCode != 401 && statusCode != 403 && statusCode != 408 && statusCode != 425 && statusCode != 429 && statusCode < 500 {
+		return
+	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	acc, ok := r.store.Accounts[accountID]
+	if r.store == nil {
+		return
+	}
+	acc, ok := r.store.Get(accountID)
 	if !ok {
 		return
 	}
 
 	if statusCode == 429 {
-		// Rate limited: cooldown for 2 minutes
 		acc.MarkCooldown(2*time.Minute, fmt.Sprintf("Rate limited (429): %s", errMsg))
 	} else if statusCode == 401 || statusCode == 403 {
-		// Auth error: cooldown for 10 minutes or until refreshed
 		acc.MarkCooldown(10*time.Minute, fmt.Sprintf("Auth failed (%d): %s", statusCode, errMsg))
 	} else {
 		acc.MarkCooldown(30*time.Second, errMsg)
 	}
-
 	_ = r.store.AddOrUpdate(acc)
 }
 
-// ReportSuccess resets last error on successful usage
+// ReportSuccess resets a failed account's cooldown and last error after a
+// request succeeds. A refreshed account must be immediately eligible again.
 func (r *Router) ReportSuccess(accountID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	if acc, ok := r.store.Accounts[accountID]; ok {
+	if r.store == nil {
+		return
+	}
+	if acc, ok := r.store.Get(accountID); ok {
 		acc.LastError = ""
+		acc.CooldownUntil = time.Time{}
 		_ = r.store.AddOrUpdate(acc)
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"time"
@@ -64,13 +63,12 @@ func (o *OpenCodeProvider) Stream(ctx context.Context, req *CompletionRequest, c
 
 	resp, err := o.HTTPClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("opencode API request failed: %w", err)
+		return nil, newNetworkError(o.Name(), err)
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("opencode API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		bodyBytes := readProviderErrorBody(resp.Body)
+		return nil, newHTTPError(o.Name(), resp.StatusCode, string(bodyBytes), resp.Header)
 	}
 
 	openAIProv := &OpenAIProvider{}

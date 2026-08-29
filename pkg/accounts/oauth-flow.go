@@ -174,12 +174,17 @@ func StartAntigravityWebLogin(store *Store) (*Account, error) {
 	}
 
 	// 7. Save Account in Store
+	expiresAt := time.Time{}
+	if tokenResult.ExpiresIn > 0 {
+		expiresAt = time.Now().Add(time.Duration(tokenResult.ExpiresIn) * time.Second)
+	}
 	acc := &Account{
 		ID:           userEmail,
 		Email:        userEmail,
 		Provider:     ProviderTypeAntigravity,
 		AccessToken:  tokenResult.AccessToken,
 		RefreshToken: tokenResult.RefreshToken,
+		ExpiresAt:    expiresAt,
 		IsActive:     true,
 		CreatedAt:    time.Now(),
 	}

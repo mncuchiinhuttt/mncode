@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -48,13 +47,13 @@ func (a *AnthropicProvider) Stream(ctx context.Context, req *CompletionRequest, 
 
 	resp, err := a.HTTPClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("anthropic API request failed: %w", err)
+		return nil, newNetworkError(a.Name(), err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("anthropic API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		bodyBytes := readProviderErrorBody(resp.Body)
+		return nil, newHTTPError(a.Name(), resp.StatusCode, string(bodyBytes), resp.Header)
 	}
 
 	return a.parseSSE(resp.Body, cb)

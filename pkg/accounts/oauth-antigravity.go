@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -46,11 +48,12 @@ func ImportAntigravityDefaultCreds(store *Store) (*Account, error) {
 				if refreshToken == "" {
 					refreshToken = creds.Token.RefreshToken
 				}
-
+				expiresAt := parseCredentialExpiry(creds.Token.Expiry)
 				if accessToken != "" || refreshToken != "" {
 					if refreshToken != "" {
 						if newTok, err := RefreshGoogleToken(refreshToken, "", ""); err == nil && newTok != "" {
 							accessToken = newTok
+							expiresAt = time.Now().Add(time.Hour)
 						}
 					}
 					email := creds.Email
@@ -63,6 +66,7 @@ func ImportAntigravityDefaultCreds(store *Store) (*Account, error) {
 						Provider:     ProviderTypeAntigravity,
 						AccessToken:  accessToken,
 						RefreshToken: refreshToken,
+						ExpiresAt:    expiresAt,
 						IsActive:     true,
 						CreatedAt:    time.Now(),
 					}
@@ -74,6 +78,25 @@ func ImportAntigravityDefaultCreds(store *Store) (*Account, error) {
 	}
 
 	return nil, fmt.Errorf("no local antigravity credentials found")
+}
+
+func parseCredentialExpiry(raw string) time.Time {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}
+	}
+	if seconds, err := strconv.ParseInt(raw, 10, 64); err == nil {
+		if seconds > 1_000_000_000_000 {
+			return time.UnixMilli(seconds)
+		}
+		return time.Unix(seconds, 0)
+	}
+	for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+		if value, err := time.Parse(layout, raw); err == nil {
+			return value
+		}
+	}
+	return time.Time{}
 }
 
 // RefreshGoogleToken refreshes Google OAuth tokens using a refresh token

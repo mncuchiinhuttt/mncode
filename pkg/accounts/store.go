@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -49,38 +50,79 @@ func (s *Store) Load() error {
 	if err := json.Unmarshal(data, &loaded); err != nil {
 		return err
 	}
-
+	if loaded == nil {
+		loaded = make(map[string]*Account)
+	}
 	s.Accounts = loaded
 	return nil
 }
 
-// Save writes accounts to disk safely
+// Save writes accounts to disk atomically with restrictive permissions.
 func (s *Store) Save() error {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	snapshot := make(map[string]*Account, len(s.Accounts))
+	for id, account := range s.Accounts {
+		if account == nil {
+			continue
+		}
+		copy := *account
+		snapshot[id] = &copy
+	}
+	data, err := json.MarshalIndent(snapshot, "", "  ")
+	s.mu.RUnlock()
+	if err != nil {
+		return err
+	}
 
 	dir := filepath.Dir(s.filePath)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-
-	data, err := json.MarshalIndent(s.Accounts, "", "  ")
+	if err := os.Chmod(dir, 0700); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(dir, ".accounts.json.tmp-*")
 	if err != nil {
 		return err
 	}
-
-	return os.WriteFile(s.filePath, data, 0600)
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	if err := tmp.Chmod(0600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := replaceExistingFile(tmpPath, s.filePath); err != nil {
+		return err
+	}
+	return os.Chmod(s.filePath, 0600)
 }
 
-// AddOrUpdate saves an account into the store
+// AddOrUpdate saves an account into the store.
 func (s *Store) AddOrUpdate(acc *Account) error {
-	s.mu.Lock()
-	if acc.CreatedAt.IsZero() {
-		acc.CreatedAt = time.Now()
+	if acc == nil || acc.ID == "" {
+		return fmt.Errorf("account and account ID are required")
 	}
-	s.Accounts[acc.ID] = acc
+	s.mu.Lock()
+	snapshot := *acc
+	if snapshot.CreatedAt.IsZero() {
+		snapshot.CreatedAt = time.Now()
+	}
+	if s.Accounts == nil {
+		s.Accounts = make(map[string]*Account)
+	}
+	s.Accounts[snapshot.ID] = &snapshot
 	s.mu.Unlock()
-
 	return s.Save()
 }
 
@@ -93,16 +135,18 @@ func (s *Store) Remove(id string) error {
 	return s.Save()
 }
 
-// ListByProvider returns all accounts for a specific provider sorted by ID
+// ListByProvider returns account snapshots for a specific provider sorted by ID.
 func (s *Store) ListByProvider(provider AccountProvider) []*Account {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var list []*Account
-	for _, acc := range s.Accounts {
-		if acc.Provider == provider {
-			list = append(list, acc)
+	list := make([]*Account, 0)
+	for _, account := range s.Accounts {
+		if account.Provider != provider {
+			continue
 		}
+		snapshot := *account
+		list = append(list, &snapshot)
 	}
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].ID < list[j].ID
@@ -110,21 +154,29 @@ func (s *Store) ListByProvider(provider AccountProvider) []*Account {
 	return list
 }
 
-// GetActiveAccount returns the explicitly selected active account for a provider
-func (s *Store) GetActiveAccount(provider AccountProvider) *Account {
+// Get returns a defensive snapshot for an account ID.
+func (s *Store) Get(id string) (*Account, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	account, ok := s.Accounts[id]
+	if !ok || account == nil {
+		return nil, false
+	}
+	snapshot := *account
+	return &snapshot, true
+}
 
-	var fallback *Account
-	for _, acc := range s.Accounts {
-		if acc.Provider == provider {
-			if acc.IsActive {
-				return acc
-			}
-			if fallback == nil {
-				fallback = acc
-			}
+// GetActiveAccount returns a snapshot of the explicitly selected active
+// account, or the first account for the provider when none is marked active.
+func (s *Store) GetActiveAccount(provider AccountProvider) *Account {
+	for _, account := range s.ListByProvider(provider) {
+		if account.IsActive {
+			return account
 		}
 	}
-	return fallback
+	list := s.ListByProvider(provider)
+	if len(list) > 0 {
+		return list[0]
+	}
+	return nil
 }

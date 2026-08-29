@@ -13,9 +13,9 @@ const (
 	ProviderTypeAnthropic   AccountProvider = "anthropic"
 	ProviderTypeGemini      AccountProvider = "gemini"
 	ProviderTypeOpenAI      AccountProvider = "openai"
+	ProviderTypeOpenRouter  AccountProvider = "openrouter"
 	ProviderTypeOpenCode    AccountProvider = "opencode"
 )
-
 // Account represents a single logged-in account/credential
 type Account struct {
 	ID            string          `json:"id"`

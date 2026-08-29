@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -61,16 +60,17 @@ func (g *GeminiProvider) Stream(ctx context.Context, req *CompletionRequest, cb 
 
 	resp, err := g.HTTPClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("gemini API request failed: %w", err)
+		return nil, newNetworkError(g.Name(), err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes := readProviderErrorBody(resp.Body)
+		message := string(bodyBytes)
 		if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnauthorized {
-			return nil, fmt.Errorf("gemini API error (status %d): %s\n\n\033[1;33m[Tip]\033[0m Run '/login antigravity' or '/account import' or configure your API key with '/config'.", resp.StatusCode, string(bodyBytes))
+			message += "\n\n\033[1;33m[Tip]\033[0m Run '/login antigravity' or '/account import' or configure your API key with '/config'."
 		}
-		return nil, fmt.Errorf("gemini API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		return nil, newHTTPError(g.Name(), resp.StatusCode, message, resp.Header)
 	}
 
 	return g.parseSSE(resp.Body, cb)
