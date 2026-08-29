@@ -59,6 +59,7 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 44, Command: "/exit", Description: "Exit mncode assistant"},
 	{Number: 45, Command: "/search", Description: "Configure web search (Auto, Brave, Tavily, Google)"},
 	{Number: 46, Command: "/export", Description: "Export frozen session trajectory as ShareGPT JSON"},
+	{Number: 47, Command: "/combo", Description: "Manage and run multi-agent Combos (Swarm & Pipelines)"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis
