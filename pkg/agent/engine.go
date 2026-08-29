@@ -63,6 +63,9 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			}
 		}
 	}
+	if s.Budget != nil && s.Budget.IsHardStopExceeded() {
+		return fmt.Errorf("session token budget hard limit reached. Use '/budget' to extend or clear")
+	}
 
 	maxTurns := agentTurnLimit(s.Config)
 	completed := false
@@ -114,6 +117,15 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			return err
 		}
 		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
+		if s.Budget != nil {
+			hardStop, notice := s.Budget.AddTokens(resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
+			if notice != "" {
+				fmt.Printf("\n\033[1;33m%s\033[0m\n\n", notice)
+			}
+			if hardStop {
+				return fmt.Errorf("session token budget exhausted. Aborting agent turn")
+			}
+		}
 
 		if s.UI != nil {
 			s.UI.Flush()

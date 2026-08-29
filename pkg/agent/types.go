@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"mncode/pkg/accounts"
+	"mncode/pkg/budget"
 	"mncode/pkg/config"
 	"mncode/pkg/mcp"
 	"mncode/pkg/provider"
@@ -55,6 +56,7 @@ type Session struct {
 		Record(model, accountID string, inputTokens, outputTokens int)
 	}
 	History     []provider.Message
+	Budget      *budget.Tracker
 	Subagents   *SubagentRegistry
 	CodebaseMap *CodebaseSummary
 	MCP         *mcp.Manager
