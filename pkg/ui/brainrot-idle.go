@@ -17,8 +17,8 @@ var (
 		"Level 100 Sigma Dev detected: Waiting for the ultimate prompt... [MAX]",
 		"Brainrot energy at 99%: Give me tasks to mog this codebase [SIGMA]",
 		"Bro is generating infinite aura before hitting Enter [GIGA][ACTION]",
-		"Did you get distracted by Subway Surfers gameplay below? 🛹",
-		"Max rizz compiler standing by: Feed me code to cook! 🍲",
+		"Did you get distracted by Subway Surfers gameplay below? [SUBWAY]",
+		"Max rizz compiler standing by: Feed me code to cook! [CHEF]",
 	}
 
 	idleMu           sync.Mutex

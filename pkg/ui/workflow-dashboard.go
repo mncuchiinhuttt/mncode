@@ -71,10 +71,10 @@ func getWorkflowPhases(s *agent.Session, isBrainrot bool) []WorkflowPhase {
 
 	if isBrainrot {
 		return []WorkflowPhase{
-			{ID: 1, Name: "1. Snooping Codebase 🕵️‍♂️", Role: "Scouting entrypoints (caught in 4k)", Status: p1Status, Subagents: subMap["scout"], Todos: []string{"Scan entrypoint & AST layout", "Find sus code & tech debt"}, Artifact: "./plans/reports/scout-report.md"},
+			{ID: 1, Name: "1. Snooping Codebase [SCOUT]", Role: "Scouting entrypoints (caught in 4k)", Status: p1Status, Subagents: subMap["scout"], Todos: []string{"Scan entrypoint & AST layout", "Find sus code & tech debt"}, Artifact: "./plans/reports/scout-report.md"},
 			{ID: 2, Name: "2. Big Brain Plan [THINK]", Role: "Cooking 200 IQ architecture", Status: p2Status, Subagents: subMap["plan"], Todos: []string{"Write based plan.md (< 80 lines)", "Breakdown grind phases no cap"}, Artifact: "./plans/plan.md"},
-			{ID: 3, Name: "3. 10x Sigma Coding 💻", Role: "Dropping bussin code (< 200 LOC)", Status: "⏳ In queue", Subagents: subMap["code"], Todos: []string{"Implement real code (no fakes)", "Keep files clean and compilable"}, Artifact: "./docs/project-changelog.md"},
-			{ID: 4, Name: "4. Hunting Cringe Bugs 🐛", Role: "Gaslighting tests into 100% W", Status: "⏳ In queue", Subagents: subMap["test"], Todos: []string{"Run tests with zero cheating", "Verify everything is valid fr"}, Artifact: "./plans/reports/test-results.md"},
+			{ID: 3, Name: "3. 10x Sigma Coding [CODE]", Role: "Dropping bussin code (< 200 LOC)", Status: "⏳ In queue", Subagents: subMap["code"], Todos: []string{"Implement real code (no fakes)", "Keep files clean and compilable"}, Artifact: "./docs/project-changelog.md"},
+			{ID: 4, Name: "4. Hunting Cringe Bugs [BUG]", Role: "Gaslighting tests into 100% W", Status: "⏳ In queue", Subagents: subMap["test"], Todos: []string{"Run tests with zero cheating", "Verify everything is valid fr"}, Artifact: "./plans/reports/test-results.md"},
 			{ID: 5, Name: "5. Final Rizz Audit [SHINE]", Role: "Verifying pure based energy", Status: "⏳ In queue", Subagents: subMap["review"], Todos: []string{"Sign off on ultimate sigma code", "Push updates with maximum aura"}, Artifact: "./docs/development-roadmap.md"},
 		}
 	}
@@ -131,7 +131,7 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 		rightHeader := "Phase Details & Subagents"
 		if isBrainrot {
 			title = "[ACTION] Ultra Sigma Workflow & Minions Dashboard [THINK]"
-			leftHeader = "📜 Sigma Grind Tasks (no cap)"
+			leftHeader = "[TASKS] Sigma Grind Tasks (no cap)"
 			rightHeader = "[COOK] Minions Cooking & Rizz"
 		}
 
