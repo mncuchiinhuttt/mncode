@@ -77,10 +77,10 @@ func StartExecutionSteerWatcher(s *agent.Session, cancel context.CancelFunc) fun
 						if strings.HasPrefix(typed, "/queue ") {
 							qMsg := strings.TrimPrefix(typed, "/queue ")
 							s.EnqueueMessage(qMsg)
-							fmt.Printf("\r\n%s %s\r\n", BoldCyan("📥 [Message Queued for Next Turn]:"), Bold(qMsg))
+							fmt.Printf("\r\n%s %s\r\n", BoldCyan("[INBOX] [Message Queued for Next Turn]:"), Bold(qMsg))
 						} else {
 							s.EnqueueSteer(typed)
-							fmt.Printf("\r\n%s %s\r\n", BoldPastelPink("⚡ [Steer Directive Injected (High Priority)]:"), Bold(typed))
+							fmt.Printf("\r\n%s %s\r\n", BoldPastelPink("[ACTION] [Steer Directive Injected (High Priority)]:"), Bold(typed))
 						}
 					}
 					continue

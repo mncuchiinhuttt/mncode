@@ -24,7 +24,7 @@ func HandleRecapCommand(parts []string, s *agent.Session) {
 // CheckAndPrintPeriodicRecap is called after user turns to show periodic milestone recap
 func CheckAndPrintPeriodicRecap(s *agent.Session, userTurnIndex int) {
 	if userTurnIndex > 0 && userTurnIndex%6 == 0 {
-		fmt.Printf("\n%s\n\n", BoldPastelPink("💡 Milestone reached! Here is a quick session checkpoint:"))
+		fmt.Printf("\n%s\n\n", BoldPastelPink("[INFO] Milestone reached! Here is a quick session checkpoint:"))
 		PrintSessionRecapCard(s, true)
 	}
 }
@@ -54,7 +54,7 @@ func PrintSessionRecapCard(s *agent.Session, isMilestone bool) {
 	printRecapRow("", cardWidth)
 
 	// Section 1: Topics / Goals
-	printRecapRow(BoldCyan("📌 Key Topics & Requests:"), cardWidth)
+	printRecapRow(BoldCyan("[PIN] Key Topics & Requests:"), cardWidth)
 	if len(userMsgs) == 0 {
 		printRecapRow("  • No user messages yet in this session.", cardWidth)
 	} else {
@@ -74,7 +74,7 @@ func PrintSessionRecapCard(s *agent.Session, isMilestone bool) {
 	printRecapRow("", cardWidth)
 
 	// Section 2: Files Touched
-	printRecapRow(BoldGreen("🛠️ Files Referenced / Touched:"), cardWidth)
+	printRecapRow(BoldGreen("[TOOLS] Files Referenced / Touched:"), cardWidth)
 	if len(filesTouched) == 0 {
 		printRecapRow(GrayText("  • None recorded in recent tool interactions"), cardWidth)
 	} else {
@@ -91,7 +91,7 @@ func PrintSessionRecapCard(s *agent.Session, isMilestone bool) {
 	effStr := strings.ToUpper(s.Config.Effort)
 	wfStr := strings.ToUpper(s.Config.Workflow)
 	printRecapRow(fmt.Sprintf("%s %s · Workflow: %s · Model: %s",
-		BoldMagenta("⚡ Status:"), Bold(effStr), BoldCyan(wfStr), GrayText(s.Config.Model)), cardWidth)
+		BoldMagenta("[ACTION] Status:"), Bold(effStr), BoldCyan(wfStr), GrayText(s.Config.Model)), cardWidth)
 
 	printRecapRow(GrayText("╰"+strings.Repeat("─", cardWidth-2)+"╯"), cardWidth)
 	fmt.Println()
