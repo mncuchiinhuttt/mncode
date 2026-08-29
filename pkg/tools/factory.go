@@ -33,6 +33,8 @@ func DefaultRegistry(workspaceDir string, autoApprove bool, cfg *config.Config, 
 	register(&LSPTool{BaseDir: workspaceDir}, "workspace", ScopeWorkspace)
 	register(&KernelTool{BaseDir: workspaceDir}, "workspace", ScopeWorkspace)
 	register(&DAPTool{WorkspaceDir: workspaceDir}, "workspace", ScopeWorkspace)
+	register(&ServiceHubTool{DefaultCwd: workspaceDir}, "workspace", ScopeWorkspace)
+	register(&ASTEditTool{BaseDir: workspaceDir}, "workspace", ScopeWorkspace)
 
 	browser := &BrowserTool{
 		Enabled: func() bool {

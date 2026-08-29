@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"mncode/pkg/artifacts"
 )
 
 const maxCommandOutputBytes = 512 * 1024
@@ -201,13 +203,13 @@ func (b *BashTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		}
 
 		if err != nil {
-			return sb.String(), fmt.Errorf("command failed with exit code: %w\n%s", err, sb.String())
+			return artifacts.TruncateOutput(sb.String(), nil), fmt.Errorf("command failed with exit code: %w\n%s", err, artifacts.TruncateOutput(sb.String(), nil))
 		}
 
 		if sb.Len() == 0 {
 			return "Command executed successfully with no output.", nil
 		}
 
-		return sb.String(), nil
+		return artifacts.TruncateOutput(sb.String(), nil), nil
 	}
 }

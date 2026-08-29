@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
-)
 
+	"mncode/pkg/artifacts"
+)
 // ViewTool reads files with line numbering and range slicing
 type ViewTool struct {
 	BaseDir string
@@ -46,6 +47,10 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	path, _ := args["AbsolutePath"].(string)
 	if path == "" {
 		return "", fmt.Errorf("AbsolutePath is required")
+	}
+
+	if artifacts.IsVirtualURI(path) {
+		return artifacts.ReadVirtualURI(path, v.BaseDir)
 	}
 
 	resolvedPath, err := resolveWorkspacePath(v.BaseDir, path, false)
