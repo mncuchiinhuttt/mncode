@@ -23,7 +23,8 @@ func (s *Session) PreprocessSkillTags(userInput string) string {
 			if rawCmd == "/help" || rawCmd == "/exit" || rawCmd == "/quit" || rawCmd == "/model" ||
 				rawCmd == "/effort" || rawCmd == "/workflow" || rawCmd == "/agents" || rawCmd == "/context" ||
 				rawCmd == "/compact" || rawCmd == "/clear" || rawCmd == "/status" || rawCmd == "/config" ||
-				rawCmd == "/sync" || rawCmd == "/feedback" || rawCmd == "/btw" || rawCmd == "/brainrot" {
+				rawCmd == "/sync" || rawCmd == "/feedback" || rawCmd == "/btw" || rawCmd == "/brainrot" ||
+				rawCmd == "/export" || rawCmd == "/trajectory" || rawCmd == "/sharegpt" || rawCmd == "/export-training" {
 				remainingWords = append(remainingWords, word)
 				continue
 			}
@@ -47,7 +48,7 @@ func (s *Session) PreprocessSkillTags(userInput string) string {
 					matched.Name, matched.Description)
 
 				if instr != "" {
-					s.History = append(s.History, provider.Message{
+					appendHistory(s, provider.Message{
 						Role:    provider.RoleSystem,
 						Content: fmt.Sprintf("<activated_skill name=\"%s\">\n%s\n</activated_skill>", matched.Name, instr),
 					})

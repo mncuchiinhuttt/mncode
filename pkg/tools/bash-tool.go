@@ -9,6 +9,39 @@ import (
 	"time"
 )
 
+const maxCommandOutputBytes = 512 * 1024
+
+type boundedOutput struct {
+	buf       bytes.Buffer
+	limit     int
+	truncated bool
+}
+
+func (o *boundedOutput) Write(p []byte) (int, error) {
+	if o.limit <= 0 {
+		o.truncated = len(p) > 0
+		return len(p), nil
+	}
+	if len(p) > o.limit-o.buf.Len() {
+		remaining := o.limit - o.buf.Len()
+		if remaining > 0 {
+			_, _ = o.buf.Write(p[:remaining])
+		}
+		o.truncated = true
+		return len(p), nil
+	}
+	return o.buf.Write(p)
+}
+
+func (o *boundedOutput) String() string {
+	s := o.buf.String()
+	if o.truncated {
+		s += "\n...[output truncated]"
+	}
+	return s
+}
+func (o *boundedOutput) Len() int { return o.buf.Len() }
+
 // BashTool executes shell commands
 type BashTool struct {
 	DefaultCwd string
@@ -105,7 +138,9 @@ func (b *BashTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	}
 	setProcessGroup(cmd)
 
-	var stdout, stderr bytes.Buffer
+	var stdout, stderr boundedOutput
+	stdout.limit = maxCommandOutputBytes
+	stderr.limit = maxCommandOutputBytes
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 

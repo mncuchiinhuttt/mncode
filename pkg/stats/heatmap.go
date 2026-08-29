@@ -2,6 +2,7 @@ package stats
 
 import (
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -9,6 +10,7 @@ type StreakInfo struct {
 	TotalTokens    int64
 	InputTokens    int64
 	OutputTokens   int64
+	ThinkingTokens int64
 	CacheRead      int64
 	CacheWrite     int64
 	Sessions       int
@@ -22,80 +24,89 @@ type StreakInfo struct {
 }
 
 // GetStreakStats computes streaks, active days, favorite model, and token totals
+// from recorded usage only. Unknown values remain zero/empty instead of being
+// presented as estimates.
 func (t *Tracker) GetStreakStats() StreakInfo {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	info := StreakInfo{
-		TotalDays:      30,
-		LongestSession: "2h 45m",
-		Sessions:       len(t.store.History),
-	}
-	if info.Sessions < 1 {
-		info.Sessions = 1
-	}
-
+	info := StreakInfo{}
 	if t.store.Lifetime != nil {
 		info.TotalTokens = t.store.Lifetime.TotalTokens
 		info.InputTokens = t.store.Lifetime.InputTokens
 		info.OutputTokens = t.store.Lifetime.OutputTokens
-		info.CacheRead = info.InputTokens / 3
-		info.CacheWrite = info.OutputTokens / 5
+		info.ThinkingTokens = t.store.Lifetime.ThinkingTokens
 	}
 
-	// Favorite Model
 	var maxModelTokens int64
-	for m, s := range t.store.ByModel {
-		if s.TotalTokens > maxModelTokens {
-			maxModelTokens = s.TotalTokens
-			info.FavoriteModel = m
+	for model, summary := range t.store.ByModel {
+		if summary != nil && (summary.TotalTokens > maxModelTokens ||
+			summary.TotalTokens == maxModelTokens && (info.FavoriteModel == "" || model < info.FavoriteModel)) {
+			maxModelTokens = summary.TotalTokens
+			info.FavoriteModel = model
 		}
 	}
-	if info.FavoriteModel == "" {
-		info.FavoriteModel = "Gemini 3.7 Flash"
-	}
 
-	// Active days & Streaks
-	now := time.Now()
-	curStreak := 0
+	active := make(map[string]bool, len(t.store.Daily))
+	for date, summary := range t.store.Daily {
+		if summary != nil && summary.TotalTokens > 0 {
+			active[date] = true
+		}
+	}
+	info.ActiveDays = len(active)
+	info.TotalDays = len(active)
+
+	now := time.Now().UTC()
+	current := 0
+	for d := 0; ; d++ {
+		date := now.AddDate(0, 0, -d).Format("2006-01-02")
+		if !active[date] {
+			break
+		}
+		current++
+	}
 	maxStreak := 0
-	var mostActiveDay string
+	streak := 0
+	var mostActiveDate string
 	var mostActiveTokens int64
-
-	for d := 0; d < 52*7; d++ {
-		checkDate := now.AddDate(0, 0, -d).Format("2006-01-02")
-		if sum, ok := t.store.Daily[checkDate]; ok && sum.TotalTokens > 0 {
-			info.ActiveDays++
-			curStreak++
-			if curStreak > maxStreak {
-				maxStreak = curStreak
-			}
-			if sum.TotalTokens > mostActiveTokens {
-				mostActiveTokens = sum.TotalTokens
-				mostActiveDay = now.AddDate(0, 0, -d).Format("Jan 02")
-			}
-		} else {
-			if d == 0 {
-				// today might not have tokens yet
-			} else {
-				curStreak = 0
-			}
-		}
+	dateKeys := make([]string, 0, len(active))
+	for date := range active {
+		dateKeys = append(dateKeys, date)
 	}
-
-	info.CurrentStreak = curStreak
-	if info.CurrentStreak == 0 && info.ActiveDays > 0 {
-		info.CurrentStreak = 1
+	sort.Strings(dateKeys)
+	var previous time.Time
+	for _, date := range dateKeys {
+		parsed, err := time.ParseInLocation("2006-01-02", date, time.UTC)
+		if err != nil {
+			continue
+		}
+		if !previous.IsZero() && parsed.Sub(previous) == 24*time.Hour {
+			streak++
+		} else {
+			streak = 1
+		}
+		if streak > maxStreak {
+			maxStreak = streak
+		}
+		previous = parsed
+		if summary := t.store.Daily[date]; summary != nil &&
+			(summary.TotalTokens > mostActiveTokens ||
+				summary.TotalTokens == mostActiveTokens && (mostActiveDate == "" || date < mostActiveDate)) {
+			mostActiveTokens = summary.TotalTokens
+			mostActiveDate = date
+		}
 	}
 	info.LongestStreak = maxStreak
-	if info.LongestStreak == 0 && info.ActiveDays > 0 {
-		info.LongestStreak = 1
+	if mostActiveDate != "" {
+		if parsed, err := time.ParseInLocation("2006-01-02", mostActiveDate, time.UTC); err == nil {
+			info.MostActiveDay = parsed.Format("Jan 02")
+		}
 	}
-	if mostActiveDay == "" {
-		mostActiveDay = now.Format("Jan 02")
-	}
-	info.MostActiveDay = mostActiveDay
 
+	// History entries represent recorded requests; do not invent a session
+	// when no record exists. Duration is unavailable in the token schema.
+	info.Sessions = len(t.store.History)
+	info.LongestSession = ""
 	return info
 }
 
@@ -105,7 +116,7 @@ func (t *Tracker) GetHeatmapMatrix() ([7][52]rune, []string) {
 	defer t.mu.RUnlock()
 
 	var matrix [7][52]rune
-	now := time.Now()
+	now := time.Now().UTC()
 	weekday := int(now.Weekday()) // 0 = Sun, 1 = Mon ... 6 = Sat
 
 	// Generate month labels
@@ -122,7 +133,7 @@ func (t *Tracker) GetHeatmapMatrix() ([7][52]rune, []string) {
 				continue
 			}
 			dateKey := now.AddDate(0, 0, -daysAgo).Format("2006-01-02")
-			if sum, ok := t.store.Daily[dateKey]; ok && sum.TotalTokens > 0 {
+			if sum, ok := t.store.Daily[dateKey]; ok && sum != nil && sum.TotalTokens > 0 {
 				if sum.TotalTokens > 500000 {
 					matrix[row][col] = '█'
 				} else if sum.TotalTokens > 200000 {
@@ -161,16 +172,16 @@ type DailyTokenPoint struct {
 }
 
 func (t *Tracker) GetDailyHistory(days int) []DailyTokenPoint {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
+	if days <= 0 {
+		return []DailyTokenPoint{}
+	}
 	points := make([]DailyTokenPoint, days)
-	now := time.Now()
+	now := time.Now().UTC()
 	for i := 0; i < days; i++ {
 		d := now.AddDate(0, 0, -(days - 1 - i))
 		key := d.Format("2006-01-02")
 		tokens := int64(0)
-		if sum, ok := t.store.Daily[key]; ok {
+		if sum, ok := t.store.Daily[key]; ok && sum != nil {
 			tokens = sum.TotalTokens
 		}
 		points[i] = DailyTokenPoint{

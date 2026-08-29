@@ -1,8 +1,11 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"mncode/pkg/persistence"
 	"mncode/pkg/provider"
 	"os"
 	"path/filepath"
@@ -33,6 +36,58 @@ func GetSessionsDir() string {
 	return dir
 }
 
+func openCanonicalStore() (*persistence.Store, error) {
+	return persistence.Open(context.Background(), persistence.StoreConfig{Profile: "default"})
+}
+
+func canonicalMessages(sessionID string, history []provider.Message, at time.Time) []persistence.MessageRecord {
+	out := make([]persistence.MessageRecord, 0, len(history))
+	for i, message := range history {
+		payload, _ := json.Marshal(message)
+		msgID := fmt.Sprintf("%s:msg:%d", sessionID, i)
+		out = append(out, persistence.MessageRecord{
+			ID: msgID, Sequence: i, Role: string(message.Role),
+			Content: message.Content, Thinking: message.Thinking, Payload: payload, CreatedAt: at,
+		})
+	}
+	return out
+}
+
+func savedSessionFromCanonical(record persistence.SessionRecord) *SavedSession {
+	saved := &SavedSession{
+		ID: record.ID, Title: record.Title, WorkspaceDir: record.WorkspaceDir,
+		CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
+		Model: record.Model, Turns: record.Turns,
+	}
+	for _, stored := range record.Messages {
+		var message provider.Message
+		if len(stored.Payload) > 0 {
+			_ = json.Unmarshal(stored.Payload, &message)
+		}
+		if message.Role == "" {
+			message.Role = provider.Role(stored.Role)
+			message.Content = stored.Content
+			message.Thinking = stored.Thinking
+		}
+		saved.Messages = append(saved.Messages, message)
+	}
+
+	return saved
+}
+func importLegacySessionBestEffort(path string, data []byte) {
+	canonical, err := openCanonicalStore()
+	if err != nil {
+		return
+	}
+	defer canonical.Close()
+	backupPath := path + ".backup"
+	if _, statErr := os.Stat(backupPath); os.IsNotExist(statErr) {
+		if _, backupErr := persistence.Backup(path, backupPath); backupErr != nil {
+			return
+		}
+	}
+	_, _, _ = persistence.ImportLegacySessionJSON(context.Background(), canonical, data, backupPath)
+}
 func (s *Session) Save() error {
 	if len(s.History) == 0 {
 		return nil
@@ -56,15 +111,15 @@ func (s *Session) Save() error {
 		}
 	}
 
+	now := time.Now().UTC()
+	model, providerName := "", ""
+	if s.Config != nil {
+		model, providerName = s.Config.Model, string(s.Config.Provider)
+	}
 	saved := SavedSession{
-		ID:           s.ID,
-		Title:        title,
-		WorkspaceDir: s.WorkspaceDir,
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-		Model:        s.Config.Model,
-		Turns:        turns,
-		Messages:     s.History,
+		ID: s.ID, Title: title, WorkspaceDir: s.WorkspaceDir,
+		CreatedAt: now, UpdatedAt: now, Model: model,
+		Turns: turns, Messages: s.History,
 	}
 
 	data, err := json.MarshalIndent(saved, "", "  ")
@@ -77,38 +132,77 @@ func (s *Session) Save() error {
 		return err
 	}
 	filePath := filepath.Join(dir, fileName)
-	return writePrivateFile(filePath, data)
+	// Keep writing the legacy file as an explicit compatibility export until
+	// all callers migrate; SQLite failure safely falls back to this JSON path.
+	var canonicalErr error
+	if canonical, err := openCanonicalStore(); err == nil {
+		canonicalErr = canonical.SaveSession(context.Background(), persistence.SessionRecord{
+			ID: s.ID, Title: title, WorkspaceDir: s.WorkspaceDir, ChatID: s.ID,
+			Model: model, Provider: providerName, Turns: turns,
+			CreatedAt: now, UpdatedAt: now, Messages: canonicalMessages(s.ID, s.History, now),
+		})
+		if closeErr := canonical.Close(); canonicalErr == nil {
+			canonicalErr = closeErr
+		}
+	} else if !errors.Is(err, persistence.ErrSQLiteUnavailable) {
+		canonicalErr = err
+	}
+	if err := writePrivateFile(filePath, data); err != nil {
+		return err
+	}
+	if canonicalErr != nil {
+		return canonicalErr
+	}
+	return nil
 }
 
 func ListSavedSessions() ([]*SavedSession, error) {
+	// Read canonical state first, then merge legacy files so an interrupted
+	// import never hides recoverable source data. Canonical rows win by ID.
+	var list []*SavedSession
+	seen := make(map[string]bool)
+	if canonical, err := openCanonicalStore(); err == nil {
+		records, listErr := canonical.ListSessions(context.Background(), persistence.SearchFilter{})
+		closeErr := canonical.Close()
+		if listErr != nil {
+			return nil, listErr
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		for _, record := range records {
+			saved := savedSessionFromCanonical(record)
+			if len(saved.Messages) > 0 {
+				list = append(list, saved)
+				seen[saved.ID] = true
+			}
+		}
+	} else if !errors.Is(err, persistence.ErrSQLiteUnavailable) {
+		return nil, err
+	}
+
 	dir := GetSessionsDir()
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-
-	var list []*SavedSession
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
-		if err != nil {
+		data, readErr := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if readErr != nil {
 			continue
 		}
-		var s SavedSession
-		if err := json.Unmarshal(data, &s); err == nil && len(s.Messages) > 0 {
-			list = append(list, &s)
+		var saved SavedSession
+		if jsonErr := json.Unmarshal(data, &saved); jsonErr == nil && len(saved.Messages) > 0 && !seen[saved.ID] {
+			importLegacySessionBestEffort(filepath.Join(dir, entry.Name()), data)
+			list = append(list, &saved)
 		}
 	}
-
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].UpdatedAt.After(list[j].UpdatedAt)
-	})
-
+	sort.Slice(list, func(i, j int) bool { return list[i].UpdatedAt.After(list[j].UpdatedAt) })
 	return list, nil
 }
-
 func GetLatestSavedSession() (*SavedSession, error) {
 	list, err := ListSavedSessions()
 	if err != nil {
@@ -121,6 +215,27 @@ func GetLatestSavedSession() (*SavedSession, error) {
 }
 
 func LoadSavedSession(id string) (*SavedSession, error) {
+	if strings.TrimSpace(id) == "" || strings.ContainsAny(id, "/\\") || strings.Contains(id, "..") {
+		return nil, fmt.Errorf("invalid session id")
+	}
+	if canonical, err := openCanonicalStore(); err == nil {
+		record, getErr := canonical.GetSession(context.Background(), id)
+		closeErr := canonical.Close()
+		if getErr == nil {
+			if closeErr != nil {
+				return nil, closeErr
+			}
+			return savedSessionFromCanonical(record), nil
+		}
+		if !errors.Is(getErr, persistence.ErrNotFound) {
+			return nil, getErr
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+	} else if !errors.Is(err, persistence.ErrSQLiteUnavailable) {
+		return nil, err
+	}
 	dir := GetSessionsDir()
 	fileName, err := safeSessionFilename(id)
 	if err != nil {
@@ -130,11 +245,12 @@ func LoadSavedSession(id string) (*SavedSession, error) {
 	if err != nil {
 		return nil, err
 	}
-	var s SavedSession
-	if err := json.Unmarshal(data, &s); err != nil {
+	var saved SavedSession
+	if err := json.Unmarshal(data, &saved); err != nil {
 		return nil, err
 	}
-	return &s, nil
+	importLegacySessionBestEffort(filepath.Join(dir, fileName), data)
+	return &saved, nil
 }
 
 func safeSessionFilename(id string) (string, error) {
@@ -183,7 +299,7 @@ func writePrivateFile(path string, data []byte) error {
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Rename(tmpPath, path); err != nil {
+	if err := replaceExistingFile(tmpPath, path); err != nil {
 		return err
 	}
 	return os.Chmod(path, 0o600)

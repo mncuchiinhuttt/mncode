@@ -38,8 +38,9 @@ Please research the codebase and create a production-grade multi-phase implement
 3. Create '%s' (Detailed Phase 1 file containing: Context Links, Overview, Key Insights, Requirements, Architecture, Related Code Files, Implementation Steps, Todo List checkboxes, Success Criteria, Risk Assessment, Security Considerations).
 4. DO NOT modify any application code files; only write the plan documents to '%s'.
 5. Provide a clear summary and next steps when completed.`, task, planDir, planOverviewPath, phase1Path, planDir)
+	ensureSessionIdentity(s)
 
-	s.History = append(s.History, provider.Message{
+	appendHistory(s, provider.Message{
 		Role:    provider.RoleUser,
 		Content: planPrompt,
 	})
@@ -53,7 +54,7 @@ Please research the codebase and create a production-grade multi-phase implement
 
 		req := &provider.CompletionRequest{
 			SystemPrompt:   systemPrompt,
-			Messages:       s.History,
+			Messages:       historySnapshot(s),
 			Tools:          toolDefs,
 			Model:          s.Config.Model,
 			MaxTokens:      s.Config.MaxTokens,
@@ -61,7 +62,7 @@ Please research the codebase and create a production-grade multi-phase implement
 			Temperature:    0.2,
 		}
 
-		resp, err := s.Provider.Stream(ctx, req, func(ev provider.StreamEvent) error {
+		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
 			if s.UI == nil {
 				return nil
 			}
@@ -102,7 +103,7 @@ Please research the codebase and create a production-grade multi-phase implement
 			Thinking:  resp.Thinking,
 			ToolCalls: resp.ToolCalls,
 		}
-		s.History = append(s.History, assistantMsg)
+		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
 			completed = true
@@ -119,7 +120,7 @@ Please research the codebase and create a production-grade multi-phase implement
 			Role:        provider.RoleTool,
 			ToolResults: results,
 		}
-		s.History = append(s.History, toolMsg)
+		appendHistory(s, toolMsg)
 	}
 
 	if !completed {

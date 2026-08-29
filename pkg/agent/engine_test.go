@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"io"
 	"strings"
 	"testing"
 
@@ -25,6 +26,134 @@ func (p *loopingProvider) Stream(_ context.Context, _ *provider.CompletionReques
 			Arguments: map[string]interface{}{},
 		}},
 	}, nil
+}
+
+type retryingProvider struct {
+	calls     int
+	failures  int
+	retryable bool
+}
+
+func (p *retryingProvider) Name() string { return "retrying-test-provider" }
+
+func (p *retryingProvider) Stream(context.Context, *provider.CompletionRequest, func(provider.StreamEvent) error) (*provider.CompletionResponse, error) {
+	p.calls++
+	if p.calls <= p.failures {
+		return nil, &provider.ProviderError{
+			Provider:   p.Name(),
+			StatusCode: 503,
+			Class:      provider.ErrorClassServer,
+			Retryable:  p.retryable,
+			Message:    "temporary failure",
+		}
+	}
+	return &provider.CompletionResponse{Content: "ok"}, nil
+}
+
+func TestStreamProviderRetriesRetryableFailuresWithinBudget(t *testing.T) {
+	p := &retryingProvider{failures: 2, retryable: true}
+	session := &Session{Provider: p}
+
+	resp, err := session.streamProvider(context.Background(), &provider.CompletionRequest{}, nil)
+	if err != nil {
+		t.Fatalf("streamProvider() error = %v", err)
+	}
+	if resp == nil || resp.Content != "ok" {
+		t.Fatalf("streamProvider() response = %+v, want successful response", resp)
+	}
+	if p.calls != 3 {
+		t.Fatalf("provider calls = %d, want three attempts", p.calls)
+	}
+}
+
+func TestStreamProviderDoesNotRetryNonRetryableFailures(t *testing.T) {
+	p := &retryingProvider{failures: 1, retryable: false}
+	session := &Session{Provider: p}
+
+	_, err := session.streamProvider(context.Background(), &provider.CompletionRequest{}, nil)
+	// A provider error classified as non-retryable must be returned immediately
+	// rather than being sent through account rotation or cooldown.
+	if err == nil {
+		t.Fatal("streamProvider() error = nil, want non-retryable provider failure")
+	}
+	if p.calls != 1 {
+		t.Fatalf("provider calls = %d, want one attempt", p.calls)
+	}
+}
+
+func TestStreamProviderHonorsCancellationBeforeAttempt(t *testing.T) {
+	p := &retryingProvider{retryable: true}
+	session := &Session{Provider: p}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := session.streamProvider(ctx, &provider.CompletionRequest{}, nil)
+	if err != context.Canceled {
+		t.Fatalf("streamProvider() error = %v, want context.Canceled", err)
+	}
+	if p.calls != 0 {
+		t.Fatalf("provider calls = %d, want zero after cancellation", p.calls)
+	}
+}
+
+type scrubberProvider struct{}
+
+func (scrubberProvider) Name() string { return "scrubber-test-provider" }
+
+func (scrubberProvider) Stream(_ context.Context, _ *provider.CompletionRequest, cb func(provider.StreamEvent) error) (*provider.CompletionResponse, error) {
+	for _, text := range []string{"visible <memory-", "context>private", " value</memory-", "context> tail"} {
+		if err := cb(provider.StreamEvent{Type: provider.EventToken, Text: text}); err != nil {
+			return nil, err
+		}
+	}
+	return &provider.CompletionResponse{Content: "visible <local_memories>secret</local_memories> tail"}, nil
+}
+
+func TestStreamProviderScrubsPrivateMemoryContext(t *testing.T) {
+	var visible strings.Builder
+	session := &Session{Provider: scrubberProvider{}}
+	resp, err := session.streamProvider(context.Background(), &provider.CompletionRequest{}, func(event provider.StreamEvent) error {
+		visible.WriteString(event.Text)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp == nil || strings.Contains(resp.Content, "secret") {
+		t.Fatalf("response leaked private memory context: %+v", resp)
+	}
+	if got, want := visible.String(), "visible  tail"; got != want {
+		t.Fatalf("visible stream = %q, want %q", got, want)
+	}
+}
+
+type partialRetryProvider struct{ calls int }
+
+func (p *partialRetryProvider) Name() string { return "partial-retry-provider" }
+
+func (p *partialRetryProvider) Stream(_ context.Context, _ *provider.CompletionRequest, cb func(provider.StreamEvent) error) (*provider.CompletionResponse, error) {
+	p.calls++
+	if p.calls == 1 {
+		_ = cb(provider.StreamEvent{Type: provider.EventToken, Text: "partial output"})
+		return nil, io.ErrUnexpectedEOF
+	}
+	_ = cb(provider.StreamEvent{Type: provider.EventToken, Text: "final output"})
+	return &provider.CompletionResponse{Content: "final output"}, nil
+}
+
+func TestStreamProviderDoesNotReplayFailedAttemptOutput(t *testing.T) {
+	var visible strings.Builder
+	session := &Session{Provider: &partialRetryProvider{}}
+	_, err := session.streamProvider(context.Background(), &provider.CompletionRequest{}, func(event provider.StreamEvent) error {
+		visible.WriteString(event.Text)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := visible.String(), "final output"; got != want {
+		t.Fatalf("visible stream = %q, want %q", got, want)
+	}
 }
 
 type loopTestTool struct{}

@@ -56,3 +56,27 @@ func TestSaveSessionRestrictsHistoryPermissions(t *testing.T) {
 		t.Fatalf("session file mode = %04o, want %04o", got, want)
 	}
 }
+
+func TestLoadSavedSessionPrefersCanonicalState(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	session := &Session{
+		ID:      "canonical-session",
+		Config:  &config.Config{Model: "canonical-model"},
+		History: []provider.Message{{Role: provider.RoleUser, Content: "canonical prompt"}},
+	}
+	if err := session.Save(); err != nil {
+		t.Fatalf("Save() error = %v", err)
+	}
+	legacyPath := filepath.Join(GetSessionsDir(), "canonical-session.json")
+	if err := os.WriteFile(legacyPath, []byte(`{"id":"canonical-session","messages":[{"role":"user","content":"stale"}]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := LoadSavedSession("canonical-session")
+	if err != nil {
+		t.Fatalf("LoadSavedSession() error = %v", err)
+	}
+	if got := loaded.Messages[0].Content; got != "canonical prompt" {
+		t.Fatalf("loaded content = %q, want canonical state", got)
+	}
+}
