@@ -372,7 +372,7 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 }
 
 func readCustomInput(promptLabel string) string {
-	fmt.Printf("\n%s %s\n%s ", BoldCyan("✏️"), Bold(promptLabel), BoldPastelPink("❯❯"))
+	fmt.Printf("\n%s %s\n%s ", BoldCyan(">"), Bold(promptLabel), BoldPastelPink("❯❯"))
 	reader := bufio.NewReader(os.Stdin)
 	line, _ := reader.ReadString('\n')
 	line = strings.TrimSpace(line)

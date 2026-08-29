@@ -61,7 +61,7 @@ func HandleChangelogCommand(parts []string, s *agent.Session) {
 		sb.WriteString("\n")
 	}
 	if len(fixes) > 0 {
-		sb.WriteString("### 🐛 Bug Fixes\n")
+		sb.WriteString("### [BUG] Bug Fixes\n")
 		for _, f := range fixes {
 			sb.WriteString(fmt.Sprintf("- %s\n", f))
 		}
@@ -75,7 +75,7 @@ func HandleChangelogCommand(parts []string, s *agent.Session) {
 		sb.WriteString("\n")
 	}
 	if len(docs) > 0 {
-		sb.WriteString("### 📝 Documentation\n")
+		sb.WriteString("### [DOC] Documentation\n")
 		for _, d := range docs {
 			sb.WriteString(fmt.Sprintf("- %s\n", d))
 		}

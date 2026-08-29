@@ -36,7 +36,7 @@ func HandlePRCommand(parts []string, s *agent.Session) {
 	var bodySb strings.Builder
 	bodySb.WriteString("## [LAUNCH] Summary of Changes\n\n")
 	bodySb.WriteString(fmt.Sprintf("This pull request integrates updates from branch `%s`.\n\n", branch))
-	bodySb.WriteString("### 📝 Commits Included:\n")
+	bodySb.WriteString("### [DOC] Commits Included:\n")
 	if recentCommits != "" {
 		for _, l := range strings.Split(recentCommits, "\n") {
 			bodySb.WriteString(fmt.Sprintf("- %s\n", l))

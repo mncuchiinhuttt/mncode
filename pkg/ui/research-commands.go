@@ -127,7 +127,7 @@ func showResearchSummaryCard(title, filePath string, elapsed time.Duration) {
 	fmt.Println(topBorder)
 	printMCPRow("", cardWidth)
 	printMCPRow(fmt.Sprintf("  [FILE] %s %s (%d lines · %.1f KB)", BoldCyan("Report:  "), Bold(relPath), linesCount, fileSizeKB), cardWidth)
-	printMCPRow(fmt.Sprintf("  ⏱️  %s %s", GrayText("Duration:"), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [TIME]  %s %s", GrayText("Duration:"), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
 	printMCPRow("", cardWidth)
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()

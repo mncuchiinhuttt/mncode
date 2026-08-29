@@ -47,7 +47,7 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s Scratchpad is empty.\n\n", GrayText("[Scratchpad]"))
 			return
 		}
-		fmt.Printf("\n%s (%s):\n", BoldCyan("📝 Scratchpad Contents"), scratchFile)
+		fmt.Printf("\n%s (%s):\n", BoldCyan("[DOC] Scratchpad Contents"), scratchFile)
 		lines := strings.Split(string(data), "\n")
 		for i, l := range lines {
 			fmt.Printf("  %3d │ %s\n", i+1, l)

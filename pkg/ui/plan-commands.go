@@ -122,7 +122,7 @@ func showPlanSummaryCard(planDir string, elapsed time.Duration) {
 	printMCPRow("", cardWidth)
 	printMCPRow(fmt.Sprintf("  [DIR] %s %s", BoldCyan("Plan Dir: "), Bold(relPath)), cardWidth)
 	printMCPRow(fmt.Sprintf("  [FILE] %s %s", GrayText("Overview: "), GrayText(filepath.Join(relPath, "plan.md"))), cardWidth)
-	printMCPRow(fmt.Sprintf("  ⏱️  %s %s", GrayText("Duration: "), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [TIME]  %s %s", GrayText("Duration: "), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
 	printMCPRow("", cardWidth)
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()
