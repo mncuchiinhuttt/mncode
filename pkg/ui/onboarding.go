@@ -82,6 +82,30 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), GrayText("Standard Professional Dev mode set."))
 	}
 
+	// Shared Workspace Memory & Self-Evolving Reflection Onboarding
+	fmt.Println()
+	fmt.Println(Bold("Shared Workspace Memory & Self-Evolving Reflection"))
+	fmt.Println(GrayText("   Enables agents to learn from test/build mistakes, remember repository conventions,\n   and share evolving insights across all chat sessions in the same workspace (Hermes style)."))
+	memoryPrompt := promptui.Select{
+		Label: BoldCyan("Enable Shared Workspace Memory & Self-Reflection?"),
+		Items: []string{
+			"Yes - Enable Shared Workspace Memory & Self-Reflective Learning (Recommended)",
+			"No  - Ephemeral Sessions Only (Do not save or share lessons across chats)",
+		},
+		HideSelected: true,
+	}
+
+	mIdx, _, mErr := memoryPrompt.Run()
+	if mErr == nil && mIdx == 0 {
+		s.Config.SetSetting("shared_memory_enabled", "true")
+		s.Config.SetSetting("hermes_reflection_enabled", "true")
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), Bold("Shared Workspace Memory & Hermes Reflection active."))
+	} else {
+		s.Config.SetSetting("shared_memory_enabled", "false")
+		s.Config.SetSetting("hermes_reflection_enabled", "false")
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), GrayText("Shared memory disabled (Ephemeral mode)."))
+	}
+
 	s.Config.SetSetting("onboarding_completed", "true")
 	_ = config.SaveConfig(s.Config)
 
