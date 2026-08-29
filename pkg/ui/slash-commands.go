@@ -54,6 +54,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/export"
 	} else if strings.HasPrefix("/combo", cmd) && len(cmd) >= 3 {
 		cmd = "/combo"
+	} else if strings.HasPrefix("/debate", cmd) && len(cmd) >= 3 {
+		cmd = "/debate"
 	}
 	switch cmd {
 	case "/help", "/?":
@@ -236,6 +238,13 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			args = strings.Join(parts[1:], " ")
 		}
 		handleComboCommand(args, s)
+	case "/debate", "/arena":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleDebateCommand(args, s)
+	default:
 		fmt.Printf("Unknown command '%s'.\n", cmd)
 		ShowSlashPalette()
 	}

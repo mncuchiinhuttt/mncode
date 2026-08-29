@@ -60,6 +60,7 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 45, Command: "/search", Description: "Configure web search (Auto, Brave, Tavily, Google)"},
 	{Number: 46, Command: "/export", Description: "Export frozen session trajectory as ShareGPT JSON"},
 	{Number: 47, Command: "/combo", Description: "Manage and run multi-agent Combos (Swarm & Pipelines)"},
+	{Number: 48, Command: "/debate", Description: "Launch AI Agent Debate Arena between competing models"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis
