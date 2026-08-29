@@ -31,7 +31,7 @@ func runComboCreateWizard(store *combos.Store, session *agent.Session) {
 	}
 
 	fmt.Println("\n\033[1m3. Select Execution Mode:\033[0m")
-	fmt.Println("  1) Pipeline   - Step-by-step linear data handoff (A ➔ B ➔ C)")
+	fmt.Println("  1) Pipeline   - Step-by-step linear data handoff (A -> B -> C)")
 	fmt.Println("  2) Debate     - Proposer vs Critic multi-round debate with Decider")
 	fmt.Println("  3) Fan-Out    - Concurrent execution on isolated worktrees + Merge")
 	fmt.Print("Choose mode [1-3, default 1]: ")
@@ -94,7 +94,7 @@ func runComboCreateWizard(store *combos.Store, session *agent.Session) {
 			PromptOverlay: promptOverlay,
 		})
 
-		fmt.Printf("\033[32m✔ Added role '%s' (Model: %s | Fallback: %s)\033[0m\n", roleName, model, fallback)
+		fmt.Printf("\033[32m[OK] Added role '%s' (Model: %s | Fallback: %s)\033[0m\n", roleName, model, fallback)
 		roleIndex++
 	}
 
@@ -113,7 +113,7 @@ func runComboCreateWizard(store *combos.Store, session *agent.Session) {
 		return
 	}
 
-	fmt.Printf("\n\033[1;32m🎉 Successfully created Combo '%s' (%s) with %d roles!\033[0m\n", name, slug, len(members))
+	fmt.Printf("\n\033[1;32m[SUCCESS] Successfully created Combo '%s' (%s) with %d roles!\033[0m\n", name, slug, len(members))
 	fmt.Printf("Run it anytime with: \033[1;36m/combo run %s <your task>\033[0m\n\n", slug)
 }
 

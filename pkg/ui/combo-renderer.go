@@ -52,8 +52,8 @@ func newTerminalComboHUD() combos.ComboListener {
 }
 
 func (h *terminalComboHUD) OnModelFallback(role, fromModel, toModel string, cause error) {
-	fmt.Printf("\n  \033[1;33m⚠️  [Combo Fallback] Role '%s' model '%s' encountered an issue (%v)\033[0m\n", role, fromModel, cause)
-	fmt.Printf("     \033[1;36m➔ Seamlessly switching to fallback model: '%s'...\033[0m\n\n", toModel)
+	fmt.Printf("\n  \033[1;33m[WARN]  [Combo Fallback] Role '%s' model '%s' encountered an issue (%v)\033[0m\n", role, fromModel, cause)
+	fmt.Printf("     \033[1;36m-> Seamlessly switching to fallback model: '%s'...\033[0m\n\n", toModel)
 }
 
 func (h *terminalComboHUD) OnComboStart(comboID, name string, mode combos.ExecutionMode, memberCount int) {
@@ -76,7 +76,7 @@ func (h *terminalComboHUD) OnComboStepDone(comboID, role, modelUsed string, dura
 	if len(summary) > 48 {
 		summary = summary[:45] + "..."
 	}
-	fmt.Printf("\033[2m│\033[0m \033[1;32m✔ %-16s\033[0m \033[2m(%s | %s) — %s\033[0m\n", role, modelUsed, durStr, summary)
+	fmt.Printf("\033[2m│\033[0m \033[1;32m[OK] %-16s\033[0m \033[2m(%s | %s) — %s\033[0m\n", role, modelUsed, durStr, summary)
 }
 
 func (h *terminalComboHUD) OnComboStepError(comboID, role string, err error) {

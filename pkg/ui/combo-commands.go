@@ -82,12 +82,12 @@ func renderComboList(store *combos.Store) {
 		for _, m := range c.Members {
 			roles = append(roles, m.Role)
 		}
-		rolesStr := strings.Join(roles, " ➔ ")
+		rolesStr := strings.Join(roles, " -> ")
 		if len(rolesStr) > 28 {
 			rolesStr = rolesStr[:25] + "..."
 		}
 		fmt.Printf("%-18s %-10s %-8d %s %s\n", c.ID, string(c.Mode), len(c.Members), badge, c.Description)
-		fmt.Printf("   \033[2mRoles: %s\033[0m\n\n", strings.Join(roles, " ➔ "))
+		fmt.Printf("   \033[2mRoles: %s\033[0m\n\n", strings.Join(roles, " -> "))
 	}
 	fmt.Println("\033[2mUse '/combo run <id>' to execute or '/combo create' to build a custom swarm.\033[0m")
 }
@@ -135,7 +135,7 @@ func runComboInteractive(store *combos.Store, session *agent.Session, comboID, p
 	hud := newTerminalComboHUD()
 	runner := combos.NewRunner(store, exec, hud)
 
-	fmt.Printf("\n\033[1;35m🚀 Launching Combo Swarm: %s [%s]\033[0m\n\n", c.Name, c.Mode)
+	fmt.Printf("\n\033[1;35m[LAUNCH] Launching Combo Swarm: %s [%s]\033[0m\n\n", c.Name, c.Mode)
 	res, err := runner.Run(context.Background(), comboID, prompt)
 	if err != nil {
 		fmt.Printf("\n\033[31m[Combo Error] %v\033[0m\n\n", err)
