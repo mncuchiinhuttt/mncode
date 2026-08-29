@@ -37,11 +37,14 @@ var namedKeys = map[string]string{
 }
 
 // Navigate loads a URL in the active tab and waits for load to settle.
-func (s *Session) Navigate(ctx context.Context, url string) (string, string, error) {
-	if strings.TrimSpace(url) == "" {
+func (s *Session) Navigate(ctx context.Context, rawURL string) (string, string, error) {
+	if strings.TrimSpace(rawURL) == "" {
 		return "", "", fmt.Errorf("url is required")
 	}
-	url = normalizeNavigateURL(url)
+	url := normalizeNavigateURL(rawURL)
+	if _, err := s.networkPolicy().Validate(url); err != nil {
+		return "", "", err
+	}
 	var title string
 	if err := s.run(ctx, defaultActionTimeout,
 		chromedp.Navigate(url),
@@ -147,9 +150,6 @@ func (s *Session) ScrollIntoView(ctx context.Context, selector string) error {
 		chromedp.ScrollIntoView(selector, chromedp.ByQuery),
 	)
 }
-
-// GetText returns the rendered text content of the given selector, or the
-// whole visible page body text when selector is empty.
 func (s *Session) GetText(ctx context.Context, selector string) (string, error) {
 	var text string
 	if strings.TrimSpace(selector) == "" {
@@ -158,7 +158,7 @@ func (s *Session) GetText(ctx context.Context, selector string) (string, error) 
 		); err != nil {
 			return "", err
 		}
-		return text, nil
+		return boundedBrowserText(text), nil
 	}
 	if err := s.run(ctx, defaultActionTimeout,
 		chromedp.WaitReady(selector, chromedp.ByQuery),
@@ -166,11 +166,8 @@ func (s *Session) GetText(ctx context.Context, selector string) (string, error) 
 	); err != nil {
 		return "", err
 	}
-	return text, nil
+	return boundedBrowserText(text), nil
 }
-
-// GetHTML returns the outer HTML of the given selector, or the whole
-// document's HTML when selector is empty.
 func (s *Session) GetHTML(ctx context.Context, selector string) (string, error) {
 	var html string
 	if strings.TrimSpace(selector) == "" {
@@ -179,7 +176,7 @@ func (s *Session) GetHTML(ctx context.Context, selector string) (string, error) 
 		); err != nil {
 			return "", err
 		}
-		return html, nil
+		return boundedBrowserText(html), nil
 	}
 	if err := s.run(ctx, defaultActionTimeout,
 		chromedp.WaitReady(selector, chromedp.ByQuery),
@@ -187,23 +184,18 @@ func (s *Session) GetHTML(ctx context.Context, selector string) (string, error) 
 	); err != nil {
 		return "", err
 	}
-	return html, nil
+	return boundedBrowserText(html), nil
 }
-
-// Eval runs arbitrary JavaScript in the page context and returns the
-// JSON-encodable result as a string.
 func (s *Session) Eval(ctx context.Context, expression string) (string, error) {
 	if strings.TrimSpace(expression) == "" {
 		return "", fmt.Errorf("expression is required")
 	}
 	var res string
-	// Wrap so both expressions and statements work, and results always
-	// come back as a string (JSON.stringify handles objects/arrays/etc).
 	wrapped := fmt.Sprintf("(() => { const __r = (function(){ return (%s); })(); return typeof __r === 'string' ? __r : JSON.stringify(__r); })()", expression)
 	if err := s.run(ctx, defaultActionTimeout, chromedp.Evaluate(wrapped, &res)); err != nil {
 		return "", err
 	}
-	return res, nil
+	return boundedBrowserText(res), nil
 }
 
 // WaitForSelector blocks until the given selector is visible, up to timeout.
@@ -285,5 +277,5 @@ func (s *Session) ListInteractiveElements(ctx context.Context, max int) (string,
 	if err := s.run(ctx, defaultActionTimeout, chromedp.Evaluate(script, &res)); err != nil {
 		return "", err
 	}
-	return res, nil
+	return boundedBrowserText(res), nil
 }
