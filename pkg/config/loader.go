@@ -94,4 +94,14 @@ func resolveProviderAndKeys(cfg *Config) {
 	if model := os.Getenv("LLM_MODEL"); model != "" {
 		cfg.Model = model
 	}
+
+	if braveKey := os.Getenv("BRAVE_API_KEY"); braveKey != "" {
+		cfg.BraveAPIKey = braveKey
+	}
+	if tavilyKey := os.Getenv("TAVILY_API_KEY"); tavilyKey != "" {
+		cfg.TavilyAPIKey = tavilyKey
+	}
+	if engine := os.Getenv("SEARCH_ENGINE"); engine != "" {
+		cfg.SearchEngine = engine
+	}
 }
