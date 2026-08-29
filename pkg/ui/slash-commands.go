@@ -60,6 +60,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/service"
 	} else if strings.HasPrefix("/budget", cmd) && len(cmd) >= 3 {
 		cmd = "/budget"
+	} else if strings.HasPrefix("/memory", cmd) && len(cmd) >= 3 {
+		cmd = "/memory"
 	}
 	switch cmd {
 	case "/help", "/?":
@@ -260,6 +262,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			args = strings.Join(parts[1:], " ")
 		}
 		handleBudgetCommand(args, s)
+	case "/memory", "/mem":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleMemoryCommand(args, s)
 	default:
 		ShowSlashPalette()
 	}
