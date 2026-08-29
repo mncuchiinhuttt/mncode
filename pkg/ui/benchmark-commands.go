@@ -15,7 +15,7 @@ import (
 func HandleBenchmarkCommand(parts []string, s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ mncode Performance & Benchmark Suite ] ────────────────────────────────╮"))
-	fmt.Println("│ ⚡ Autonomous code latency, throughput & memory profiling engine           │")
+	fmt.Println("│ [ACTION] Autonomous code latency, throughput & memory profiling engine           │")
 	fmt.Println(BoldPastelPink("╰────────────────────────────────────────────────────────────────────────────╯"))
 	fmt.Println()
 
@@ -49,7 +49,7 @@ func HandleBenchmarkCommand(parts []string, s *agent.Session) {
 		if err != nil {
 			fmt.Printf("\n%s Benchmark exited with error: %v\n", BoldRed("Notice:"), err)
 		} else {
-			fmt.Printf("\n%s Benchmark completed in %s\n", BoldGreen("✓"), elapsed.Round(time.Millisecond))
+			fmt.Printf("\n%s Benchmark completed in %s\n", BoldGreen("[OK]"), elapsed.Round(time.Millisecond))
 		}
 		return
 	}

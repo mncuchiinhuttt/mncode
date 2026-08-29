@@ -33,14 +33,14 @@ func OpenInteractiveMCPMenu(s *agent.Session) {
 			statusMap[st.Name] = st
 		}
 
-		ghStatus := GrayText("[⚪ Not Configured]")
+		ghStatus := GrayText("[[DISABLED] Not Configured]")
 		if gh, ok := statusMap["github"]; ok && gh.Connected {
-			ghStatus = BoldGreen(fmt.Sprintf("[🟢 Connected · %d tools]", len(gh.Tools)))
+			ghStatus = BoldGreen(fmt.Sprintf("[[ACTIVE] Connected · %d tools]", len(gh.Tools)))
 		}
 
-		notionStatus := GrayText("[⚪ Not Configured]")
+		notionStatus := GrayText("[[DISABLED] Not Configured]")
 		if notion, ok := statusMap["notion"]; ok && notion.Connected {
-			notionStatus = BoldGreen(fmt.Sprintf("[🟢 Connected · %d tools]", len(notion.Tools)))
+			notionStatus = BoldGreen(fmt.Sprintf("[[ACTIVE] Connected · %d tools]", len(notion.Tools)))
 		}
 
 		options := []struct {
@@ -50,7 +50,7 @@ func OpenInteractiveMCPMenu(s *agent.Session) {
 			Action      func()
 		}{
 			{
-				Title:       "🐙 GitHub MCP Server",
+				Title:       "[GIT] GitHub MCP Server",
 				Status:      ghStatus,
 				Description: "Manage repos, issues, PRs, file contents & code search",
 				Action:      func() { setupGitHubMCP(s) },

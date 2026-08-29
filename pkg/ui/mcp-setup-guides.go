@@ -12,7 +12,7 @@ import (
 func setupGitHubMCP(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup GitHub MCP Server ] ───────────────────────────────────────────────╮"))
-	fmt.Println("│ 📋 Step-by-Step Setup Instructions:                                          │")
+	fmt.Println("│ [PLAN] Step-by-Step Setup Instructions:                                          │")
 	fmt.Println("│   1. Open https://github.com/settings/tokens (Personal access tokens classic)│")
 	fmt.Println("│   2. Click 'Generate new token (classic)'                                    │")
 	fmt.Println("│   3. Check the 'repo' scope (and 'read:org' if needed)                       │")
@@ -41,7 +41,7 @@ func setupGitHubMCP(s *agent.Session) {
 func setupNotionMCP(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup Notion MCP Server ] ───────────────────────────────────────────────╮"))
-	fmt.Println("│ 📋 Step-by-Step Setup Instructions:                                          │")
+	fmt.Println("│ [PLAN] Step-by-Step Setup Instructions:                                          │")
 	fmt.Println("│   1. Open https://app.notion.com/developers/connections                     │")
 	fmt.Println("│   2. Click '+ New integration', name it 'mncode', and select your workspace  │")
 	fmt.Println("│   3. Copy the 'Internal Integration Secret' (starts with secret_...)         │")
@@ -92,5 +92,5 @@ func selectAndRemoveMCP(s *agent.Session) {
 		fmt.Printf("%s Failed to remove %s: %v\n", BoldRed("[Error]"), target, err)
 		return
 	}
-	fmt.Printf("\n%s %s MCP server disconnected and removed.\n", BoldGreen("✓"), Bold(target))
+	fmt.Printf("\n%s %s MCP server disconnected and removed.\n", BoldGreen("[OK]"), Bold(target))
 }
