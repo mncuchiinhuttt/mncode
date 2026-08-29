@@ -72,6 +72,9 @@ type Config struct {
 	TelemetryKey     string                    `json:"telemetryKey,omitempty"`
 	TelemetryURL     string                    `json:"telemetryUrl,omitempty"`
 	OpenCodeAPIKey   string                    `json:"opencodeApiKey,omitempty"`
+	SearchEngine     string                    `json:"searchEngine,omitempty"`
+	BraveAPIKey      string                    `json:"braveApiKey,omitempty"`
+	TavilyAPIKey     string                    `json:"tavilyApiKey,omitempty"`
 	CustomProviders  map[string]CustomProvider `json:"customProviders,omitempty"`
 	Settings         map[string]string         `json:"settings,omitempty"`
 }
@@ -91,6 +94,60 @@ func (c *Config) GetOpenCodeAPIKey() string {
 		return c.APIKey
 	}
 	return ""
+}
+
+// GetSearchEngine returns configured search engine (auto, antigravity, brave, tavily, duckduckgo).
+func (c *Config) GetSearchEngine() string {
+	if c == nil {
+		return "auto"
+	}
+	engine := c.SearchEngine
+	if engine == "" {
+		engine = c.GetSetting("search_engine", "")
+	}
+	if engine == "" {
+		engine = os.Getenv("SEARCH_ENGINE")
+	}
+	switch strings.ToLower(strings.TrimSpace(engine)) {
+	case "antigravity", "google":
+		return "antigravity"
+	case "brave":
+		return "brave"
+	case "tavily":
+		return "tavily"
+	case "duckduckgo", "ddg":
+		return "duckduckgo"
+	default:
+		return "auto"
+	}
+}
+
+// GetBraveAPIKey returns configured Brave Search API key from config, settings, or env.
+func (c *Config) GetBraveAPIKey() string {
+	if c == nil {
+		return strings.TrimSpace(os.Getenv("BRAVE_API_KEY"))
+	}
+	if key := strings.TrimSpace(c.BraveAPIKey); key != "" {
+		return key
+	}
+	if key := strings.TrimSpace(c.GetSetting("brave_api_key", "")); key != "" {
+		return key
+	}
+	return strings.TrimSpace(os.Getenv("BRAVE_API_KEY"))
+}
+
+// GetTavilyAPIKey returns configured Tavily Search API key from config, settings, or env.
+func (c *Config) GetTavilyAPIKey() string {
+	if c == nil {
+		return strings.TrimSpace(os.Getenv("TAVILY_API_KEY"))
+	}
+	if key := strings.TrimSpace(c.TavilyAPIKey); key != "" {
+		return key
+	}
+	if key := strings.TrimSpace(c.GetSetting("tavily_api_key", "")); key != "" {
+		return key
+	}
+	return strings.TrimSpace(os.Getenv("TAVILY_API_KEY"))
 }
 
 func (c *Config) GetCustomProvider(id string) (CustomProvider, bool) {
@@ -196,6 +253,7 @@ func DefaultConfig() *Config {
 		CodingLevel:     -1,
 		Effort:          "high",
 		Workflow:        "auto",
+		SearchEngine:    "auto",
 		CustomProviders: make(map[string]CustomProvider),
 	}
 }

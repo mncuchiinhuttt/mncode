@@ -142,17 +142,16 @@ func main() {
 		llmProvider, _ = provider.NewProvider(cfg)
 	}
 
-	// 5. Initialize Tools, MCP & UI
-	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove, cfg)
+	// Every process-supervising tool is owned by this registry and must be
+	// reaped when the CLI exits.
+	toolRegistry := tools.DefaultRegistry(cfg.WorkspaceDir, cfg.AutoApprove, cfg, accStore)
+	defer toolRegistry.Close()
 	toolRegistry.Register(&tools.AskTool{
 		AutoApprove: cfg.AutoApprove,
 		Prompter: func(question string, options []string, isMultiSelect bool) string {
 			isBrainrot := cfg.GetSetting("brainrot_mode", "false") == "true" || cfg.GetSetting("troll_mode", "false") == "true"
 			return ui.PromptAgentQuestion(ui.AskQuestionParams{
-				Question:      question,
-				Options:       options,
-				IsMultiSelect: isMultiSelect,
-				IsBrainrot:    isBrainrot,
+				Question: question, Options: options, IsMultiSelect: isMultiSelect, IsBrainrot: isBrainrot,
 			})
 		},
 	})
@@ -241,6 +240,7 @@ func main() {
 		ctx := context.Background()
 		if err := session.ProcessUserInput(ctx, *promptFlag); err != nil {
 			fmt.Fprintf(os.Stderr, "\nExecution error: %v\n", err)
+			_ = toolRegistry.Close()
 			os.Exit(1)
 		}
 		return

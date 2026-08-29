@@ -210,17 +210,19 @@ func (m *Manager) StartAll(ctx context.Context) {
 	m.mu.RLock()
 	isWs := m.IsWorkspaceLvl
 	isTrusted := m.IsTrusted
-	servers := make(map[string]ServerConfig, len(m.Config.MCPServers))
-	for name, cfg := range m.Config.MCPServers {
-		servers[name] = cfg
+	servers := make(map[string]ServerConfig)
+	if m.Config != nil {
+		servers = make(map[string]ServerConfig, len(m.Config.MCPServers))
+		for name, cfg := range m.Config.MCPServers {
+			servers[name] = cfg
+		}
 	}
 	m.mu.RUnlock()
-
-	// Security Policy: Do not automatically spawn untrusted workspace-level MCP servers
+	// Workspace-level configuration is executable code. Never start it
+	// implicitly until the workspace has been explicitly trusted.
 	if isWs && !isTrusted {
 		return
 	}
-
 	var wg sync.WaitGroup
 	for name, cfg := range servers {
 		if cfg.Disabled {
@@ -229,9 +231,12 @@ func (m *Manager) StartAll(ctx context.Context) {
 		wg.Add(1)
 		go func(sName string, sCfg ServerConfig) {
 			defer wg.Done()
-			client, err := NewClient(sName, sCfg)
+			client, err := newClient(ctx, sName, sCfg)
 			if err == nil {
 				m.mu.Lock()
+				if existing := m.Clients[sName]; existing != nil {
+					_ = existing.Close()
+				}
 				m.Clients[sName] = client
 				m.mu.Unlock()
 			}
@@ -241,25 +246,31 @@ func (m *Manager) StartAll(ctx context.Context) {
 }
 
 func (m *Manager) AddServer(ctx context.Context, name string, cfg ServerConfig) error {
-	client, err := NewClient(name, cfg)
+	m.mu.RLock()
+	untrustedWorkspace := m.IsWorkspaceLvl && !m.IsTrusted
+	m.mu.RUnlock()
+	if untrustedWorkspace {
+		return fmt.Errorf("workspace is not trusted for MCP server execution")
+	}
+	client, err := newClient(ctx, name, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to start server '%s': %w", name, err)
 	}
-
 	m.mu.Lock()
 	if m.Clients[name] != nil {
 		_ = m.Clients[name].Close()
 	}
 	m.Clients[name] = client
+	if m.Config == nil {
+		m.Config = &Config{MCPServers: make(map[string]ServerConfig)}
+	}
 	if m.Config.MCPServers == nil {
 		m.Config.MCPServers = make(map[string]ServerConfig)
 	}
 	m.Config.MCPServers[name] = cfg
 	m.mu.Unlock()
-
 	return m.SaveConfig()
 }
-
 func (m *Manager) RemoveServer(name string) error {
 	m.mu.Lock()
 	if client, ok := m.Clients[name]; ok {

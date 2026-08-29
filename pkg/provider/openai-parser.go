@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 )
 
@@ -58,8 +59,10 @@ func formatOpenAIMessage(m Message) map[string]interface{} {
 
 func (o *OpenAIProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*CompletionResponse, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	resp := &CompletionResponse{}
 	toolCallsMap := make(map[int]*ToolCall)
+	toolStarted := make(map[int]bool)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -75,14 +78,17 @@ func (o *OpenAIProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*Com
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			continue
 		}
-
-		// Extract OpenAI / OpenRouter token usage
 		if usage, ok := chunk["usage"].(map[string]interface{}); ok {
-			if pt, ok := usage["prompt_tokens"].(float64); ok {
-				resp.InputTokens = int(pt)
+			if value, ok := usage["prompt_tokens"].(float64); ok {
+				resp.InputTokens = int(value)
 			}
-			if ct, ok := usage["completion_tokens"].(float64); ok {
-				resp.OutputTokens = int(ct)
+			if value, ok := usage["completion_tokens"].(float64); ok {
+				resp.OutputTokens = int(value)
+			}
+			if value, ok := usage["completion_tokens_details"].(map[string]interface{}); ok {
+				if thought, ok := value["reasoning_tokens"].(float64); ok {
+					resp.ThinkingTokens = int(thought)
+				}
 			}
 		}
 
@@ -90,63 +96,88 @@ func (o *OpenAIProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*Com
 		if len(choices) == 0 {
 			continue
 		}
-
 		choice, _ := choices[0].(map[string]interface{})
 		delta, _ := choice["delta"].(map[string]interface{})
 		if delta == nil {
 			continue
 		}
-
 		if content, ok := delta["content"].(string); ok && content != "" {
 			resp.Content += content
-			_ = cb(StreamEvent{Type: EventToken, Text: content})
+			if err := emitEvent(cb, StreamEvent{Type: EventToken, Text: content}); err != nil {
+				return nil, err
+			}
 		}
-
-		if reasoning, ok := delta["reasoning_content"].(string); ok && reasoning != "" {
-			resp.Thinking += reasoning
-			_ = cb(StreamEvent{Type: EventThinking, Thinking: reasoning})
-		} else if reasoning, ok := delta["reasoning"].(string); ok && reasoning != "" {
-			resp.Thinking += reasoning
-			_ = cb(StreamEvent{Type: EventThinking, Thinking: reasoning})
+		reasoning := ""
+		if value, ok := delta["reasoning_content"].(string); ok {
+			reasoning = value
 		}
-
+		if reasoning == "" {
+			if value, ok := delta["reasoning"].(string); ok {
+				reasoning = value
+			}
+		}
+		if reasoning != "" {
+			resp.Thinking += reasoning
+			if err := emitEvent(cb, StreamEvent{Type: EventThinking, Thinking: reasoning}); err != nil {
+				return nil, err
+			}
+		}
 		if tcs, ok := delta["tool_calls"].([]interface{}); ok {
-			for _, tcItem := range tcs {
-				tcMap, _ := tcItem.(map[string]interface{})
+			for _, item := range tcs {
+				tcMap, _ := item.(map[string]interface{})
 				idx := 0
-				if i, ok := tcMap["index"].(float64); ok {
-					idx = int(i)
+				if value, ok := tcMap["index"].(float64); ok {
+					idx = int(value)
 				}
-				if _, exists := toolCallsMap[idx]; !exists {
-					toolCallsMap[idx] = &ToolCall{Arguments: make(map[string]interface{})}
+				tc, exists := toolCallsMap[idx]
+				if !exists {
+					tc = &ToolCall{Arguments: make(map[string]interface{})}
+					toolCallsMap[idx] = tc
 				}
-				tc := toolCallsMap[idx]
 				if id, ok := tcMap["id"].(string); ok && id != "" {
 					tc.ID = id
 				}
 				if fn, ok := tcMap["function"].(map[string]interface{}); ok {
 					if name, ok := fn["name"].(string); ok && name != "" {
 						tc.Name = name
-						_ = cb(StreamEvent{Type: EventToolCallStart, ToolCall: tc})
+						if !toolStarted[idx] {
+							toolStarted[idx] = true
+							if err := emitEvent(cb, StreamEvent{Type: EventToolCallStart, ToolCall: tc}); err != nil {
+								return nil, err
+							}
+						}
 					}
-					if argsChunk, ok := fn["arguments"].(string); ok {
-						tc.RawArgs += argsChunk
+					if args, ok := fn["arguments"].(string); ok {
+						tc.RawArgs += args
 					}
 				}
 			}
 		}
 	}
-
-	for _, tc := range toolCallsMap {
-		if tc.RawArgs != "" {
-			var args map[string]interface{}
-			_ = json.Unmarshal([]byte(tc.RawArgs), &args)
-			tc.Arguments = args
-		}
-		resp.ToolCalls = append(resp.ToolCalls, *tc)
-		_ = cb(StreamEvent{Type: EventToolCallComplete, ToolCall: tc})
+	if err := scanner.Err(); err != nil {
+		return nil, err
 	}
 
-	_ = cb(StreamEvent{Type: EventDone})
-	return resp, scanner.Err()
+	indices := make([]int, 0, len(toolCallsMap))
+	for idx := range toolCallsMap {
+		indices = append(indices, idx)
+	}
+	sort.Ints(indices)
+	for _, idx := range indices {
+		tc := toolCallsMap[idx]
+		if tc.RawArgs != "" {
+			var args map[string]interface{}
+			if err := json.Unmarshal([]byte(tc.RawArgs), &args); err == nil && args != nil {
+				tc.Arguments = args
+			}
+		}
+		resp.ToolCalls = append(resp.ToolCalls, *tc)
+		if err := emitEvent(cb, StreamEvent{Type: EventToolCallComplete, ToolCall: tc}); err != nil {
+			return nil, err
+		}
+	}
+	if err := emitEvent(cb, StreamEvent{Type: EventDone}); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

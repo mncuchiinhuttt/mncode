@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"sort"
 	"strings"
 )
 
@@ -84,7 +85,13 @@ func (s *Session) GetContextUsage() ContextUsage {
 	if s.Catalog != nil && len(s.Catalog.Agents) > 0 {
 		mcpCount = len(s.Catalog.Agents)
 		var agentBuilder strings.Builder
-		for name, ag := range s.Catalog.Agents {
+		names := make([]string, 0, len(s.Catalog.Agents))
+		for name := range s.Catalog.Agents {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			ag := s.Catalog.Agents[name]
 			agentBuilder.WriteString(name + ": " + ag.Role + "\n" + ag.Prompt + "\n")
 		}
 		mcpTokens = (len(agentBuilder.String()) + 400) / 4
@@ -92,7 +99,7 @@ func (s *Session) GetContextUsage() ContextUsage {
 
 	// 5. Exact Conversation Messages Tokens
 	messagesTokens := 0
-	for _, msg := range s.History {
+	for _, msg := range historySnapshot(s) {
 		messagesTokens += (len(msg.Content) + len(msg.Thinking)) / 4
 		for _, tc := range msg.ToolCalls {
 			argsBytes, _ := json.Marshal(tc.Arguments)

@@ -83,8 +83,8 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 | `/api` | **In-Terminal REST / HTTP Tester** — Send requests with syntax JSON & latency meter |
 | `/tree` | **Interactive ASCII File Tree** — Visualize codebase structure and file sizes |
 | `/share` | **Web Session Share** — Export & publish public transcripts to `mncode.dev/share/[id]` |
+| `/export [path]` | **ShareGPT Trajectory** — Export frozen session history as private `0600` JSON |
 | `/doctor` | **Workspace Health Audit** — Diagnostic scorecard, runtimes, and file size limits |
-| `/test [--heal]` | **Test Runner & Auto-Healer** — Run test suite & autonomously heal stack traces |
 | `/commit [-p]` | **AI Semantic Commit** — Conventional commit generation, auto-stage & push |
 | `/review` | **Pre-Commit Code Auditor** — Scan uncommitted diffs for secrets, SQLi, and smells |
 | `/symbol <name>` | **AST Symbol Search** — Find functions, structs, interfaces, and classes instantly |
@@ -100,6 +100,7 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 | `/effort [level]` | Configure thinking token budget (`None`, `Low`, `Medium`, `High`, `Max`, `PRO MAX`) |
 | `/workflow [mode]` | Switch orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
 | `/mcp` | Model Context Protocol (MCP) server manager and tool inspector |
+| `/search [engine]` | **Configuration only** — choose the backend or run `/search setup`; prompts trigger `search_web` automatically |
 | `/agents` | Inspect active subagents and multi-agent execution pipeline |
 | `/account` | Manage multi-account pool, health checks, and cooldown status |
 | `/quota` | Check real-time rate limit headroom and remaining token quotas |
@@ -159,7 +160,23 @@ OPENROUTER_API_KEY=sk-or-v1-...
 OPENROUTER_MODEL=stealth/ox-alpha
 ```
 
+### 4. Web Search Engines
+
+`search_web` is an internal agent tool. Users write a normal prompt; when the harness decides current web research is needed, the model calls `search_web` automatically. Users do not need to type `/search` to perform a search.
+
+The tool defaults to `auto` and tries engines in this order: Antigravity/Gemini, Tavily, Brave, then DuckDuckGo (skipping keyed engines that are not configured).
+
+Configure keys in the CLI with `/search setup` or in Desktop → Settings → General → Web search. Keys persist locally in `~/.mncode/config.json` (`0700` directory, `0600` file). A `.env` file is optional; `BRAVE_API_KEY`, `TAVILY_API_KEY`, and `SEARCH_ENGINE` remain optional environment fallbacks for development and automation.
+
 ---
+
+## 🧠 Advanced Agent Tools
+
+- `lsp_tool`: semantic Go/TypeScript definition, references, hover, diagnostics, and project-wide rename through installed language servers.
+- `debugger`: persistent Delve DAP sessions for breakpoints, stack traces, scopes, variables, and expression evaluation.
+- `persistent_kernel`: bounded persistent Python or Node namespaces for calculations and data analysis.
+- `replace_file_content` accepts an optional `FileHash` to reject edits against stale file bytes.
+- Concurrent subagents can coordinate through the in-process `subagent_message` tool.
 
 ## 🏗️ Architecture & Modules
 
@@ -170,16 +187,17 @@ mncode/
 │       └── main.go                 # Application entrypoint & CLI flag router
 ├── pkg/
 │   ├── accounts/                   # Multi-account pool, auto-rotation & quota checkers
-│   ├── agent/                      # ReAct agent loop, prompt builder & subagent coordinator
+│   ├── agent/                      # ReAct loop, prompt tiers, memory scrubber & subagent coordinator
 │   ├── config/                     # Configuration loader, .env & persistent settings store
+│   ├── evals/                      # Isolated parallel edit-reliability benchmark harness
 │   ├── mcp/                        # Model Context Protocol client & server lifecycle manager
 │   ├── provider/                   # LLM backends (Anthropic, Gemini, OpenAI, OpenRouter, OpenCode)
 │   ├── skills/                     # Open Agent Skills parser (.claude/skills, rules, agents)
 │   ├── stats/                      # Token usage tracking, telemetry sync & visualizer
-│   ├── tools/                      # Tool suite (Bash, File Slice, Ripgrep, Subagents, Web)
+│   ├── tools/                      # Workspace tools, LSP/DAP, kernels, edits, peer messaging & web
 │   └── ui/                         # Interactive terminal REPL, theme selector & overlays
 ├── dist/                           # Multi-platform compiled release binaries
-├── install.sh                      # Universal macOS/Linux 1-line curl installer
+├── install.sh                      # Universal macOS/Linux 1-line installer
 ├── install.ps1                     # Universal Windows PowerShell 1-line installer
 └── LICENSE                         # MIT License
 ```

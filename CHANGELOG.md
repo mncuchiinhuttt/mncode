@@ -1,3 +1,22 @@
+## Release v0.1.5-beta (2026-08-29)
+
+### 🚀 New Features & Enhancements
+- **Hash-Anchored Edit Tool (`replace_file_content`)**: Surgical line-anchored file edits with SHA-256 preflight checks to prevent race conditions and stale edits.
+- **LSP Semantic Code Intelligence (`lsp_tool`)**: Native Language Server Protocol support for Go, TypeScript, and Python with definition, references, hover, diagnostics, and atomic multi-file rename.
+- **Persistent REPL Kernel (`persistent_kernel`)**: Stateful execution environment for Python and JavaScript/Node with isolated namespaces, process lifecycle bounds, and stdout/stderr capture.
+- **Debug Adapter Protocol Integration (`dap_tool`)**: Full debugging capabilities supporting Delve (Go) and debugpy (Python) with breakpoints, stepping, stack trace inspection, and variable evaluation.
+- **Subagent Peer-to-Peer Hub Messaging (`subagent_message`)**: Bounded asynchronous peer communication allowing sibling subagents to coordinate directly without round-tripping through the orchestrator.
+- **ShareGPT Trajectory Export (`/export`)**: Export complete conversation, reasoning, and tool execution trajectories formatted for evaluation, fine-tuning, and sharing.
+- **Memory Context Stream Scrubber**: Real-time scrubbing of private `<memory-context>` and `<local_memories>` tags from streaming provider responses.
+- **Parallel Evaluation Harness (`pkg/evals`)**: Benchmarking suite measuring edit reliability, stale rejection rates, and tool invocation correctness.
+
+### 🐛 Bug Fixes & Stability
+- fix(lsp): add lock ordering and transaction rollback on preflight check failure during workspace rename.
+- fix(agent): isolate subagent config and provider instances to prevent concurrent session races.
+- fix(tools): handle Windows process tree cleanup gracefully with taskkill process group termination.
+- fix(mcp): stream-bound individual JSON-RPC frames instead of capping the lifetime stdout reader.
+- fix(browserctl): ensure terminal close state flag is set when browser session terminates.
+- fix(version): implement unambiguous `compareVersion` to prevent replay and rollback false positives.
 ## Release v0.1.1-beta (2026-08-22)
 
 ### 🚀 New Features

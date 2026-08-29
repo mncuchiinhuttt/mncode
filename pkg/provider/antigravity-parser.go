@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 )
 
 type antigravityUsageMetadata struct {
@@ -75,6 +74,7 @@ func (a *AntigravityProvider) buildGeminiRequest(req *CompletionRequest) map[str
 
 func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*CompletionResponse, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	fullText := strings.Builder{}
 	var toolCalls []ToolCall
 	inputTokens, outputTokens, thinkingTokens := 0, 0, 0
@@ -88,7 +88,6 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 		if data == "[DONE]" {
 			break
 		}
-
 		var chunk struct {
 			Response *struct {
 				UsageMetadata antigravityUsageMetadata `json:"usageMetadata"`
@@ -117,45 +116,40 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 				} `json:"content"`
 			} `json:"candidates"`
 		}
-
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			continue
 		}
-		if chunk.UsageMetadata.PromptTokenCount > 0 {
-			inputTokens = chunk.UsageMetadata.PromptTokenCount
-		}
-		if chunk.UsageMetadata.CandidatesTokenCount > 0 {
-			outputTokens = chunk.UsageMetadata.CandidatesTokenCount
-		}
-		if chunk.UsageMetadata.ThoughtsTokenCount > 0 {
-			thinkingTokens = chunk.UsageMetadata.ThoughtsTokenCount
-		}
-		if chunk.Response != nil {
-			usage := chunk.Response.UsageMetadata
-			if usage.PromptTokenCount > 0 {
-				inputTokens = usage.PromptTokenCount
-			}
-			if usage.CandidatesTokenCount > 0 {
-				outputTokens = usage.CandidatesTokenCount
-			}
-			if usage.ThoughtsTokenCount > 0 {
-				thinkingTokens = usage.ThoughtsTokenCount
-			}
-		}
-
+		usage := chunk.UsageMetadata
 		candidates := chunk.Candidates
-		if chunk.Response != nil && len(chunk.Response.Candidates) > 0 {
-			candidates = chunk.Response.Candidates
+		if chunk.Response != nil {
+			if value := chunk.Response.UsageMetadata; value.PromptTokenCount > 0 || value.CandidatesTokenCount > 0 || value.ThoughtsTokenCount > 0 {
+				usage = value
+			}
+			if len(chunk.Response.Candidates) > 0 {
+				candidates = chunk.Response.Candidates
+			}
 		}
-
-		for _, cand := range candidates {
-			for _, part := range cand.Content.Parts {
+		if usage.PromptTokenCount > 0 {
+			inputTokens = usage.PromptTokenCount
+		}
+		if usage.CandidatesTokenCount > 0 {
+			outputTokens = usage.CandidatesTokenCount
+		}
+		if usage.ThoughtsTokenCount > 0 {
+			thinkingTokens = usage.ThoughtsTokenCount
+		}
+		for _, candidate := range candidates {
+			for _, part := range candidate.Content.Parts {
 				if part.Text != "" {
 					if part.Thought {
-						_ = cb(StreamEvent{Type: EventThinking, Thinking: part.Text})
+						if err := emitEvent(cb, StreamEvent{Type: EventThinking, Thinking: part.Text}); err != nil {
+							return nil, err
+						}
 					} else {
 						fullText.WriteString(part.Text)
-						_ = cb(StreamEvent{Type: EventToken, Text: part.Text})
+						if err := emitEvent(cb, StreamEvent{Type: EventToken, Text: part.Text}); err != nil {
+							return nil, err
+						}
 					}
 				}
 				if len(part.FunctionCall) > 0 {
@@ -165,25 +159,23 @@ func (a *AntigravityProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) 
 					if sig == "" {
 						sig = part.ThoughtSignatureSnake
 					}
-					tc := ToolCall{
-						ID:               fmt.Sprintf("tc-%d", time.Now().UnixNano()),
-						Name:             name,
-						Arguments:        args,
-						ThoughtSignature: sig,
-					}
+					tc := ToolCall{ID: fmt.Sprintf("tc-%d", len(toolCalls)+1), Name: name, Arguments: args, ThoughtSignature: sig}
 					toolCalls = append(toolCalls, tc)
-					_ = cb(StreamEvent{Type: EventToolCallStart, ToolCall: &tc})
+					if err := emitEvent(cb, StreamEvent{Type: EventToolCallStart, ToolCall: &toolCalls[len(toolCalls)-1]}); err != nil {
+						return nil, err
+					}
+					if err := emitEvent(cb, StreamEvent{Type: EventToolCallComplete, ToolCall: &toolCalls[len(toolCalls)-1]}); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
 	}
-
-	_ = cb(StreamEvent{Type: EventDone})
-	return &CompletionResponse{
-		Content:        fullText.String(),
-		ToolCalls:      toolCalls,
-		InputTokens:    inputTokens,
-		OutputTokens:   outputTokens,
-		ThinkingTokens: thinkingTokens,
-	}, nil
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	if err := emitEvent(cb, StreamEvent{Type: EventDone}); err != nil {
+		return nil, err
+	}
+	return &CompletionResponse{Content: fullText.String(), ToolCalls: toolCalls, InputTokens: inputTokens, OutputTokens: outputTokens, ThinkingTokens: thinkingTokens}, nil
 }

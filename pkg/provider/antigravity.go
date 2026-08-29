@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,7 +19,11 @@ type AntigravityProvider struct {
 	ProjectID        string
 	HTTPClient       *http.Client
 	OnTokenRefreshed func(newTok string)
+	accountID        string
 }
+
+func (a *AntigravityProvider) AccountID() string      { return a.accountID }
+func (a *AntigravityProvider) SetAccountID(id string) { a.accountID = id }
 
 func NewAntigravityProvider(accessToken, baseURL string) *AntigravityProvider {
 	if baseURL == "" || !strings.Contains(baseURL, "googleapis.com") {
@@ -79,7 +82,7 @@ func (a *AntigravityProvider) RefreshTokenNow() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body := []byte(readProviderErrorBody(resp.Body))
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed refreshing token: %s", string(body))
 	}
@@ -114,7 +117,7 @@ func (a *AntigravityProvider) EnsureProjectID(ctx context.Context) string {
 				var codeAssist struct {
 					ProjectID string `json:"cloudaicompanionProject"`
 				}
-				body, _ := io.ReadAll(resp.Body)
+				body := []byte(readProviderErrorBody(resp.Body))
 				_ = json.Unmarshal(body, &codeAssist)
 				if codeAssist.ProjectID != "" {
 					a.ProjectID = codeAssist.ProjectID
@@ -162,30 +165,20 @@ func (a *AntigravityProvider) Stream(ctx context.Context, req *CompletionRequest
 		httpReq.Header.Set("X-Goog-Api-Client", "antigravity/1.107.0")
 		return a.HTTPClient.Do(httpReq)
 	}
-
 	resp, err := makeReq(a.AccessToken, url)
 	if err != nil {
-		return nil, fmt.Errorf("antigravity API request failed: %w", err)
+		return nil, newNetworkError(a.Name(), err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized && a.RefreshToken != "" {
-		if newTok, rErr := a.RefreshTokenNow(); rErr == nil && newTok != "" {
-			resp.Body.Close()
-			resp, err = makeReq(newTok, url)
-			if err != nil {
-				return nil, err
-			}
-			defer resp.Body.Close()
-		}
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		bodyBytes := []byte(readProviderErrorBody(resp.Body))
+		message := string(bodyBytes)
 		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, fmt.Errorf("antigravity rate limit reached (429): Quota exhausted for model '%s'.\n\n[Tip] Switch model with '/model' or switch account with '/account'.", targetModel)
+			message = fmt.Sprintf("Quota exhausted for model '%s'.\n\n[Tip] Switch model with '/model' to switch account with '/account'.", targetModel)
+		} else {
+			message += "\n\n[Tip] Run '/login antigravity' to re-authenticate or '/account import' to refresh credentials."
 		}
-		return nil, fmt.Errorf("antigravity API error (status %d): %s\n\n[Tip] Run '/login antigravity' to re-authenticate or '/account import' to refresh credentials.", resp.StatusCode, string(bodyBytes))
+		return nil, newHTTPError(a.Name(), resp.StatusCode, message, resp.Header)
 	}
 
 	return a.parseSSE(resp.Body, cb)

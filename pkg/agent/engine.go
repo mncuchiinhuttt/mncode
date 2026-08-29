@@ -3,11 +3,16 @@ package agent
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"mncode/pkg/accounts"
 	"mncode/pkg/config"
 	"mncode/pkg/provider"
+	"mncode/pkg/tools"
 )
 
 // agentTurnLimit returns a bounded ReAct iteration count. The setting is
@@ -44,7 +49,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 	userInput = s.PreprocessSkillTags(userInput)
 	cleanedInput, images := ExtractImagesFromInput(s.WorkspaceDir, userInput)
 
-	s.History = append(s.History, provider.Message{
+	appendHistory(s, provider.Message{
 		Role:    provider.RoleUser,
 		Content: cleanedInput,
 		Images:  images,
@@ -52,8 +57,10 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 
 	// Auto-compact safeguard if enabled and context exceeds 85%
 	if s.Config.GetSetting("auto_compact", "true") == "true" {
-		if usage := s.GetContextUsage(); usage.PercentUsed >= 85.0 && len(s.History) > 4 {
-			_, _ = s.CompactHistory(ctx)
+		if usage := s.GetContextUsage(); usage.PercentUsed >= 85.0 && len(historySnapshot(s)) > 4 {
+			if _, compactErr := s.CompactHistory(ctx); compactErr != nil && s.UI != nil {
+				s.UI.OnError(compactErr)
+			}
 		}
 	}
 
@@ -63,7 +70,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		toolDefs := s.getToolDefinitions()
 		req := &provider.CompletionRequest{
 			SystemPrompt:   s.BuildSystemPrompt(),
-			Messages:       s.History,
+			Messages:       historySnapshot(s),
 			Tools:          toolDefs,
 			Model:          s.Config.Model,
 			MaxTokens:      s.Config.MaxTokens,
@@ -71,7 +78,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			Temperature:    s.Config.Temperature,
 		}
 
-		resp, err := s.Provider.Stream(ctx, req, func(ev provider.StreamEvent) error {
+		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
 			if s.UI == nil {
 				return nil
 			}
@@ -130,7 +137,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			Thinking:  resp.Thinking,
 			ToolCalls: resp.ToolCalls,
 		}
-		s.History = append(s.History, assistantMsg)
+		appendHistory(s, assistantMsg)
 
 		// If no tools requested, turn is complete
 		if len(resp.ToolCalls) == 0 {
@@ -146,16 +153,15 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		}
 
 		// Record Tool Results
-		toolMsg := provider.Message{
+		appendHistory(s, provider.Message{
 			Role:        provider.RoleTool,
 			ToolResults: results,
-		}
-		s.History = append(s.History, toolMsg)
+		})
 
-		// Inject real-time steer directives into history for next reasoning step
+		// Inject real-time steer directives into history for next reasoning step.
 		if steers := s.DrainSteer(); len(steers) > 0 {
 			steerText := strings.Join(steers, "\n")
-			s.History = append(s.History, provider.Message{
+			appendHistory(s, provider.Message{
 				Role:    provider.RoleUser,
 				Content: fmt.Sprintf("[User Steering Directive (High Priority)]:\n%s", steerText),
 			})
@@ -172,9 +178,163 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		}
 		return err
 	}
-
 	_ = s.Save()
 	return nil
+}
+
+func planWriteTargetAllowed(workspace, rawPath string) bool {
+	if strings.TrimSpace(workspace) == "" {
+		return false
+	}
+	resolved, err := tools.ResolveWorkspacePath(workspace, rawPath, true)
+	if err != nil {
+		return false
+	}
+	root, err := filepath.Abs(workspace)
+	if err != nil {
+		return false
+	}
+	relative, err := filepath.Rel(root, resolved)
+	if err != nil || relative == "." || filepath.IsAbs(relative) {
+		return false
+	}
+	relative = filepath.ToSlash(relative)
+	return relative == "plans" || strings.HasPrefix(relative, "plans/") ||
+		relative == "reports" || strings.HasPrefix(relative, "reports/")
+}
+func (s *Session) streamProvider(ctx context.Context, req *provider.CompletionRequest, cb func(provider.StreamEvent) error) (*provider.CompletionResponse, error) {
+	const maxAttempts = 3
+	for attempt := range maxAttempts {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		if s.Provider == nil {
+			return nil, fmt.Errorf("provider is unavailable")
+		}
+
+		activeID := ""
+		if identifiable, ok := s.Provider.(provider.AccountIdentifiable); ok {
+			activeID = identifiable.AccountID()
+		}
+		scrubber := NewMemoryContextScrubber()
+		attemptEvents := make([]provider.StreamEvent, 0, 16)
+		streamCallback := func(event provider.StreamEvent) error {
+			if event.Type == provider.EventToken {
+				event.Text = scrubber.Feed(event.Text)
+			} else if event.Type == provider.EventThinking {
+				event.Thinking = scrubber.Feed(event.Thinking)
+			}
+			if event.Type == provider.EventToken && event.Text == "" {
+				return nil
+			}
+			if event.Type == provider.EventThinking && event.Thinking == "" {
+				return nil
+			}
+			if event.ToolCall != nil {
+				toolCall := *event.ToolCall
+				event.ToolCall = &toolCall
+			}
+			attemptEvents = append(attemptEvents, event)
+			return nil
+		}
+		resp, err := s.Provider.Stream(ctx, req, streamCallback)
+		if err == nil {
+			if trailing := scrubber.Flush(); trailing != "" {
+				attemptEvents = append(attemptEvents, provider.StreamEvent{Type: provider.EventToken, Text: trailing})
+			}
+			if cb != nil {
+				for _, event := range attemptEvents {
+					if callbackErr := cb(event); callbackErr != nil {
+						return nil, callbackErr
+					}
+				}
+			}
+			if resp != nil {
+				resp.Content = ScrubMemoryContext(resp.Content)
+				resp.Thinking = ScrubMemoryContext(resp.Thinking)
+			}
+			if activeID != "" && s.Router != nil {
+				s.Router.ReportSuccess(activeID)
+			}
+			return resp, nil
+		}
+
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+
+		classified := provider.ClassifyError(err)
+		if !classified.Retryable {
+			return nil, err
+		}
+		if activeID != "" && s.Router != nil {
+			s.Router.ReportFailure(activeID, classified.StatusCode, classified.Message)
+		}
+		if attempt == maxAttempts-1 {
+			return nil, err
+		}
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
+
+		// Refresh the current credential before rotating accounts for auth
+		// failures. Other retryable errors rotate when account routing is
+		// available, and otherwise retry the current provider.
+		retryCurrent := false
+		if refresher, ok := s.Provider.(provider.TokenRefresher); ok && (classified.StatusCode == 401 || classified.StatusCode == 403) {
+			if _, refreshErr := refresher.RefreshTokenNow(); refreshErr == nil {
+				retryCurrent = true
+			}
+		}
+		if !retryCurrent && s.Router != nil {
+			accountType := routedProviderType(s.Provider.Name())
+			if accountType != "" {
+				if next, nextErr := s.Router.GetNextAccount(accountType); nextErr == nil {
+					if useErr := s.useAccount(next); useErr == nil {
+						retryCurrent = true
+					}
+				}
+			}
+		}
+
+		if delayErr := waitProviderRetry(ctx, attempt, classified.RetryAfter); delayErr != nil {
+			return nil, delayErr
+		}
+	}
+	return nil, ctx.Err()
+}
+
+func routedProviderType(name string) accounts.AccountProvider {
+	switch strings.ToLower(name) {
+	case "antigravity":
+		return accounts.ProviderTypeAntigravity
+	case "openai", "openrouter":
+		return accounts.ProviderTypeCodex
+	default:
+		return ""
+	}
+}
+
+func waitProviderRetry(ctx context.Context, attempt int, retryAfter time.Duration) error {
+	delay := 100 * time.Millisecond
+	for i := 0; i < attempt; i++ {
+		delay *= 2
+	}
+	if retryAfter > delay {
+		delay = retryAfter
+	}
+	if delay > 5*time.Second {
+		delay = 5 * time.Second
+	}
+	jitter := time.Duration(rand.Int64N(int64(delay/2) + 1))
+	timer := time.NewTimer(delay/2 + jitter)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) provider.ToolResult {
@@ -197,8 +357,7 @@ func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) pr
 			if target == "" {
 				target, _ = tc.Arguments["path"].(string)
 			}
-			cleanTarget := strings.ReplaceAll(target, "\\", "/")
-			if !strings.Contains(cleanTarget, "plans/") && !strings.Contains(cleanTarget, "reports/") {
+			if !planWriteTargetAllowed(s.WorkspaceDir, target) {
 				errStr := fmt.Sprintf("Plan Mode Block: Creating '%s' is disabled in Plan Mode. You may only create plan files in ./plans/.", target)
 				if s.UI != nil {
 					s.UI.OnToolCallResult(tc.Name, errStr, true)
@@ -255,12 +414,16 @@ func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) pr
 }
 
 func (s *Session) getToolDefinitions() []provider.ToolDefinition {
-	var list []provider.ToolDefinition
-	for _, t := range s.Tools.All() {
+	if s == nil || s.Tools == nil {
+		return nil
+	}
+	definitions := s.Tools.Definitions(context.Background())
+	list := make([]provider.ToolDefinition, 0, len(definitions))
+	for _, definition := range definitions {
 		list = append(list, provider.ToolDefinition{
-			Name:        t.Name(),
-			Description: t.Description(),
-			InputSchema: t.Schema(),
+			Name:        definition.Name,
+			Description: definition.Description,
+			InputSchema: definition.InputSchema,
 		})
 	}
 	return list

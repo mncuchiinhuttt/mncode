@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -15,7 +14,11 @@ type OpenAIProvider struct {
 	APIKey     string
 	BaseURL    string
 	HTTPClient *http.Client
+	accountID  string
 }
+
+func (o *OpenAIProvider) AccountID() string      { return o.accountID }
+func (o *OpenAIProvider) SetAccountID(id string) { o.accountID = id }
 
 func NewOpenAIProvider(apiKey, baseURL string) *OpenAIProvider {
 	if baseURL == "" {
@@ -41,20 +44,16 @@ func (o *OpenAIProvider) Stream(ctx context.Context, req *CompletionRequest, cb 
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+o.APIKey)
-
 	resp, err := o.HTTPClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("openai API request failed: %w", err)
+		return nil, newNetworkError(o.Name(), err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("openai API error (status %d): %s", resp.StatusCode, string(bodyBytes))
+		bodyBytes := readProviderErrorBody(resp.Body)
+		return nil, newHTTPError(o.Name(), resp.StatusCode, string(bodyBytes), resp.Header)
 	}
-
 	return o.parseSSE(resp.Body, cb)
 }
 
@@ -72,7 +71,7 @@ func (o *OpenAIProvider) buildPayload(req *CompletionRequest) map[string]interfa
 	if req.MaxTokens > 0 {
 		payload["max_tokens"] = req.MaxTokens
 	}
-	if strings.Contains(modelName, "ox-alpha") || req.ThinkingBudget > 0 {
+	if (strings.Contains(o.BaseURL, "openrouter") || strings.Contains(modelName, "ox-alpha")) && req.ThinkingBudget > 0 {
 		payload["include_reasoning"] = true
 	}
 

@@ -36,3 +36,28 @@ func TestSaveConfigRestrictsCredentialFilePermissions(t *testing.T) {
 		t.Fatalf("config directory permissions = %04o, want %04o", got, want)
 	}
 }
+
+func TestLoadUserConfigRestoresSearchSettings(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("SEARCH_ENGINE", "")
+	t.Setenv("BRAVE_API_KEY", "")
+	t.Setenv("TAVILY_API_KEY", "")
+	saved := &Config{
+		SearchEngine: "brave",
+		BraveAPIKey:  "brave-local-key",
+		TavilyAPIKey: "tavily-local-key",
+	}
+	if err := SaveConfig(saved); err != nil {
+		t.Fatalf("SaveConfig() error = %v", err)
+	}
+	loaded := DefaultConfig()
+	if err := LoadUserConfig(loaded); err != nil {
+		t.Fatalf("LoadUserConfig() error = %v", err)
+	}
+	if loaded.GetSearchEngine() != "brave" {
+		t.Fatalf("search engine = %q, want brave", loaded.GetSearchEngine())
+	}
+	if loaded.GetBraveAPIKey() != "brave-local-key" || loaded.GetTavilyAPIKey() != "tavily-local-key" {
+		t.Fatalf("search credentials were not restored: brave=%q tavily=%q", loaded.GetBraveAPIKey(), loaded.GetTavilyAPIKey())
+	}
+}

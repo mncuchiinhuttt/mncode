@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestTokenTracker(t *testing.T) {
@@ -63,5 +64,45 @@ func TestTokenTracker(t *testing.T) {
 	tracker2.load()
 	if tracker2.GetLifetime().TotalTokens != 2000 {
 		t.Errorf("expected 2000 reloaded lifetime tokens, got %d", tracker2.GetLifetime().TotalTokens)
+	}
+}
+
+func TestRecordWithThinkingPreservesUsageAndUTCMetadata(t *testing.T) {
+	tracker := &Tracker{
+		filePath: filepath.Join(t.TempDir(), "usage.json"),
+		store: UsageStore{
+			Daily: make(map[string]*UsageSummary), Monthly: make(map[string]*UsageSummary),
+			ByModel: make(map[string]*UsageSummary), Lifetime: &UsageSummary{},
+		},
+	}
+	if err := tracker.RecordWithThinking("model-a", "account-a", 10, 20, 30); err != nil {
+		t.Fatalf("record usage: %v", err)
+	}
+	got := tracker.GetToday()
+	if got.InputTokens != 10 || got.OutputTokens != 20 || got.ThinkingTokens != 30 ||
+		got.TotalTokens != 60 || got.Requests != 1 {
+		t.Fatalf("unexpected usage summary: %+v", got)
+	}
+	records := tracker.Records()
+	if len(records) != 1 || records[0].ThinkingTokens != 30 ||
+		records[0].Timestamp.Location() != time.UTC ||
+		records[0].Date != records[0].Timestamp.Format("2006-01-02") {
+		t.Fatalf("unexpected record metadata: %+v", records)
+	}
+}
+
+func TestRecordReportsPersistenceError(t *testing.T) {
+	tracker := &Tracker{
+		filePath: filepath.Join(t.TempDir(), "missing", "usage.json"),
+		store: UsageStore{
+			Daily: make(map[string]*UsageSummary), Monthly: make(map[string]*UsageSummary),
+			ByModel: make(map[string]*UsageSummary), Lifetime: &UsageSummary{},
+		},
+	}
+	if err := tracker.RecordWithThinking("model-a", "account-a", 1, 1, 0); err == nil {
+		t.Fatal("expected persistence error")
+	}
+	if tracker.LastError() == nil {
+		t.Fatal("expected tracker to retain persistence error")
 	}
 }

@@ -40,8 +40,8 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 25, Command: "/heal", Description: "Autonomous test failure analysis and self-healing loop"},
 	{Number: 26, Command: "/review", Description: "Pre-commit security and clean code auditor"},
 	{Number: 27, Command: "/share", Description: "Export and share session transcript to web & clipboard"},
-	{Number: 28, Command: "/pr", Description: "Create GitHub Pull Request with automated AI summary"},
-	{Number: 29, Command: "/doctor", Description: "Diagnose workspace health, toolchains, and rule limits"},
+	{Number: 28, Command: "/doctor", Description: "Diagnose workspace health, toolchains, and rule limits"},
+	{Number: 29, Command: "/pr", Description: "Create GitHub Pull Request with automated AI summary"},
 	{Number: 30, Command: "/symbol", Description: "Search codebase functions, structs, classes via AST"},
 	{Number: 31, Command: "/scratch", Description: "Open local code sandbox to evaluate test snippets"},
 	{Number: 32, Command: "/resolve", Description: "Autonomous Git merge conflict detector & resolver"},
@@ -57,6 +57,8 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 42, Command: "/remote", Description: "Launch web & mobile remote companion bridge with QR code"},
 	{Number: 43, Command: "/help", Description: "Show available slash commands"},
 	{Number: 44, Command: "/exit", Description: "Exit mncode assistant"},
+	{Number: 45, Command: "/search", Description: "Configure web search (Auto, Brave, Tavily, Google)"},
+	{Number: 46, Command: "/export", Description: "Export frozen session trajectory as ShareGPT JSON"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis

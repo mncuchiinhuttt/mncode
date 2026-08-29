@@ -35,8 +35,9 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 	}
 
 	researchPrompt := fmt.Sprintf("[%s ACTIVATED]\nTopic: %s\nTarget Report File: %s\n\nExecute autonomous deep research:\n1. Decompose the topic into 3-5 key search inquiries.\n2. Use search_web to find authoritative sources, documentation, benchmarks, or academic papers.\n3. Use read_url_content to deeply read key pages and extract quotes/data.\n4. Write an exhaustive, publication-grade markdown report to '%s' using write_to_file.\n5. Ensure comprehensive comparison tables, architectural diagrams, trade-offs, and citations with full URLs.\n6. Provide a concise executive briefing when finished.", pipelineName, topic, targetFilePath, targetFilePath)
+	ensureSessionIdentity(s)
 
-	s.History = append(s.History, provider.Message{
+	appendHistory(s, provider.Message{
 		Role:    provider.RoleUser,
 		Content: researchPrompt,
 	})
@@ -50,7 +51,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 
 		req := &provider.CompletionRequest{
 			SystemPrompt:   systemPrompt,
-			Messages:       s.History,
+			Messages:       historySnapshot(s),
 			Tools:          toolDefs,
 			Model:          s.Config.Model,
 			MaxTokens:      s.Config.MaxTokens,
@@ -58,7 +59,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			Temperature:    0.3,
 		}
 
-		resp, err := s.Provider.Stream(ctx, req, func(ev provider.StreamEvent) error {
+		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
 			if s.UI == nil {
 				return nil
 			}
@@ -99,7 +100,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			Thinking:  resp.Thinking,
 			ToolCalls: resp.ToolCalls,
 		}
-		s.History = append(s.History, assistantMsg)
+		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
 			completed = true
@@ -116,7 +117,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			Role:        provider.RoleTool,
 			ToolResults: results,
 		}
-		s.History = append(s.History, toolMsg)
+		appendHistory(s, toolMsg)
 	}
 
 	if !completed {

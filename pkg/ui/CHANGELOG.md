@@ -1,4 +1,19 @@
-## Release v0.1.4 (2026-08-28)
+## Release v0.1.5-beta (2026-08-29)
+
+### 🚀 New Features
+- feat(tools): add hash-anchored `replace_file_content` with atomic replacement and stale-rejection preflight check
+- feat(lsp): add semantic `lsp_tool` supporting definition, references, hover, diagnostics, and atomic multi-file rename
+- feat(dap): add Debug Adapter Protocol (`dap_tool`) supporting Delve (Go) and debugpy (Python)
+- feat(kernel): add stateful `persistent_kernel` REPL for Python and Node with isolated environments
+- feat(agent): add subagent peer-to-peer message bus for direct sibling communication
+- feat(trajectory): add `/export` command for ShareGPT format conversation and tool trajectory dumps
+- feat(search): add configurable multi-engine `search_web` with Google Grounding, Tavily, Brave, and DuckDuckGo fallback
+
+### 🐛 Bug Fixes
+- fix(search): restore local search credentials on startup and prevent key previews from appearing in status output
+- fix(search): refresh zero/near-expiry Antigravity account tokens before Google grounding and bound returned snippets/results
+- fix(agent): clone session config and provider instances for subagents to prevent concurrent state pollution
+- fix(version): implement unambiguous `compareVersion` to prevent replay and rollback false positives
 
 ### 🚀 New Features
 - feat: add browser control and agent runtime hardening (b8085f3)

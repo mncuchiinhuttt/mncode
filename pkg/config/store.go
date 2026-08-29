@@ -146,6 +146,15 @@ func LoadUserConfig(cfg *Config) error {
 	if saved.TelemetryURL != "" {
 		cfg.TelemetryURL = saved.TelemetryURL
 	}
+	if saved.SearchEngine != "" {
+		cfg.SearchEngine = saved.SearchEngine
+	}
+	if saved.BraveAPIKey != "" {
+		cfg.BraveAPIKey = saved.BraveAPIKey
+	}
+	if saved.TavilyAPIKey != "" {
+		cfg.TavilyAPIKey = saved.TavilyAPIKey
+	}
 	if saved.Settings != nil {
 		cfg.Settings = saved.Settings
 	}

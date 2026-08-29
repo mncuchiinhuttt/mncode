@@ -19,8 +19,9 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 	}
 
 	goalPrompt := fmt.Sprintf("GOAL MODE: %s\n\nPlease execute autonomously. Use all necessary tools, verify changes, run tests, and only complete when the goal is verified 100%% achieved.", goal)
+	ensureSessionIdentity(s)
 
-	s.History = append(s.History, provider.Message{
+	appendHistory(s, provider.Message{
 		Role:    provider.RoleUser,
 		Content: goalPrompt,
 	})
@@ -42,7 +43,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 
 		req := &provider.CompletionRequest{
 			SystemPrompt:   systemPrompt,
-			Messages:       s.History,
+			Messages:       historySnapshot(s),
 			Tools:          toolDefs,
 			Model:          s.Config.Model,
 			MaxTokens:      s.Config.MaxTokens,
@@ -50,7 +51,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			Temperature:    s.Config.Temperature,
 		}
 
-		resp, err := s.Provider.Stream(ctx, req, func(ev provider.StreamEvent) error {
+		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
 			if s.UI == nil {
 				return nil
 			}
@@ -91,7 +92,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			Thinking:  resp.Thinking,
 			ToolCalls: resp.ToolCalls,
 		}
-		s.History = append(s.History, assistantMsg)
+		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
 			completed = true
@@ -109,7 +110,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			Role:        provider.RoleTool,
 			ToolResults: results,
 		}
-		s.History = append(s.History, toolMsg)
+		appendHistory(s, toolMsg)
 	}
 
 	if !completed {

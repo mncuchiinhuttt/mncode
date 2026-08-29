@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"mncode/pkg/tools"
 	"sync"
 	"time"
 )
@@ -23,13 +24,22 @@ type SubagentRecord struct {
 }
 
 type SubagentRegistry struct {
-	mu      sync.RWMutex
-	records []*SubagentRecord
+	mu        sync.RWMutex
+	messageMu sync.Mutex
+	records   []*SubagentRecord
+	inboxes   map[string]chan SubagentMessage
+	messages  []SubagentMessage
+	messageID uint64
 }
+
+// SubagentMessage is a bounded, in-process peer message between subagents.
+type SubagentMessage = tools.PeerMessage
 
 func NewSubagentRegistry() *SubagentRegistry {
 	return &SubagentRegistry{
-		records: make([]*SubagentRecord, 0),
+		records:  make([]*SubagentRecord, 0),
+		inboxes:  make(map[string]chan SubagentMessage),
+		messages: make([]SubagentMessage, 0),
 	}
 }
 
@@ -38,16 +48,16 @@ func (r *SubagentRegistry) Register(id, name, role, prompt string) *SubagentReco
 	defer r.mu.Unlock()
 
 	rec := &SubagentRecord{
-		ID:        id,
-		Name:      name,
-		Role:      role,
-		Prompt:    prompt,
-		Status:    "running",
-		StartTime: time.Now(),
-		ToolCalls: make([]string, 0),
-		Logs:      make([]string, 0),
+		ID: id, Name: name, Role: role, Prompt: prompt, Status: "running",
+		StartTime: time.Now(), ToolCalls: make([]string, 0), Logs: make([]string, 0),
 	}
 	r.records = append(r.records, rec)
+	if r.inboxes == nil {
+		r.inboxes = make(map[string]chan SubagentMessage)
+	}
+	if r.inboxes[id] == nil {
+		r.inboxes[id] = make(chan SubagentMessage, 32)
+	}
 	return rec
 }
 

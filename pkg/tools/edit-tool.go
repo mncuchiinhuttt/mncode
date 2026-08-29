@@ -2,6 +2,8 @@ package tools
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
@@ -28,6 +30,10 @@ func (e *EditTool) Schema() map[string]interface{} {
 				"type":        "string",
 				"description": "The file path to modify.",
 			},
+			"FileHash": map[string]interface{}{
+				"type":        "string",
+				"description": "Optional sha256 hex of the exact file bytes you read. When supplied and stale, the edit is rejected with the current hash so you can re-read and retry.",
+			},
 			"TargetContent": map[string]interface{}{
 				"type":        "string",
 				"description": "The exact string/block to be replaced.",
@@ -45,8 +51,25 @@ func (e *EditTool) Schema() map[string]interface{} {
 	}
 }
 
+// fileFingerprint returns a stable sha256 hex of the raw file bytes.
+func fileFingerprint(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// shortHash truncates a hex hash for compact error messages.
+func shortHash(h string) string {
+	if len(h) > 12 {
+		return h[:12] + "…"
+	}
+	return h
+}
+
 func (e *EditTool) Execute(ctx context.Context, args map[string]interface{}) (string, error) {
 	path, _ := args["TargetFile"].(string)
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	target, _ := args["TargetContent"].(string)
 	replacement, _ := args["ReplacementContent"].(string)
 	allowMultiple, _ := args["AllowMultiple"].(bool)
@@ -60,12 +83,24 @@ func (e *EditTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return "", err
 	}
 	path = resolvedPath
-
+	release := acquireEditPath(path)
+	defer release()
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to read %s: %w", path, err)
 	}
-
+	if claimed, _ := args["FileHash"].(string); strings.TrimSpace(claimed) != "" {
+		current := fileFingerprint(data)
+		if claimed != current {
+			return "", fmt.Errorf(
+				"stale edit rejected: you supplied FileHash %s but %s is now %s (file changed since you read it); re-read the file and re-apply against fresh content",
+				shortHash(claimed), path, shortHash(current),
+			)
+		}
+	}
 	content := string(data)
 	count := strings.Count(content, target)
 	if count == 0 {
@@ -83,9 +118,18 @@ func (e *EditTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		newContent = strings.Replace(content, target, replacement, 1)
 	}
 
-	if err := os.WriteFile(path, []byte(newContent), 0644); err != nil {
+	info, err := os.Stat(path)
+	if err != nil {
+		return "", fmt.Errorf("failed to stat updated file %s: %w", path, err)
+	}
+	if err := atomicEditWrite(path, data, []byte(newContent), info.Mode()); err != nil {
 		return "", fmt.Errorf("failed to write updated file %s: %w", path, err)
 	}
+	return fmt.Sprintf("Successfully replaced %d occurrence(s) in %s. FileHash: %s", count, path, fileFingerprint([]byte(newContent))), nil
+}
 
-	return fmt.Sprintf("Successfully replaced %d occurrence(s) in %s.", count, path), nil
+// NewHash returns the fingerprint an agent must echo back as FileHash on its
+// next edit after a successful write, enabling optimistic-concurrency edits.
+func (e *EditTool) NewHash(newContent string) string {
+	return fileFingerprint([]byte(newContent))
 }

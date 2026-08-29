@@ -51,6 +51,7 @@ func (s *Session) EnsureProvider() error {
 			}
 			ap := provider.NewAntigravityProvider(acc.AccessToken, baseURL)
 			ap.RefreshToken = acc.RefreshToken
+			ap.SetAccountID(acc.ID)
 			targetID := acc.ID
 			ap.OnTokenRefreshed = func(newTok string) {
 				s.Config.APIKey = newTok
@@ -77,7 +78,9 @@ func (s *Session) EnsureProvider() error {
 			if !strings.Contains(baseURL, "openai.com") && !strings.Contains(baseURL, "openrouter.ai") {
 				baseURL = "https://api.openai.com/v1"
 			}
-			s.Provider = provider.NewOpenAIProvider(acc.AccessToken, baseURL)
+			ap := provider.NewOpenAIProvider(acc.AccessToken, baseURL)
+			ap.SetAccountID(acc.ID)
+			s.Provider = ap
 			return nil
 		}
 	}
@@ -119,24 +122,88 @@ func (s *Session) EnsureProvider() error {
 		s.Config.APIKey = key
 	}
 
-	// Save to accounts store
+	// Save to accounts store.
+	accountID := fmt.Sprintf("key-%d", time.Now().UnixNano())
 	if s.Accounts != nil {
-		_ = s.Accounts.AddOrUpdate(&accounts.Account{
-			ID:          fmt.Sprintf("key-%d", time.Now().Unix()),
+		accountProvider := accounts.AccountProvider(s.Config.Provider)
+		if s.Config.Provider == config.ProviderOpenAI || s.Config.Provider == config.ProviderOpenRouter {
+			accountProvider = accounts.ProviderTypeCodex
+		}
+		if err := s.Accounts.AddOrUpdate(&accounts.Account{
+			ID:          accountID,
 			Email:       "manual-key",
-			Provider:    accounts.AccountProvider(s.Config.Provider),
+			Provider:    accountProvider,
 			AccessToken: key,
 			IsActive:    true,
 			CreatedAt:   time.Now(),
-		})
+		}); err != nil {
+			return fmt.Errorf("save provider account: %w", err)
+		}
 	}
 
 	prov, err := provider.NewProvider(s.Config)
 	if err != nil {
 		return err
 	}
+	if identity, ok := prov.(interface{ SetAccountID(string) }); ok {
+		identity.SetAccountID(accountID)
+	}
 
 	s.Provider = prov
 	fmt.Println("\033[1;32m[OK] Da thiet lap thanh cong Provider:\033[0m", s.Config.Provider)
 	return nil
+}
+func (s *Session) useAccount(acc *accounts.Account) error {
+	if acc == nil {
+		return fmt.Errorf("account is nil")
+	}
+	switch acc.Provider {
+	case accounts.ProviderTypeAntigravity:
+		s.Config.Provider = config.ProviderAntigravity
+		s.Config.APIKey = acc.AccessToken
+		if s.Config.Model == "" {
+			s.Config.Model = "gemini-3.7-flash-high"
+		}
+		baseURL := ""
+		if strings.Contains(s.Config.BaseURL, "googleapis.com") {
+			baseURL = s.Config.BaseURL
+		}
+		ap := provider.NewAntigravityProvider(acc.AccessToken, baseURL)
+		ap.RefreshToken = acc.RefreshToken
+		ap.SetAccountID(acc.ID)
+		s.bindAntigravityRefresh(ap, acc.ID)
+		s.Provider = ap
+	case accounts.ProviderTypeCodex:
+		s.Config.Provider = config.ProviderOpenAI
+		s.Config.APIKey = acc.AccessToken
+		if s.Config.Model == "" {
+			s.Config.Model = "gpt-4o"
+		}
+		baseURL := s.Config.BaseURL
+		if !strings.Contains(baseURL, "openai.com") && !strings.Contains(baseURL, "openrouter.ai") {
+			baseURL = "https://api.openai.com/v1"
+		}
+		ap := provider.NewOpenAIProvider(acc.AccessToken, baseURL)
+		ap.SetAccountID(acc.ID)
+		s.Provider = ap
+	default:
+		return fmt.Errorf("unsupported account provider %q", acc.Provider)
+	}
+	return nil
+}
+
+func (s *Session) bindAntigravityRefresh(ap *provider.AntigravityProvider, accountID string) {
+	ap.OnTokenRefreshed = func(newTok string) {
+		s.Config.APIKey = newTok
+		if s.Accounts == nil {
+			return
+		}
+		for _, acc := range s.Accounts.Accounts {
+			if acc.ID == accountID {
+				acc.AccessToken = newTok
+				break
+			}
+		}
+		_ = s.Accounts.Save()
+	}
 }

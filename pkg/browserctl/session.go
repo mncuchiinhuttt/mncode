@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,36 +22,40 @@ type Options struct {
 	// ExecPath overrides browser binary discovery (Chrome/Chromium/Edge/Brave).
 	ExecPath string
 	// UserDataDir is the Chrome profile directory used by the controlled
-	// browser. Kept separate from the user's real browser profile by
-	// default so agent browsing never touches their personal cookies/history
-	// unless they explicitly import it (see Import in profile.go).
-	UserDataDir string
-	// Headless runs the browser without a visible window.
-	Headless bool
-	// IgnoreCertErrors disables TLS certificate verification in the browser.
+	// browser.
+	UserDataDir      string
+	Headless         bool
 	IgnoreCertErrors bool
-	// WindowWidth/WindowHeight set the initial browser window size.
-	WindowWidth  int
-	WindowHeight int
+	WindowWidth      int
+	WindowHeight     int
+	// Local development hosts are denied unless this is explicitly enabled.
+	AllowLocalDevelopment bool
+	LocalDevelopmentHosts []string
 }
 
 // Session owns the lifecycle of one browser + one active tab. Safe for
 // concurrent use; all tool calls serialize through mu so actions on the page
 // (navigate, click, type) never interleave.
 type Session struct {
-	mu sync.Mutex
-
-	opts       Options
-	allocCtx   context.Context
-	allocStop  context.CancelFunc
-	browserCtx context.Context
+	mu            sync.Mutex
+	opts          Options
+	allocCtx      context.Context
+	allocStop     context.CancelFunc
+	browserCtx    context.Context
 	browserCancel context.CancelFunc
+	egress        *EgressProxy
+	started       bool
+	closed        bool
+	lastURL       string
+	lastTitle     string
+}
 
-	started bool
-	closed  bool
-
-	lastURL   string
-	lastTitle string
+func (s *Session) networkPolicy() NetworkPolicy {
+	hosts := make(map[string]bool, len(s.opts.LocalDevelopmentHosts))
+	for _, host := range s.opts.LocalDevelopmentHosts {
+		hosts[strings.ToLower(strings.TrimSuffix(strings.TrimSpace(host), "."))] = true
+	}
+	return NetworkPolicy{AllowLocalDevelopment: s.opts.AllowLocalDevelopment, LocalHosts: hosts}
 }
 
 // NewSession creates an unstarted browser session. The browser process is
@@ -77,6 +82,9 @@ func DefaultUserDataDir() string {
 
 // ensureStarted launches the browser process on first use. Caller must hold mu.
 func (s *Session) ensureStarted(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if s.closed {
 		return fmt.Errorf("browser session was closed")
 	}
@@ -92,12 +100,18 @@ func (s *Session) ensureStarted(ctx context.Context) error {
 		return fmt.Errorf("create browser profile dir: %w", err)
 	}
 
+	egress, err := StartEgressProxy(s.networkPolicy())
+	if err != nil {
+		return err
+	}
 	allocOpts := append([]chromedp.ExecAllocatorOption{}, chromedp.DefaultExecAllocatorOptions[:]...)
 	allocOpts = append(allocOpts,
 		chromedp.UserDataDir(dataDir),
 		chromedp.WindowSize(s.opts.WindowWidth, s.opts.WindowHeight),
 		chromedp.Flag("headless", s.opts.Headless),
 		chromedp.Flag("new-window", true),
+		chromedp.Flag("proxy-server", egress.Address()),
+		chromedp.Flag("proxy-bypass-list", ""),
 	)
 	if s.opts.IgnoreCertErrors {
 		allocOpts = append(allocOpts, chromedp.Flag("ignore-certificate-errors", true))
@@ -127,16 +141,24 @@ func (s *Session) ensureStarted(ctx context.Context) error {
 		if err != nil {
 			browserCancel()
 			allocStop()
+			_ = egress.Close()
 			return fmt.Errorf("failed to start controlled browser: %w", err)
 		}
+	case <-ctx.Done():
+		browserCancel()
+		allocStop()
+		_ = egress.Close()
+		return ctx.Err()
 	case <-time.After(30 * time.Second):
 		browserCancel()
 		allocStop()
+		_ = egress.Close()
 		return fmt.Errorf("failed to start controlled browser: timed out waiting for browser to become ready")
 	}
 
 	s.allocCtx = allocCtx
 	s.allocStop = allocStop
+	s.egress = egress
 	s.browserCtx = browserCtx
 	s.browserCancel = browserCancel
 	s.started = true
@@ -170,17 +192,17 @@ func (s *Session) IsRunning() bool {
 func (s *Session) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.started || s.closed {
-		s.closed = true
-		return nil
-	}
-	s.closed = true
 	if s.browserCancel != nil {
 		s.browserCancel()
 	}
 	if s.allocStop != nil {
 		s.allocStop()
 	}
+	if s.egress != nil {
+		_ = s.egress.Close()
+		s.egress = nil
+	}
 	s.started = false
+	s.closed = true
 	return nil
 }

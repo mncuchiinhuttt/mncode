@@ -32,24 +32,31 @@ type UsageStatsResponse struct {
 
 // FetchUsageStats reads the authenticated user's daily token usage from mncode-web.
 func FetchUsageStats(s *agent.Session) (*UsageStatsResponse, error) {
+	if s == nil || s.Config == nil {
+		return nil, fmt.Errorf("session or config is nil")
+	}
 	key := s.Config.GetTelemetryKey()
 	if key == "" {
 		return nil, fmt.Errorf("no sync key configured")
 	}
 
-	request, err := http.NewRequest("GET", s.Config.GetWebBaseURL()+"/api/user/stats", nil)
+	baseURL := s.Config.GetWebBaseURL()
+	if baseURL == "" {
+		return nil, fmt.Errorf("no web base URL configured")
+	}
+
+	request, err := http.NewRequest("GET", baseURL+"/api/user/stats", nil)
 	if err != nil {
 		return nil, err
 	}
 	request.Header.Set("Authorization", "Bearer "+key)
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: 3 * time.Second}
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
-
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return nil, fmt.Errorf("server returned %d", response.StatusCode)
 	}

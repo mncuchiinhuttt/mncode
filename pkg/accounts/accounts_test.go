@@ -3,6 +3,7 @@ package accounts
 import (
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestStoreAndRouter(t *testing.T) {
@@ -79,5 +80,15 @@ func TestCodexAccountManagement(t *testing.T) {
 	accounts := store.ListByProvider(ProviderTypeCodex)
 	if len(accounts) != 1 {
 		t.Errorf("expected 1 codex account, got %d", len(accounts))
+	}
+}
+
+func TestParseCredentialExpiry(t *testing.T) {
+	if got := parseCredentialExpiry("1700000000"); got.Unix() != 1700000000 {
+		t.Fatalf("numeric expiry = %v", got)
+	}
+	want := time.Date(2026, time.August, 29, 12, 0, 0, 0, time.UTC)
+	if got := parseCredentialExpiry(want.Format(time.RFC3339)); !got.Equal(want) {
+		t.Fatalf("RFC3339 expiry = %v, want %v", got, want)
 	}
 }

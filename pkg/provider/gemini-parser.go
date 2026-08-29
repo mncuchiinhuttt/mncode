@@ -10,6 +10,7 @@ import (
 
 func (g *GeminiProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*CompletionResponse, error) {
 	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	resp := &CompletionResponse{}
 	toolIndex := 0
 
@@ -19,58 +20,62 @@ func (g *GeminiProvider) parseSSE(r io.Reader, cb func(StreamEvent) error) (*Com
 			continue
 		}
 		data := strings.TrimPrefix(line, "data: ")
-
+		if data == "[DONE]" {
+			break
+		}
 		var chunk map[string]interface{}
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			continue
 		}
-
-		// Extract token usage metadata from Gemini
 		if usage, ok := chunk["usageMetadata"].(map[string]interface{}); ok {
-			if pt, ok := usage["promptTokenCount"].(float64); ok {
-				resp.InputTokens = int(pt)
+			if value, ok := usage["promptTokenCount"].(float64); ok {
+				resp.InputTokens = int(value)
 			}
-			if ct, ok := usage["candidatesTokenCount"].(float64); ok {
-				resp.OutputTokens = int(ct)
+			if value, ok := usage["candidatesTokenCount"].(float64); ok {
+				resp.OutputTokens = int(value)
 			}
-			if tt, ok := usage["thoughtsTokenCount"].(float64); ok {
-				resp.ThinkingTokens = int(tt)
+			if value, ok := usage["thoughtsTokenCount"].(float64); ok {
+				resp.ThinkingTokens = int(value)
 			}
 		}
-
 		candidates, _ := chunk["candidates"].([]interface{})
 		if len(candidates) == 0 {
 			continue
 		}
-
-		cand, _ := candidates[0].(map[string]interface{})
-		content, _ := cand["content"].(map[string]interface{})
+		candidate, _ := candidates[0].(map[string]interface{})
+		content, _ := candidate["content"].(map[string]interface{})
 		if content == nil {
 			continue
 		}
-
 		parts, _ := content["parts"].([]interface{})
-		for _, p := range parts {
-			part, _ := p.(map[string]interface{})
-			if txt, ok := part["text"].(string); ok && txt != "" {
-				resp.Content += txt
-				_ = cb(StreamEvent{Type: EventToken, Text: txt})
-			}
-			if fc, ok := part["functionCall"].(map[string]interface{}); ok {
-				name, _ := fc["name"].(string)
-				args, _ := fc["args"].(map[string]interface{})
-				toolIndex++
-				tc := ToolCall{
-					ID:        fmt.Sprintf("call_%d", toolIndex),
-					Name:      name,
-					Arguments: args,
+		for _, item := range parts {
+			part, _ := item.(map[string]interface{})
+			if text, ok := part["text"].(string); ok && text != "" {
+				resp.Content += text
+				if err := emitEvent(cb, StreamEvent{Type: EventToken, Text: text}); err != nil {
+					return nil, err
 				}
+			}
+			if functionCall, ok := part["functionCall"].(map[string]interface{}); ok {
+				name, _ := functionCall["name"].(string)
+				args, _ := functionCall["args"].(map[string]interface{})
+				toolIndex++
+				tc := ToolCall{ID: fmt.Sprintf("call_%d", toolIndex), Name: name, Arguments: args}
 				resp.ToolCalls = append(resp.ToolCalls, tc)
-				_ = cb(StreamEvent{Type: EventToolCallComplete, ToolCall: &tc})
+				if err := emitEvent(cb, StreamEvent{Type: EventToolCallStart, ToolCall: &tc}); err != nil {
+					return nil, err
+				}
+				if err := emitEvent(cb, StreamEvent{Type: EventToolCallComplete, ToolCall: &tc}); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
-
-	_ = cb(StreamEvent{Type: EventDone})
-	return resp, scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	if err := emitEvent(cb, StreamEvent{Type: EventDone}); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
