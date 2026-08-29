@@ -116,7 +116,7 @@ func OpenInteractiveEffortSlider(s *agent.Session) {
 		trackSb.WriteString("   ")
 		for i := 0; i < trackLen; i++ {
 			if i == targetCenter {
-				trackSb.WriteString(BoldPastelPink("▲"))
+				trackSb.WriteString(BoldPastelPink("^"))
 			} else if i == dividerPos {
 				trackSb.WriteString(GrayText("┆"))
 			} else {

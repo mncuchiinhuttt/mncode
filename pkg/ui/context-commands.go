@@ -85,15 +85,15 @@ func ShowContextUsage(s *agent.Session) {
 		symbols := make([]string, totalBlocks)
 		for i := 0; i < totalBlocks; i++ {
 			if i < sysBlocks {
-				symbols[i] = BoldCyan("⛁")
+				symbols[i] = BoldCyan("[TOKEN]")
 			} else if i < sysBlocks+toolsBlocks {
-				symbols[i] = BoldGreen("⛁")
+				symbols[i] = BoldGreen("[TOKEN]")
 			} else if i < sysBlocks+toolsBlocks+mcpBlocks {
-				symbols[i] = BoldYellow("⛁")
+				symbols[i] = BoldYellow("[TOKEN]")
 			} else if i < sysBlocks+toolsBlocks+mcpBlocks+skillsBlocks {
-				symbols[i] = BoldMagenta("⛁")
+				symbols[i] = BoldMagenta("[TOKEN]")
 			} else if i < usedBlocks {
-				symbols[i] = BoldBlue("⛁")
+				symbols[i] = BoldBlue("[TOKEN]")
 			} else if i >= totalBlocks-bufferBlocks {
 				symbols[i] = BoldYellow("⛝")
 			} else {
@@ -109,15 +109,15 @@ func ShowContextUsage(s *agent.Session) {
 		rightLines[3] = ""
 		rightLines[4] = Bold("Estimated usage by category")
 		rightLines[5] = fmt.Sprintf("%s System prompt: %s tokens (%.1f%%)",
-			BoldCyan("⛁"), formatTokens(usage.SystemTokens), pct(usage.SystemTokens, usage.Limit))
+			BoldCyan("[TOKEN]"), formatTokens(usage.SystemTokens), pct(usage.SystemTokens, usage.Limit))
 		rightLines[6] = fmt.Sprintf("%s System tools: %s tokens (%.1f%%)",
-			BoldGreen("⛁"), formatTokens(usage.SystemToolsTokens), pct(usage.SystemToolsTokens, usage.Limit))
+			BoldGreen("[TOKEN]"), formatTokens(usage.SystemToolsTokens), pct(usage.SystemToolsTokens, usage.Limit))
 		rightLines[7] = fmt.Sprintf("%s MCP tools: %s tokens (%.1f%%)",
-			BoldYellow("⛁"), formatTokens(usage.MCPToolsTokens), pct(usage.MCPToolsTokens, usage.Limit))
+			BoldYellow("[TOKEN]"), formatTokens(usage.MCPToolsTokens), pct(usage.MCPToolsTokens, usage.Limit))
 		rightLines[8] = fmt.Sprintf("%s Skills: %s tokens (%.1f%%)",
-			BoldMagenta("⛁"), formatTokens(usage.SkillsTokens), pct(usage.SkillsTokens, usage.Limit))
+			BoldMagenta("[TOKEN]"), formatTokens(usage.SkillsTokens), pct(usage.SkillsTokens, usage.Limit))
 		rightLines[9] = fmt.Sprintf("%s Messages: %s tokens (%.1f%%)",
-			BoldBlue("⛁"), formatTokens(usage.MessagesTokens), pct(usage.MessagesTokens, usage.Limit))
+			BoldBlue("[TOKEN]"), formatTokens(usage.MessagesTokens), pct(usage.MessagesTokens, usage.Limit))
 
 		var lines []string
 		lines = append(lines, "")

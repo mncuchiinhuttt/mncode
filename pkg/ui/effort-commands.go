@@ -77,7 +77,7 @@ func triggerProMaxActivationAnimation() {
 		fmt.Printf("\r  \033[1;38;5;212m[ENGAGING MNCODE PRO MAX]\033[0m \033[38;5;218m[%s]\033[0m \033[38;5;225m%d%%\033[0m", bar, pct)
 		time.Sleep(15 * time.Millisecond)
 	}
-	fmt.Printf("\r  \033[1;38;5;218m[MNCODE PRO MAX ACTIVE]\033[0m   \033[1;38;5;212m[████████████████████]\033[0m \033[1;38;5;225mULTRA WORKFLOW\033[0m · \033[1;38;5;219mMax Rizz & Unbounded Cognitive Depth Activated 🔥\033[0m\n\n")
+	fmt.Printf("\r  \033[1;38;5;218m[MNCODE PRO MAX ACTIVE]\033[0m   \033[1;38;5;212m[████████████████████]\033[0m \033[1;38;5;225mULTRA WORKFLOW\033[0m · \033[1;38;5;219mMax Rizz & Unbounded Cognitive Depth Activated [MAX]\033[0m\n\n")
 }
 
 func showCurrentEffort(s *agent.Session) {

@@ -40,7 +40,7 @@ func RenderResumedHistory(history []provider.Message) {
 				if len([]rune(preview)) > 60 {
 					preview = string([]rune(preview)[:57]) + "…"
 				}
-				printRawLine(fmt.Sprintf("%s %s", Colorize(AttrBold+t.Secondary, "💭 [Thinking]"), GrayText(fmt.Sprintf("%s (%d lines)", preview, len(lines)))))
+				printRawLine(fmt.Sprintf("%s %s", Colorize(AttrBold+t.Secondary, "[THINKING] [Thinking]"), GrayText(fmt.Sprintf("%s (%d lines)", preview, len(lines)))))
 			}
 
 			for _, tc := range m.ToolCalls {
