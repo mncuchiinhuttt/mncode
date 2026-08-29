@@ -38,7 +38,7 @@ func HandleDBCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s DATABASE_URL not found in .env\n\n", BoldRed("[Error]"))
 			return
 		}
-		fmt.Printf("\n%s Querying tables from %s...\n\n", BoldCyan("🗄️  [Database]"), maskDBURL(dbURL))
+		fmt.Printf("\n%s Querying tables from %s...\n\n", BoldCyan("[DB]  [Database]"), maskDBURL(dbURL))
 		if strings.HasPrefix(dbURL, "postgres") || strings.HasPrefix(dbURL, "postgresql") {
 			runPSQLQuery(dbURL, "\\dt")
 		} else if strings.HasPrefix(dbURL, "sqlite") || strings.HasSuffix(dbURL, ".db") {
@@ -57,7 +57,7 @@ func HandleDBCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s DATABASE_URL not found in .env\n\n", BoldRed("[Error]"))
 			return
 		}
-		fmt.Printf("\n%s Schema for table '%s':\n\n", BoldCyan("🗄️  [Database Schema]"), Bold(table))
+		fmt.Printf("\n%s Schema for table '%s':\n\n", BoldCyan("[DB]  [Database Schema]"), Bold(table))
 		if strings.HasPrefix(dbURL, "postgres") || strings.HasPrefix(dbURL, "postgresql") {
 			runPSQLQuery(dbURL, fmt.Sprintf("\\d %s", table))
 		} else if strings.HasPrefix(dbURL, "sqlite") || strings.HasSuffix(dbURL, ".db") {
@@ -74,7 +74,7 @@ func HandleDBCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s DATABASE_URL not found in .env\n\n", BoldRed("[Error]"))
 			return
 		}
-		fmt.Printf("\n%s Executing: %s\n\n", BoldCyan("▶ [SQL Query]"), Bold(sqlQuery))
+		fmt.Printf("\n%s Executing: %s\n\n", BoldCyan("> [SQL Query]"), Bold(sqlQuery))
 		if strings.HasPrefix(dbURL, "postgres") || strings.HasPrefix(dbURL, "postgresql") {
 			runPSQLQuery(dbURL, sqlQuery)
 		} else if strings.HasPrefix(dbURL, "sqlite") || strings.HasSuffix(dbURL, ".db") {

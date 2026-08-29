@@ -26,12 +26,12 @@ func HandleReviewCommand(parts []string, s *agent.Session) {
 
 	rawDiff := string(out)
 	if strings.TrimSpace(rawDiff) == "" {
-		fmt.Printf("\n%s Working tree is clean. No uncommitted changes to review.\n\n", BoldGreen("✓"))
+		fmt.Printf("\n%s Working tree is clean. No uncommitted changes to review.\n\n", BoldGreen("[OK]"))
 		return
 	}
 
 	fmt.Println()
-	fmt.Println(BoldPastelPink("🛡️  Autonomous Pre-Commit Code & Security Review"))
+	fmt.Println(BoldPastelPink("[SECURITY]  Autonomous Pre-Commit Code & Security Review"))
 	fmt.Println(GrayText(strings.Repeat("─", 65)))
 
 	var findings []AuditFinding
@@ -88,13 +88,13 @@ func HandleReviewCommand(parts []string, s *agent.Session) {
 
 	if len(findings) == 0 {
 		fmt.Println()
-		fmt.Printf("  %s %s\n", BoldGreen("✓ AUDIT PASSED [10/10]"), Bold("No security vulnerabilities or code smells detected!"))
+		fmt.Printf("  %s %s\n", BoldGreen("[OK] AUDIT PASSED [10/10]"), Bold("No security vulnerabilities or code smells detected!"))
 		fmt.Printf("  %s %s\n", GrayText("Verdict:"), BoldGreen("Approved for Commit & PR"))
 		fmt.Println()
 		return
 	}
 
-	fmt.Printf("\n  %s %s\n\n", BoldYellow("⚠️  Findings Detected:"), GrayText(fmt.Sprintf("(%d issues flagged)", len(findings))))
+	fmt.Printf("\n  %s %s\n\n", BoldYellow("[WARN]  Findings Detected:"), GrayText(fmt.Sprintf("(%d issues flagged)", len(findings))))
 	for _, f := range findings {
 		var badge string
 		switch f.Severity {
@@ -116,5 +116,5 @@ func HandleReviewCommand(parts []string, s *agent.Session) {
 	}
 
 	fmt.Println()
-	fmt.Printf("  %s %s\n\n", BoldCyan("💡 Recommendation:"), GrayText("Review flagged items before running '/commit --push'."))
+	fmt.Printf("  %s %s\n\n", BoldCyan("[INFO] Recommendation:"), GrayText("Review flagged items before running '/commit --push'."))
 }

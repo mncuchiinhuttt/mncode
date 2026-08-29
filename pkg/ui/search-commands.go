@@ -36,7 +36,7 @@ func HandleSearchCommand(parts []string, s *agent.Session) {
 				fmt.Printf("\n%s Could not save search engine: %v\n\n", BoldRed("[Error]"), err)
 				return
 			}
-			fmt.Printf("\n%s Web Search Engine set to: %s\n\n", BoldGreen("✓"), BoldCyan(arg))
+			fmt.Printf("\n%s Web Search Engine set to: %s\n\n", BoldGreen("[OK]"), BoldCyan(arg))
 			return
 		}
 	}
@@ -110,7 +110,7 @@ func openSearchSetupWizard(s *agent.Session) {
 func setupBraveSearchGuide(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup Brave Search API ] ───────────────────────────────────────────────╮"))
-	fmt.Println("│ 📋 Step-by-Step Instructions:                                                │")
+	fmt.Println("│ [PLAN] Step-by-Step Instructions:                                                │")
 	fmt.Println("│   1. Open https://brave.com/search/api/ in your browser                      │")
 	fmt.Println("│   2. Sign up / Log in and get your Free API Key (2,000 queries/month free)  │")
 	fmt.Println("│   3. Copy your API Key (starts with BSA...)                                  │")
@@ -135,13 +135,13 @@ func setupBraveSearchGuide(s *agent.Session) {
 		fmt.Printf("\n%s Could not save Brave Search API key: %v\n", BoldRed("[Error]"), err)
 		return
 	}
-	fmt.Printf("\n%s Brave Search API key saved locally.\n", BoldGreen("✓"))
+	fmt.Printf("\n%s Brave Search API key saved locally.\n", BoldGreen("[OK]"))
 }
 
 func setupTavilySearchGuide(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup Tavily AI Search ] ───────────────────────────────────────────────╮"))
-	fmt.Println("│ 📋 Step-by-Step Instructions:                                                │")
+	fmt.Println("│ [PLAN] Step-by-Step Instructions:                                                │")
 	fmt.Println("│   1. Open https://tavily.com in your browser                                 │")
 	fmt.Println("│   2. Sign up / Log in and get your API Key (1,000 queries/month free)        │")
 	fmt.Println("│   3. Copy your API Key (starts with tvly-...)                                │")
@@ -166,13 +166,13 @@ func setupTavilySearchGuide(s *agent.Session) {
 		fmt.Printf("\n%s Could not save Tavily API key: %v\n", BoldRed("[Error]"), err)
 		return
 	}
-	fmt.Printf("\n%s Tavily Search API key saved locally.\n", BoldGreen("✓"))
+	fmt.Printf("\n%s Tavily Search API key saved locally.\n", BoldGreen("[OK]"))
 }
 
 func setupAntigravityGuide(s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ Setup Google Search Grounding ] ────────────────────────────────────────╮"))
-	fmt.Println("│ 📋 Instructions:                                                             │")
+	fmt.Println("│ [PLAN] Instructions:                                                             │")
 	fmt.Println("│   Run `/login antigravity` or `/account import` to authenticate Google.      │")
 	fmt.Println("│   Google Grounding uses native Google search results with Gemini models.     │")
 	fmt.Println(BoldPastelPink("╰──────────────────────────────────────────────────────────────────────────────╯"))

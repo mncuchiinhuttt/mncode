@@ -13,7 +13,7 @@ import (
 func HandleSecurityCommand(parts []string, s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ mncode Security Sentinel & OWASP Auditor ] ───────────────────────────╮"))
-	fmt.Println("│ 🛡️ Enterprise vulnerability scanning, secrets leak detection & auto-patch  │")
+	fmt.Println("│ [SECURITY] Enterprise vulnerability scanning, secrets leak detection & auto-patch  │")
 	fmt.Println(BoldPastelPink("╰────────────────────────────────────────────────────────────────────────────╯"))
 	fmt.Println()
 
@@ -33,10 +33,10 @@ func HandleSecurityCommand(parts []string, s *agent.Session) {
 	}
 
 	fmt.Println(BoldCyan("Select Security Action:"))
-	fmt.Println("  1. 🛡️  Full OWASP Top 10 & Codebase Security Audit (Recommended)")
-	fmt.Println("  2. ⚡  Auto-Patch All Detected Vulnerabilities (Self-Healing Fix)")
+	fmt.Println("  1. [SECURITY]  Full OWASP Top 10 & Codebase Security Audit (Recommended)")
+	fmt.Println("  2. [ACTION]  Auto-Patch All Detected Vulnerabilities (Self-Healing Fix)")
 	fmt.Println("  3. 🔑  Scan Leaked API Keys & Hardcoded Secrets")
-	fmt.Println("  4. 📦  Audit Outdated Dependencies & Known CVEs")
+	fmt.Println("  4. [PACKAGE]  Audit Outdated Dependencies & Known CVEs")
 	fmt.Println("  5. ❌  Cancel")
 	fmt.Println()
 	fmt.Print(BoldYellow("Enter choice [1-5] (default 1): "))

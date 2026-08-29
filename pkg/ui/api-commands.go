@@ -43,7 +43,7 @@ func HandleAPICommand(parts []string) {
 		targetURL = "http://" + targetURL
 	}
 
-	fmt.Printf("\n%s %s %s...\n", BoldCyan("🌐 [HTTP Request]"), BoldYellow(method), Bold(targetURL))
+	fmt.Printf("\n%s %s %s...\n", BoldCyan("[HTTP] [HTTP Request]"), BoldYellow(method), Bold(targetURL))
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest(method, targetURL, reqBody)
