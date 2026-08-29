@@ -62,6 +62,8 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/budget"
 	} else if strings.HasPrefix("/memory", cmd) && len(cmd) >= 3 {
 		cmd = "/memory"
+	} else if strings.HasPrefix("/voice", cmd) && len(cmd) >= 3 {
+		cmd = "/voice"
 	}
 	switch cmd {
 	case "/help", "/?":
@@ -202,8 +204,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleCommitCommand(parts, s)
 	case "/test":
 		HandleTestCommand(parts, s)
-	case "/heal":
-		HandleTestCommand([]string{"/test", "--heal"}, s)
+	case "/heal", "/self-heal", "/fix-test":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleHealCommand(args, s)
 	case "/review":
 		HandleReviewCommand(parts, s)
 	case "/share":
@@ -268,6 +274,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			args = strings.Join(parts[1:], " ")
 		}
 		handleMemoryCommand(args, s)
+	case "/voice", "/speech", "/stt":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleVoiceCommand(args, s)
 	default:
 		ShowSlashPalette()
 	}

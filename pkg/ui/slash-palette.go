@@ -64,6 +64,7 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 49, Command: "/service", Description: "Manage background supervised services (dev servers, watchers)"},
 	{Number: 50, Command: "/budget", Description: "Set session token or dollar budget ceiling with soft/hard stops"},
 	{Number: 51, Command: "/memory", Description: "View and manage shared workspace memories and self-reflections"},
+	{Number: 52, Command: "/voice", Description: "Record speech from microphone and transcribe directly via Whisper"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis
