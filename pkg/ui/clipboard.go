@@ -51,7 +51,7 @@ func ShowCopyToast(charCount int) {
 		return
 	}
 	copyToastMu.Lock()
-	activeCopyToast = fmt.Sprintf("\033[1;32m✓\033[0m \033[38;5;218mCopied %d characters to clipboard\033[0m", charCount)
+	activeCopyToast = fmt.Sprintf("\033[1;32m[OK]\033[0m \033[38;5;218mCopied %d characters to clipboard\033[0m", charCount)
 	if toastClearTimer != nil {
 		toastClearTimer.Stop()
 	}

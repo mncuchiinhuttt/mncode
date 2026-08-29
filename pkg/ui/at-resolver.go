@@ -113,9 +113,9 @@ func getWorkspaceTree(workspaceDir string) string {
 			return nil
 		}
 		if info.IsDir() {
-			entries = append(entries, "📁 "+rel+"/")
+			entries = append(entries, "[DIR] "+rel+"/")
 		} else {
-			entries = append(entries, "📄 "+rel)
+			entries = append(entries, "[FILE] "+rel)
 		}
 		if len(entries) >= 60 {
 			return filepath.SkipDir
@@ -137,9 +137,9 @@ func getFolderContents(fullPath string, relPath string) string {
 			continue
 		}
 		if e.IsDir() {
-			lines = append(lines, fmt.Sprintf("📁 %s/%s/", relPath, e.Name()))
+			lines = append(lines, fmt.Sprintf("[DIR] %s/%s/", relPath, e.Name()))
 		} else {
-			lines = append(lines, fmt.Sprintf("📄 %s/%s", relPath, e.Name()))
+			lines = append(lines, fmt.Sprintf("[FILE] %s/%s", relPath, e.Name()))
 		}
 	}
 	return strings.Join(lines, "\n")
