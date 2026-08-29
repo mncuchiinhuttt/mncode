@@ -33,3 +33,12 @@ func TestTruncateStr(t *testing.T) {
 		t.Errorf("got %q, want super-lon...", got)
 	}
 }
+func TestSelectDebateModelsNonTerminalFallback(t *testing.T) {
+	models := selectDebateModelsInteractive()
+	if len(models) < 2 {
+		t.Fatalf("expected at least 2 default models, got %v", models)
+	}
+	if models[0] != "claude-sonnet-4-6" || models[1] != "deepseek-reasoner" {
+		t.Fatalf("unexpected fallback models: %v", models)
+	}
+}
