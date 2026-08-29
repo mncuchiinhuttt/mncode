@@ -66,7 +66,7 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 		Label: BoldCyan("Enable Brainrot Mode? (Gen Z / Sigma 10x Developer Persona + Harmless Troll Pranks)"),
 		Items: []string{
 			"No  - Standard Professional Dev (Clean & Serious)",
-			"Yes - Gen Z / Max Rizz / Zero Cap fr fr 💀 (Includes harmless troll pranks)",
+			"Yes - Gen Z / Max Rizz / Zero Cap fr fr [SIGMA] (Includes harmless troll pranks)",
 		},
 		HideSelected: true,
 	}
@@ -75,11 +75,11 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 	if err == nil && bIdx == 1 {
 		s.Config.SetSetting("brainrot_mode", "true")
 		s.Config.SetSetting("troll_mode", "true")
-		fmt.Printf("   %s %s\n", BoldGreen("✓"), BoldPastelPink("Brainrot & Troll Mode enabled! (Zero cap fr fr 💀)"))
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), BoldPastelPink("Brainrot & Troll Mode enabled! (Zero cap fr fr [SIGMA])"))
 	} else {
 		s.Config.SetSetting("brainrot_mode", "false")
 		s.Config.SetSetting("troll_mode", "false")
-		fmt.Printf("   %s %s\n", BoldGreen("✓"), GrayText("Standard Professional Dev mode set."))
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), GrayText("Standard Professional Dev mode set."))
 	}
 
 	s.Config.SetSetting("onboarding_completed", "true")

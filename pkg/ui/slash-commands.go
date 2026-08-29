@@ -143,9 +143,9 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		s.Config.SetSetting("troll_mode", newVal)
 		_ = config.SaveConfig(s.Config)
 		if newVal == "true" {
-			fmt.Printf("\n%s Brainrot & Troll Mode enabled! 🧠🔥 (Full Gen Z / Sigma Dev + Harmless Troll Pranks)\n\n", BoldPastelPink("[PRO MAX]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode enabled! [THINK][MAX] (Full Gen Z / Sigma Dev + Harmless Troll Pranks)\n\n", BoldPastelPink("[PRO MAX]"))
 		} else {
-			fmt.Printf("\n%s Brainrot & Troll Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode disabled. [PRO] (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
 	case "/diff":
 		HandleDiffCommand(parts, s)
@@ -166,9 +166,9 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		s.Config.SetSetting("troll_mode", newTroll)
 		_ = config.SaveConfig(s.Config)
 		if newTroll == "true" {
-			fmt.Printf("\n%s Troll Mode ENABLED! 💀 (Occasional harmless scare pranks before tools)\n\n", BoldPastelPink("[Troll Mode]"))
+			fmt.Printf("\n%s Troll Mode ENABLED! [SIGMA] (Occasional harmless scare pranks before tools)\n\n", BoldPastelPink("[Troll Mode]"))
 		} else {
-			fmt.Printf("\n%s Troll Mode disabled. 💼 (Strict serious dev mode)\n\n", BoldCyan("[Troll Mode]"))
+			fmt.Printf("\n%s Troll Mode disabled. [PRO] (Strict serious dev mode)\n\n", BoldCyan("[Troll Mode]"))
 		}
 	case "/scan":
 		HandleScanCommand(parts, s)

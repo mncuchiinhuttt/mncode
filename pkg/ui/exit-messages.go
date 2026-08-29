@@ -9,34 +9,34 @@ import (
 
 var (
 	brainrotExitMessagesEN = []string{
-		"Aura +10000 for cooking today. Stay sigma, king 🗿👑",
-		"Logging off with maximum rizz. No bugs survived today fr fr 🔥",
-		"Mewing streak preserved. See you next commit, chief 🤫🧏",
-		"We cooked and we ate. Catch you on the next push boss ✌️🍳",
-		"Aura levels maxed out. Terminal safely disengaged 🚀⚡",
-		"Skibidi Ohio level 10x developer detected. Terminal disengaged 🗿🔥",
-		"Code pushed smoother than butter with zero cap. See ya king! 👑✌️",
-		"Unbounded cognitive depth achieved. Take a break, champ ✨",
+		"Aura +10000 for cooking today. Stay sigma, king [GIGA][KING]",
+		"Logging off with maximum rizz. No bugs survived today fr fr [MAX]",
+		"Mewing streak preserved. See you next commit, chief [MEW]",
+		"We cooked and we ate. Catch you on the next push boss [PEACE][COOK]",
+		"Aura levels maxed out. Terminal safely disengaged [LAUNCH][ACTION]",
+		"Skibidi Ohio level 10x developer detected. Terminal disengaged [GIGA][MAX]",
+		"Code pushed smoother than butter with zero cap. See ya king! [KING][PEACE]",
+		"Unbounded cognitive depth achieved. Take a break, champ [SHINE]",
 	}
 
 	brainrotExitMessagesVN = []string{
-		"Aura +10000 cho buổi code hôm nay. Mãi đỉnh, mãi sigma ní ơi 🗿👑",
-		"Nghỉ ngơi thôi ní ơi, nay cook căng quá aura tăng chóng mặt fr fr 🗿🔥",
-		"Đã push code mượt như bơ, không một chút cap. See ya king! 👑✌️",
-		"Skibidi toilet cũng phải nể độ 10x dev của ní hôm nay 🧠✨",
-		"Giữ vững chuỗi mewing và hẹn gặp lại ở commit sau nha ní 🤫🧏",
+		"Aura +10000 cho buổi code hôm nay. Mãi đỉnh, mãi sigma ní ơi [GIGA][KING]",
+		"Nghỉ ngơi thôi ní ơi, nay cook căng quá aura tăng chóng mặt fr fr [GIGA][MAX]",
+		"Đã push code mượt như bơ, không một chút cap. See ya king! [KING][PEACE]",
+		"Skibidi toilet cũng phải nể độ 10x dev của ní hôm nay [THINK][SHINE]",
+		"Giữ vững chuỗi mewing và hẹn gặp lại ở commit sau nha ní [MEW]",
 	}
 
 	standardExitMessagesEN = []string{
-		"✨ Session finished. Happy coding and see you next time!",
-		"⚡ mncode disengaged. Keep building amazing things!",
-		"🚀 Work saved. Until next session, happy hacking!",
+		"[SHINE] Session finished. Happy coding and see you next time!",
+		"[ACTION] mncode disengaged. Keep building amazing things!",
+		"[LAUNCH] Work saved. Until next session, happy hacking!",
 	}
 
 	standardExitMessagesVN = []string{
-		"✨ Phiên làm việc đã kết thúc. Chúc bạn code vui vẻ và hẹn gặp lại!",
-		"⚡ mncode đã ngắt kết nối an toàn. Tiếp tục tạo nên những điều tuyệt vời nhé!",
-		"🚀 Đã lưu lại toàn bộ công việc. Hẹn gặp lại bạn ở phiên tiếp theo!",
+		"[SHINE] Phiên làm việc đã kết thúc. Chúc bạn code vui vẻ và hẹn gặp lại!",
+		"[ACTION] mncode đã ngắt kết nối an toàn. Tiếp tục tạo nên những điều tuyệt vời nhé!",
+		"[LAUNCH] Đã lưu lại toàn bộ công việc. Hẹn gặp lại bạn ở phiên tiếp theo!",
 	}
 )
 

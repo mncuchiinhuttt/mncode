@@ -9,14 +9,14 @@ import (
 
 var (
 	brainrotIdleLines = []string{
-		"Bro is locked in thoughts or did you get fanum taxed by the compiler? 🗿",
-		"Aura -1000 for staying idle... Type something king 👑",
-		"Are we cooking or just staring at the terminal like an NPC? 🍳",
-		"Bro's Mewing streak is longer than this pause 🤫🧏",
-		"Skibidi code won't write itself fr fr no cap 🧢",
-		"Level 100 Sigma Dev detected: Waiting for the ultimate prompt... 🔥",
-		"Brainrot energy at 99%: Give me tasks to mog this codebase 💀",
-		"Bro is generating infinite aura before hitting Enter 🗿⚡",
+		"Bro is locked in thoughts or did you get fanum taxed by the compiler? [GIGA]",
+		"Aura -1000 for staying idle... Type something king [KING]",
+		"Are we cooking or just staring at the terminal like an NPC? [COOK]",
+		"Bro's Mewing streak is longer than this pause [MEW]",
+		"Skibidi code won't write itself fr fr no cap [NO CAP]",
+		"Level 100 Sigma Dev detected: Waiting for the ultimate prompt... [MAX]",
+		"Brainrot energy at 99%: Give me tasks to mog this codebase [SIGMA]",
+		"Bro is generating infinite aura before hitting Enter [GIGA][ACTION]",
 		"Did you get distracted by Subway Surfers gameplay below? 🛹",
 		"Max rizz compiler standing by: Feed me code to cook! 🍲",
 	}
