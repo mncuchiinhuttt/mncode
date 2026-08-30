@@ -11,8 +11,8 @@ func TestSecretScrubber(t *testing.T) {
 	input := `
 Anthropic: sk-ant-api03-abcdef1234567890abcdef1234567890
 OpenAI: sk-proj-1234567890abcdef1234567890abcdef12345678
-Google: ya29.a0AfH6SM1234567890abcdef1234567890
-GitHub: ghp_1234567890abcdef1234567890abcdef1234
+	Google: ya29.a0AfH6SM1234567890abcdef1234567890
+Gemini: AIzaSy1234567890abcdef1234567890
 Key:
 -----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA0...
@@ -20,7 +20,7 @@ MIIEowIBAAKCAQEA0...
 `
 	scrubbed := ScrubSecrets(input)
 
-	if strings.Contains(scrubbed, "sk-ant-api03") || strings.Contains(scrubbed, "sk-proj-") || strings.Contains(scrubbed, "ya29.") || strings.Contains(scrubbed, "ghp_") {
+	if strings.Contains(scrubbed, "sk-ant-api03") || strings.Contains(scrubbed, "sk-proj-") || strings.Contains(scrubbed, "ya29.") || strings.Contains(scrubbed, "ghp_") || strings.Contains(scrubbed, "AIzaSy") {
 		t.Fatalf("scrubber failed to redact secrets:\n%s", scrubbed)
 	}
 	if !strings.Contains(scrubbed, "[REDACTED_ANTHROPIC_KEY]") {

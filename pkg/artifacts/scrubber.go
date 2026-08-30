@@ -25,6 +25,11 @@ var secretScrubbers = []secretPattern{
 		replace: "[REDACTED_GOOGLE_TOKEN]",
 	},
 	{
+		name:    "Google Gemini API Key",
+		pattern: regexp.MustCompile(`AIzaSy[a-zA-Z0-9_-]{20,}`),
+		replace: "[REDACTED_GEMINI_KEY]",
+	},
+	{
 		name:    "GitHub Token",
 		pattern: regexp.MustCompile(`gh[pousr]_[a-zA-Z0-9]{36}`),
 		replace: "[REDACTED_GITHUB_TOKEN]",
