@@ -16,6 +16,11 @@ type AuditFinding struct {
 
 // HandleReviewCommand conducts an autonomous pre-commit code and security audit
 func HandleReviewCommand(parts []string, s *agent.Session) {
+	if len(parts) > 1 && strings.EqualFold(parts[1], "--arena") {
+		arenaParts := append([]string{"/arena"}, parts[2:]...)
+		HandleArenaCommand(arenaParts, s)
+		return
+	}
 	diffCmd := exec.Command("git", "diff", "HEAD")
 	diffCmd.Dir = s.WorkspaceDir
 	out, err := diffCmd.Output()

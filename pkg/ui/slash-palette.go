@@ -65,6 +65,13 @@ var slashMenuItems = []SlashMenuItem{
 	{Number: 50, Command: "/budget", Description: "Set session token or dollar budget ceiling with soft/hard stops"},
 	{Number: 51, Command: "/memory", Description: "View and manage shared workspace memories and self-reflections"},
 	{Number: 52, Command: "/voice", Description: "Record speech from microphone and transcribe directly via Whisper"},
+	{Number: 53, Command: "/drift", Description: "Detect architecture, dependency, and exported API drift against a baseline"},
+	{Number: 54, Command: "/sandbox", Description: "Run bounded argv fixtures in a temporary copy without source mutation"},
+	{Number: 55, Command: "/index", Description: "Build local BM25 plus AST code search index"},
+	{Number: 56, Command: "/arena", Description: "Run independent red-team reviews against the current git diff"},
+	{Number: 57, Command: "/replay", Description: "Record and inspect a scrubbed agent flight trace"},
+	{Number: 58, Command: "/fork", Description: "Fork a replay trace prefix into a new active session"},
+	{Number: 59, Command: "/spec", Description: "Create and check deterministic feature contracts and test matrices"},
 }
 
 // ShowSlashPalette prints a clean list of available slash commands without boxes or emojis

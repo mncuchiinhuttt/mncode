@@ -174,9 +174,14 @@ func main() {
 		MCP:          mcpMgr,
 		UI:           termUI,
 	}
+	defer func() {
+		if closer, ok := session.RecorderSnapshot().(interface{ Close(bool) error }); ok {
+			_ = closer.Close(false)
+		}
+	}()
 
 	// Prompt trust if workspace has untrusted MCP servers
-	if mcpMgr.IsWorkspaceLvl && !mcpMgr.IsTrusted && len(mcpMgr.Config.MCPServers) > 0 {
+	if !isLocalSlashPrompt(*promptFlag) && mcpMgr.IsWorkspaceLvl && !mcpMgr.IsTrusted && len(mcpMgr.Config.MCPServers) > 0 {
 		fmt.Printf("\n%s Workspace contains %d MCP server(s) in %s\n",
 			ui.BoldYellow("[Security Notice]"), len(mcpMgr.Config.MCPServers), mcpMgr.ConfigPath)
 		for name, s := range mcpMgr.Config.MCPServers {
@@ -193,12 +198,14 @@ func main() {
 		}
 	}
 
-	// Start MCP servers in background and register tools
-	go func() {
-		ctx := context.Background()
-		mcpMgr.StartAll(ctx)
-		tools.RegisterMCPTools(toolRegistry, mcpMgr, ctx)
-	}()
+	// Start MCP servers in background and register tools for provider-backed or interactive work.
+	if !isLocalSlashPrompt(*promptFlag) {
+		go func() {
+			ctx := context.Background()
+			mcpMgr.StartAll(ctx)
+			tools.RegisterMCPTools(toolRegistry, mcpMgr, ctx)
+		}()
+	}
 
 	// Register invoke_subagent and use_skill tools
 	subRunner := &agent.SubagentRunner{ParentSession: session}
@@ -260,4 +267,16 @@ func main() {
 	}
 
 	ui.RunREPL(session)
+}
+func isLocalSlashPrompt(prompt string) bool {
+	parts := strings.Fields(strings.TrimSpace(prompt))
+	if len(parts) == 0 || !strings.HasPrefix(parts[0], "/") {
+		return false
+	}
+	switch strings.ToLower(parts[0]) {
+	case "/drift", "/sandbox", "/shadow", "/index", "/arena", "/replay", "/fork", "/spec":
+		return true
+	default:
+		return false
+	}
 }

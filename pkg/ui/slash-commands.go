@@ -64,6 +64,22 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/memory"
 	} else if strings.HasPrefix("/voice", cmd) && len(cmd) >= 3 {
 		cmd = "/voice"
+	} else if strings.HasPrefix("/drift", cmd) && len(cmd) >= 3 {
+		cmd = "/drift"
+	} else if strings.HasPrefix("/sandbox", cmd) && len(cmd) >= 3 {
+		cmd = "/sandbox"
+	} else if strings.HasPrefix("/shadow", cmd) && len(cmd) >= 3 {
+		cmd = "/shadow"
+	} else if strings.HasPrefix("/index", cmd) && len(cmd) >= 3 {
+		cmd = "/index"
+	} else if strings.HasPrefix("/arena", cmd) && len(cmd) >= 3 {
+		cmd = "/arena"
+	} else if strings.HasPrefix("/replay", cmd) && len(cmd) >= 3 {
+		cmd = "/replay"
+	} else if strings.HasPrefix("/fork", cmd) && len(cmd) >= 3 {
+		cmd = "/fork"
+	} else if strings.HasPrefix("/spec", cmd) && len(cmd) >= 3 {
+		cmd = "/spec"
 	}
 	switch cmd {
 	case "/help", "/?":
@@ -250,12 +266,28 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 			args = strings.Join(parts[1:], " ")
 		}
 		handleComboCommand(args, s)
-	case "/debate", "/arena":
+	case "/debate":
 		args := ""
 		if len(parts) > 1 {
 			args = strings.Join(parts[1:], " ")
 		}
 		handleDebateCommand(args, s)
+	case "/arena":
+		HandleArenaCommand(parts, s)
+	case "/drift":
+		HandleDriftCommand(parts, s)
+	case "/sandbox":
+		HandleSandboxCommand(parts, s)
+	case "/shadow":
+		fmt.Println(BoldYellow("[Rename] /shadow was renamed to /sandbox; no action taken."))
+	case "/index":
+		HandleIndexCommand(parts, s)
+	case "/replay":
+		HandleReplayCommand(parts, s)
+	case "/fork":
+		HandleForkCommand(parts, s)
+	case "/spec":
+		HandleSpecCommand(parts, s)
 	case "/service", "/svc", "/daemon":
 		args := ""
 		if len(parts) > 1 {
