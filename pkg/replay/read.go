@@ -30,7 +30,7 @@ func (s *Store) List(ctx context.Context) ([]Trace, error) {
 	}
 	root, err := tools.ResolveWorkspacePath(s.Workspace.Root, s.Dir, false)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
 		}
 		return nil, err
