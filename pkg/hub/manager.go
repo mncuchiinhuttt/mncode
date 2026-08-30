@@ -40,9 +40,18 @@ func (m *Manager) Start(ctx context.Context, spec ServiceSpec) (*ServiceInfo, er
 		return nil, fmt.Errorf("service command is required")
 	}
 
-	if existing, exists := m.processes[name]; exists && existing.state == StateRunning {
-		m.mu.Unlock()
-		return nil, fmt.Errorf("service %q is already running (PID %d)", name, existing.cmd.Process.Pid)
+	if existing, exists := m.processes[name]; exists {
+		existing.mu.RLock()
+		state := existing.state
+		pid := 0
+		if existing.cmd != nil && existing.cmd.Process != nil {
+			pid = existing.cmd.Process.Pid
+		}
+		existing.mu.RUnlock()
+		if state == StateRunning {
+			m.mu.Unlock()
+			return nil, fmt.Errorf("service %q is already running (PID %d)", name, pid)
+		}
 	}
 
 	p := newSupervisedProcess(spec)
@@ -74,14 +83,21 @@ func (m *Manager) Start(ctx context.Context, spec ServiceSpec) (*ServiceInfo, er
 		}
 	}
 
-	return &ServiceInfo{
+	p.mu.RLock()
+	pid := 0
+	if p.cmd != nil && p.cmd.Process != nil {
+		pid = p.cmd.Process.Pid
+	}
+	info := &ServiceInfo{
 		Name:      name,
-		PID:       p.cmd.Process.Pid,
+		PID:       pid,
 		Command:   spec.Command,
 		State:     p.state,
 		ReadyPort: spec.ReadyPort,
 		StartTime: p.startTime,
-	}, nil
+	}
+	p.mu.RUnlock()
+	return info, nil
 }
 
 // Logs returns recent log lines from the specified service.
@@ -129,6 +145,7 @@ func (m *Manager) PS() []ServiceInfo {
 
 	var list []ServiceInfo
 	for name, p := range m.processes {
+		p.mu.RLock()
 		pid := 0
 		if p.cmd != nil && p.cmd.Process != nil {
 			pid = p.cmd.Process.Pid
@@ -137,7 +154,7 @@ func (m *Manager) PS() []ServiceInfo {
 		if !p.startTime.IsZero() {
 			dur = time.Since(p.startTime).Seconds()
 		}
-		list = append(list, ServiceInfo{
+		info := ServiceInfo{
 			Name:        name,
 			PID:         pid,
 			Command:     p.Spec.Command,
@@ -145,7 +162,9 @@ func (m *Manager) PS() []ServiceInfo {
 			ReadyPort:   p.Spec.ReadyPort,
 			StartTime:   p.startTime,
 			DurationSec: dur,
-		})
+		}
+		p.mu.RUnlock()
+		list = append(list, info)
 	}
 	return list
 }

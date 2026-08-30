@@ -78,7 +78,7 @@ func (p *SupervisedProcess) start() error {
 	p.state = StateRunning
 	p.startTime = time.Now()
 
-	// Drain stdout & stderr into logBuffer ring
+	// Drain stdout and stderr into the log buffer ring.
 	merged := io.MultiReader(stdoutPipe, stderrPipe)
 	go p.streamLogs(merged)
 
@@ -86,7 +86,6 @@ func (p *SupervisedProcess) start() error {
 		_ = cmd.Wait()
 		p.mu.Lock()
 		p.state = StateStopped
-		close(p.linesChan)
 		p.mu.Unlock()
 	}()
 
@@ -94,6 +93,7 @@ func (p *SupervisedProcess) start() error {
 }
 
 func (p *SupervisedProcess) streamLogs(r io.Reader) {
+	defer close(p.linesChan)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
