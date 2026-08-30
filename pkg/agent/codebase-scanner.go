@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"time"
 )
+
+const maxScanFileBytes = 2 * 1024 * 1024
 
 type PackageInfo struct {
 	Path      string
@@ -71,6 +74,13 @@ func ScanCodebase(workspaceDir string) (*CodebaseSummary, error) {
 		if d.IsDir() {
 			return nil
 		}
+		if d.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil || !info.Mode().IsRegular() || info.Size() > maxScanFileBytes {
+			return nil
+		}
 
 		// Detect entrypoint
 		if name == "main.go" || name == "index.ts" || name == "index.js" || name == "app.py" || name == "main.py" || name == "main.rs" {
@@ -84,11 +94,14 @@ func ScanCodebase(workspaceDir string) (*CodebaseSummary, error) {
 			summary.Languages[lang]++
 		}
 
-		// Count lines
-		content, err := os.ReadFile(path)
+		file, err := os.Open(path)
 		lineCount := 0
 		if err == nil {
-			lineCount = strings.Count(string(content), "\n") + 1
+			content, readErr := io.ReadAll(io.LimitReader(file, maxScanFileBytes+1))
+			_ = file.Close()
+			if readErr == nil && int64(len(content)) <= maxScanFileBytes {
+				lineCount = strings.Count(string(content), "\n") + 1
+			}
 		}
 
 		summary.TotalFiles++
