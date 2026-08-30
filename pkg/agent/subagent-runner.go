@@ -10,9 +10,11 @@ import (
 	"time"
 )
 
-// SubagentRunner executes a specialized task using a subagent definition and autonomous ReAct loop
+// SubagentRunner executes a specialized task using a subagent definition and autonomous ReAct loop.
 type SubagentRunner struct {
 	ParentSession *Session
+	ModelOverride string
+	ReadOnly      bool
 }
 
 // Run executes a subagent with a dedicated sub-session and multi-turn tool execution.
@@ -27,6 +29,9 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (ou
 	subConfig, err := cloneSessionConfig(parent.Config)
 	if err != nil {
 		return "", err
+	}
+	if sr.ModelOverride != "" {
+		subConfig.Model = sr.ModelOverride
 	}
 	subProvider, err := isolatedSubagentProvider(parent, subConfig)
 	if err != nil {
@@ -45,6 +50,9 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (ou
 	}
 
 	worktreeBase := subConfig.GetSetting("worktree_base", "current")
+	if sr.ReadOnly {
+		worktreeBase = "current"
+	}
 	subID := fmt.Sprintf("%s-%d", agentName, time.Now().UnixNano())
 	if parent.Subagents != nil {
 		parent.Subagents.Register(subID, agentName, roleName, prompt)
@@ -81,6 +89,7 @@ func (sr *SubagentRunner) Run(ctx context.Context, agentName, prompt string) (ou
 		ID: subID, WorkspaceDir: effectiveWorkspaceDir, Config: subConfig, Provider: subProvider,
 		Tools: subTools, Catalog: parent.Catalog, Tracker: parent.Tracker,
 		Subagents: parent.Subagents, History: nil, UI: newSubagentUI(parent.UI),
+		ReadOnly: sr.ReadOnly,
 	}
 	if parent.Subagents != nil {
 		subTools.RegisterSpec(tools.ToolSpec{

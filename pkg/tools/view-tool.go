@@ -9,6 +9,7 @@ import (
 
 	"mncode/pkg/artifacts"
 )
+
 // ViewTool reads files with line numbering and range slicing
 type ViewTool struct {
 	BaseDir string
@@ -50,7 +51,8 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	}
 
 	if artifacts.IsVirtualURI(path) {
-		return artifacts.ReadVirtualURI(path, v.BaseDir)
+		content, err := artifacts.ReadVirtualURI(path, v.BaseDir)
+		return artifacts.ScrubSecrets(content), err
 	}
 
 	resolvedPath, err := resolveWorkspacePath(v.BaseDir, path, false)
@@ -93,5 +95,5 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return fmt.Sprintf("File %s is empty or requested range [%d, %d] contains no lines.", path, startLine, endLine), nil
 	}
 
-	return fmt.Sprintf("File Path: %s\nTotal Lines: %d\n\n%s", path, lineNum-1, strings.Join(lines, "\n")), nil
+	return artifacts.ScrubSecrets(fmt.Sprintf("File Path: %s\nTotal Lines: %d\n\n%s", path, lineNum-1, strings.Join(lines, "\n"))), nil
 }

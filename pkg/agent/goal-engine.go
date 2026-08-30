@@ -9,6 +9,9 @@ import (
 
 // ProcessGoal runs an autonomous, persistent goal execution loop with live stopwatch
 func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if err := s.EnsureProvider(); err != nil {
 		return err
 	}
@@ -25,6 +28,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 		Role:    provider.RoleUser,
 		Content: goalPrompt,
 	})
+	s.recordEvent("prompt", 0, goalPrompt)
 
 	if usage := s.GetContextUsage(); usage.PercentUsed >= 85.0 && len(s.History) > 4 {
 		_, _ = s.CompactHistory(ctx)
@@ -50,8 +54,10 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			ThinkingBudget: s.Config.ThinkingBudget,
 			Temperature:    s.Config.Temperature,
 		}
+		s.recordEvent("provider_request", turn+1, map[string]interface{}{"model": req.Model, "message_count": len(req.Messages), "tool_count": len(req.Tools)})
 
 		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
+			s.recordStreamEvent(turn+1, ev)
 			if s.UI == nil {
 				return nil
 			}
@@ -67,13 +73,14 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			}
 			return nil
 		})
-
 		if err != nil {
+			s.recordEvent("error", turn+1, err.Error())
 			if s.UI != nil {
 				s.UI.OnError(err)
 			}
 			return err
 		}
+		s.recordEvent("provider_response", turn+1, map[string]interface{}{"content": resp.Content, "thinking": resp.Thinking, "tool_calls": resp.ToolCalls})
 		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
@@ -95,6 +102,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			s.recordEvent("turn_end", turn+1, map[string]interface{}{"completed": true})
 			completed = true
 			break
 		}
@@ -111,6 +119,7 @@ func (s *Session) ProcessGoal(ctx context.Context, goal string) error {
 			ToolResults: results,
 		}
 		appendHistory(s, toolMsg)
+		s.recordEvent("tool_result", turn+1, results)
 	}
 
 	if !completed {

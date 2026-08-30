@@ -33,6 +33,11 @@ type UsageEventListener interface {
 	OnUsage(inputTokens, outputTokens, thinkingTokens int)
 }
 
+// EventRecorder observes agent lifecycle events without coupling the engine to storage.
+type EventRecorder interface {
+	RecordAgentEvent(kind string, turn int, payload any) error
+}
+
 func notifyUsage(ui UIEventListener, inputTokens, outputTokens, thinkingTokens int) {
 	if ui == nil || inputTokens <= 0 && outputTokens <= 0 && thinkingTokens <= 0 {
 		return
@@ -42,7 +47,7 @@ func notifyUsage(ui UIEventListener, inputTokens, outputTokens, thinkingTokens i
 	}
 }
 
-// Session represents a single conversational agent session
+// Session represents a single conversational agent session.
 type Session struct {
 	ID           string
 	WorkspaceDir string
@@ -62,11 +67,49 @@ type Session struct {
 	MCP         *mcp.Manager
 	UI          UIEventListener
 	Remote      *remote.RemoteManager
+	Recorder    EventRecorder
+	ReadOnly    bool
 
 	QueueMu      sync.Mutex
 	SteerQueue   []string
 	MessageQueue []string
 	IsProcessing bool
+	recorderMu   sync.Mutex
+	recorderStop bool
+}
+
+// SetRecorder attaches a lifecycle recorder and resets prior recorder errors.
+func (s *Session) SetRecorder(recorder EventRecorder) {
+	if s == nil {
+		return
+	}
+	s.recorderMu.Lock()
+	s.Recorder = recorder
+	s.recorderStop = false
+	s.recorderMu.Unlock()
+}
+
+// RecorderSnapshot returns the currently attached recorder.
+func (s *Session) RecorderSnapshot() EventRecorder {
+	if s == nil {
+		return nil
+	}
+	s.recorderMu.Lock()
+	defer s.recorderMu.Unlock()
+	return s.Recorder
+}
+
+// DetachRecorder removes and returns the current recorder atomically.
+func (s *Session) DetachRecorder() EventRecorder {
+	if s == nil {
+		return nil
+	}
+	s.recorderMu.Lock()
+	defer s.recorderMu.Unlock()
+	recorder := s.Recorder
+	s.Recorder = nil
+	s.recorderStop = true
+	return recorder
 }
 
 // IsExecuting reports whether the agent loop is actively processing a turn

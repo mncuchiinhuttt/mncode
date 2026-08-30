@@ -35,6 +35,9 @@ func agentTurnLimit(cfg *config.Config) int {
 
 // ProcessUserInput executes an agent conversation turn with full tool-calling ReAct loop
 func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	s.SetExecuting(true)
 	defer s.SetExecuting(false)
 
@@ -48,6 +51,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 
 	userInput = s.PreprocessSkillTags(userInput)
 	cleanedInput, images := ExtractImagesFromInput(s.WorkspaceDir, userInput)
+	s.recordEvent("prompt", 0, map[string]interface{}{"content": cleanedInput, "image_count": len(images)})
 
 	appendHistory(s, provider.Message{
 		Role:    provider.RoleUser,
@@ -80,8 +84,19 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			ThinkingBudget: s.Config.ThinkingBudget,
 			Temperature:    s.Config.Temperature,
 		}
+		s.recordEvent("provider_request", turn+1, map[string]interface{}{"model": req.Model, "message_count": len(req.Messages), "tool_count": len(req.Tools)})
 
 		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
+			switch ev.Type {
+			case provider.EventToken:
+				s.recordEvent("token", turn+1, ev.Text)
+			case provider.EventThinking:
+				s.recordEvent("thinking", turn+1, ev.Thinking)
+			case provider.EventToolCallStart:
+				s.recordEvent("tool_call", turn+1, ev.ToolCall)
+			case provider.EventError:
+				s.recordEvent("error", turn+1, ev.Error)
+			}
 			if s.UI == nil {
 				return nil
 			}
@@ -111,11 +126,13 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 		})
 
 		if err != nil {
+			s.recordEvent("error", turn+1, err.Error())
 			if s.UI != nil {
 				s.UI.OnError(err)
 			}
 			return err
 		}
+		s.recordEvent("provider_response", turn+1, map[string]interface{}{"content": resp.Content, "thinking": resp.Thinking, "tool_calls": resp.ToolCalls, "input_tokens": resp.InputTokens, "output_tokens": resp.OutputTokens})
 		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 		if s.Budget != nil {
 			hardStop, notice := s.Budget.AddTokens(resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
@@ -153,6 +170,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 
 		// If no tools requested, turn is complete
 		if len(resp.ToolCalls) == 0 {
+			s.recordEvent("turn_end", turn+1, map[string]interface{}{"completed": true})
 			completed = true
 			break
 		}
@@ -163,6 +181,7 @@ func (s *Session) ProcessUserInput(ctx context.Context, userInput string) error 
 			toolResult := s.executeToolCall(ctx, &tc)
 			results = append(results, toolResult)
 		}
+		s.recordEvent("tool_result", turn+1, results)
 
 		// Record Tool Results
 		appendHistory(s, provider.Message{
@@ -350,6 +369,13 @@ func waitProviderRetry(ctx context.Context, attempt int, retryAfter time.Duratio
 }
 
 func (s *Session) executeToolCall(ctx context.Context, tc *provider.ToolCall) provider.ToolResult {
+	if s.ReadOnly && !readOnlyTool(tc.Name) {
+		content := fmt.Sprintf("Read-only subagent policy blocked tool '%s'. Reviewers may inspect but cannot mutate the workspace.", tc.Name)
+		if s.UI != nil {
+			s.UI.OnToolCallResult(tc.Name, content, true)
+		}
+		return provider.ToolResult{ToolCallID: tc.ID, Name: tc.Name, Content: content, IsError: true}
+	}
 	// Strict Plan Mode enforcement: block code editing tools
 	if s.Config.PermissionMode == config.PermissionModePlan || strings.EqualFold(s.Config.Workflow, "plan") {
 		if tc.Name == "edit_file_content" || tc.Name == "replace_file_content" {
@@ -439,4 +465,12 @@ func (s *Session) getToolDefinitions() []provider.ToolDefinition {
 		})
 	}
 	return list
+}
+func readOnlyTool(name string) bool {
+	switch name {
+	case "view_file", "grep_search", "find_by_name", "list_dir", "symbol_search":
+		return true
+	default:
+		return false
+	}
 }

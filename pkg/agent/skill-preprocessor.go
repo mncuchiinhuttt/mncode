@@ -24,7 +24,9 @@ func (s *Session) PreprocessSkillTags(userInput string) string {
 				rawCmd == "/effort" || rawCmd == "/workflow" || rawCmd == "/agents" || rawCmd == "/context" ||
 				rawCmd == "/compact" || rawCmd == "/clear" || rawCmd == "/status" || rawCmd == "/config" ||
 				rawCmd == "/sync" || rawCmd == "/feedback" || rawCmd == "/btw" || rawCmd == "/brainrot" ||
-				rawCmd == "/export" || rawCmd == "/trajectory" || rawCmd == "/sharegpt" || rawCmd == "/export-training" {
+				rawCmd == "/export" || rawCmd == "/trajectory" || rawCmd == "/sharegpt" || rawCmd == "/export-training" ||
+				rawCmd == "/drift" || rawCmd == "/sandbox" || rawCmd == "/shadow" || rawCmd == "/index" ||
+				rawCmd == "/arena" || rawCmd == "/replay" || rawCmd == "/fork" || rawCmd == "/spec" || rawCmd == "/voice" {
 				remainingWords = append(remainingWords, word)
 				continue
 			}

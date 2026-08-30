@@ -35,11 +35,48 @@ func ensureSessionIdentity(s *Session) string {
 	return s.ID
 }
 
+// EnsureIdentity returns a durable session identity for external integrations.
+func (s *Session) EnsureIdentity() string { return ensureSessionIdentity(s) }
+
 // appendHistory is the single mutation boundary used by all autonomous loops.
 func appendHistory(s *Session, msg provider.Message) {
+	cloned := cloneMessage(msg)
 	historyMu.Lock()
-	defer historyMu.Unlock()
-	s.History = append(s.History, cloneMessage(msg))
+	s.History = append(s.History, cloned)
+	historyMu.Unlock()
+	s.recordEvent("message", 0, cloned)
+}
+func (s *Session) recordEvent(kind string, turn int, payload any) {
+	if s == nil {
+		return
+	}
+	s.recorderMu.Lock()
+	if s.recorderStop || s.Recorder == nil {
+		s.recorderMu.Unlock()
+		return
+	}
+	err := s.Recorder.RecordAgentEvent(kind, turn, payload)
+	var ui UIEventListener
+	if err != nil {
+		s.recorderStop = true
+		ui = s.UI
+	}
+	s.recorderMu.Unlock()
+	if err != nil && ui != nil {
+		ui.OnError(fmt.Errorf("replay recorder stopped: %w", err))
+	}
+}
+func (s *Session) recordStreamEvent(turn int, event provider.StreamEvent) {
+	switch event.Type {
+	case provider.EventToken:
+		s.recordEvent("token", turn, event.Text)
+	case provider.EventThinking:
+		s.recordEvent("thinking", turn, event.Thinking)
+	case provider.EventToolCallStart:
+		s.recordEvent("tool_call", turn, event.ToolCall)
+	case provider.EventError:
+		s.recordEvent("error", turn, event.Error)
+	}
 }
 
 func cloneMessage(msg provider.Message) provider.Message {

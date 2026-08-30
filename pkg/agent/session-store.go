@@ -312,3 +312,35 @@ func (s *Session) Restore(saved *SavedSession) {
 		s.Config.Model = saved.Model
 	}
 }
+
+// ActivateFork switches the active session to reconstructed history and persists it.
+func (s *Session) ActivateFork(history []provider.Message, newID string) error {
+	if s == nil {
+		return errors.New("session is required")
+	}
+	if s.IsExecuting() {
+		return errors.New("cannot activate a fork while a turn is running")
+	}
+	if strings.TrimSpace(newID) == "" {
+		return errors.New("fork session id is required")
+	}
+	if _, err := LoadSavedSession(newID); err == nil {
+		return errors.New("fork session id already exists")
+	}
+	cloned := make([]provider.Message, 0, len(history))
+	for _, message := range history {
+		cloned = append(cloned, cloneMessage(message))
+	}
+	oldID, oldHistory := s.ID, historySnapshot(s)
+	s.ID, s.History = newID, cloned
+	if err := s.Save(); err != nil {
+		s.ID, s.History = oldID, oldHistory
+		return fmt.Errorf("persist forked session: %w", err)
+	}
+	oldRecorder := s.RecorderSnapshot()
+	if closer, ok := oldRecorder.(interface{ Close(bool) error }); ok {
+		_ = closer.Close(false)
+	}
+	s.DetachRecorder()
+	return nil
+}
