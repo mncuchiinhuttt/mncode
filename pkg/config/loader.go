@@ -6,8 +6,17 @@ import (
 	"path/filepath"
 )
 
-// LoadConfig loads the full configuration from environment, .env, and .claude directory
+// LoadConfig loads the full configuration from environment, .env, and .claude directory.
 func LoadConfig(workspaceDir string) (*Config, error) {
+	return loadConfig(workspaceDir, true)
+}
+
+// LoadConfigWithoutWorkspaceEnv loads configuration without executing workspace .env files.
+func LoadConfigWithoutWorkspaceEnv(workspaceDir string) (*Config, error) {
+	return loadConfig(workspaceDir, false)
+}
+
+func loadConfig(workspaceDir string, loadWorkspaceEnv bool) (*Config, error) {
 	cfg := DefaultConfig()
 
 	if workspaceDir != "" {
@@ -22,9 +31,10 @@ func LoadConfig(workspaceDir string) (*Config, error) {
 		}
 	}
 
-	// 1. Load .env from workspace or current dir
-	_ = LoadDotEnv(filepath.Join(cfg.WorkspaceDir, ".env"))
-	_ = LoadDotEnv(filepath.Join(cfg.WorkspaceDir, ".claude", ".env"))
+	if loadWorkspaceEnv {
+		_ = LoadDotEnv(filepath.Join(cfg.WorkspaceDir, ".env"))
+		_ = LoadDotEnv(filepath.Join(cfg.WorkspaceDir, ".claude", ".env"))
+	}
 
 	// 2. Locate .claude directory
 	claudeDir := filepath.Join(cfg.WorkspaceDir, ".claude")

@@ -39,3 +39,17 @@ func TestLoadDotEnv(t *testing.T) {
 		t.Errorf("expected ANOTHER_KEY to be 'quoted_value', got '%s'", val)
 	}
 }
+
+func TestLoadConfigWithoutWorkspaceEnvDoesNotExecuteWorkspaceEnv(t *testing.T) {
+	t.Setenv("MNCODE_UNTRUSTED_TEST", "")
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, ".env"), []byte("MNCODE_UNTRUSTED_TEST=workspace-value\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadConfigWithoutWorkspaceEnv(root); err != nil {
+		t.Fatal(err)
+	}
+	if got := os.Getenv("MNCODE_UNTRUSTED_TEST"); got != "" {
+		t.Fatalf("workspace dotenv was executed: %q", got)
+	}
+}
