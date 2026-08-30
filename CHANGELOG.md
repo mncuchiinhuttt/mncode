@@ -7,6 +7,13 @@
 - **Red-Team Arena (`/arena`)**: Review bounded git diffs with independent security, correctness, and maintainability adversaries; `/debate` remains unchanged.
 - **Flight Recorder (`/replay`, `/fork`)**: Explicitly record scrubbed agent lifecycle traces and fork conversation history without replaying tool effects.
 - **Spec Contracts (`/spec`)**: Store versioned deterministic contracts and run bounded command/file/invariant matrices without modifying source.
+### Security & correctness
+- Fixed workspace-relative missing-path error wrapping so Desktop first-use bindings can initialize empty stores deterministically.
+- Added role metadata to Arena findings and hardened quoted/generic credential redaction before reviewer prompts.
+- Rejected artifact and scratchpad URI traversal, special files, symlink scanner entries, and unbounded workspace reads.
+- Added an opt-out workspace configuration loader for Desktop so repository `.env` files cannot redirect provider traffic.
+- Fixed Service Hub process state races and send-after-close log channel panics under the race detector.
+
 
 ## Release v0.1.5-beta (2026-08-29)
 
