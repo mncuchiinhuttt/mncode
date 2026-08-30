@@ -102,3 +102,36 @@ func TestSliceContent(t *testing.T) {
 		t.Errorf("sliceContent(2-4) = %q, want %q", sliced, expected)
 	}
 }
+func TestVirtualURIsRejectWorkspaceEscape(t *testing.T) {
+	parent := t.TempDir()
+	workspace := filepath.Join(parent, "workspace")
+	if err := os.MkdirAll(filepath.Join(workspace, ".mncode", "scratchpad"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(parent, "outside.txt")
+	if err := os.WriteFile(outside, []byte("sensitive"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := ReadVirtualURI("local://../outside.txt", workspace); err == nil {
+		t.Fatal("expected local URI traversal to be rejected")
+	}
+	if _, err := ReadVirtualURI("artifact://../../outside", workspace); err == nil {
+		t.Fatal("expected artifact URI traversal to be rejected")
+	}
+}
+
+func TestVirtualURIReadsOnlyRegularScratchpadFiles(t *testing.T) {
+	workspace := t.TempDir()
+	scratchpad := filepath.Join(workspace, ".mncode", "scratchpad")
+	if err := os.MkdirAll(scratchpad, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(scratchpad, "note.txt"), []byte("safe"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	content, err := ReadVirtualURI("local://note.txt", workspace)
+	if err != nil || content != "safe" {
+		t.Fatalf("expected scratchpad read, content=%q err=%v", content, err)
+	}
+}

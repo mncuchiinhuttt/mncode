@@ -87,6 +87,9 @@ func (s *Store) Get(id string) (string, error) {
 	defer s.mu.RUnlock()
 
 	id = strings.TrimPrefix(strings.TrimSpace(id), "artifact://")
+	if !safeArtifactID(id) {
+		return "", fmt.Errorf("invalid artifact id")
+	}
 	targetPath := filepath.Join(s.dir, fmt.Sprintf("%s.txt", id))
 	data, err := os.ReadFile(targetPath)
 	if err != nil {

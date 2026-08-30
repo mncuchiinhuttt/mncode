@@ -59,11 +59,23 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	if err != nil {
 		return "", err
 	}
+	info, err := os.Stat(resolvedPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to stat file %s: %w", resolvedPath, err)
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("failed to view %s: not a regular file", resolvedPath)
+	}
 	path = resolvedPath
 
 	file, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file %s: %w", path, err)
+	}
+	openedInfo, statErr := file.Stat()
+	if statErr != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
+		_ = file.Close()
+		return "", fmt.Errorf("file changed during view")
 	}
 	defer file.Close()
 
