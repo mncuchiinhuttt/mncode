@@ -1,6 +1,7 @@
 package drift
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ func LoadPolicy(workspace, explicit string) (Policy, string, error) {
 	}
 	resolved, err := tools.ResolveWorkspacePath(root.Root, path, false)
 	if err != nil {
-		if os.IsNotExist(err) && explicit == "" {
+		if errors.Is(err, os.ErrNotExist) && explicit == "" {
 			return DefaultPolicy(), "", nil
 		}
 		return Policy{}, "", err
