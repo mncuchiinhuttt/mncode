@@ -1,3 +1,13 @@
+## Unreleased
+
+### New Features
+- **Architectural Drift Sentinel (`/drift`)**: Capture and compare AST/import/export baselines, with optional layer and cycle policy checks.
+- **Sandbox Fixture Harness (`/sandbox`)**: Run allowlisted argv fixtures in bounded temporary workspace copies; `/shadow` now returns a rename notice.
+- **Local Code Index (`/index`)**: Persisted BM25 and AST-aware search with stale-source detection and secret-file exclusion.
+- **Red-Team Arena (`/arena`)**: Review bounded git diffs with independent security, correctness, and maintainability adversaries; `/debate` remains unchanged.
+- **Flight Recorder (`/replay`, `/fork`)**: Explicitly record scrubbed agent lifecycle traces and fork conversation history without replaying tool effects.
+- **Spec Contracts (`/spec`)**: Store versioned deterministic contracts and run bounded command/file/invariant matrices without modifying source.
+
 ## Release v0.1.5-beta (2026-08-29)
 
 ### 🚀 New Features & Enhancements
