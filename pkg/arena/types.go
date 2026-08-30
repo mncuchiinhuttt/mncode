@@ -27,6 +27,7 @@ type Options struct {
 // Finding is an evidence-backed advisory from one reviewer role.
 type Finding struct {
 	ID             string  `json:"id"`
+	Role           string  `json:"role,omitempty"`
 	Severity       string  `json:"severity"`
 	Category       string  `json:"category"`
 	File           string  `json:"file"`

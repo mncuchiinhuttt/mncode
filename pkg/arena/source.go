@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-var diffSecretRE = regexp.MustCompile(`(?i)(api[_-]?key|bearer|token|secret|password)(\s*[:=]\s*)(["']?)(?:bearer\s+)?[^\s"',;]+`)
-var authorizationRE = regexp.MustCompile(`(?i)(authorization\s*:\s*)(?:[A-Za-z]+\s+)?[^\s"',;]+`)
+var diffSecretRE = regexp.MustCompile(`(?i)(["']?(?:api[_-]?key|access[_-]?token|authorization|bearer|token|secret|password|credentials?|private[_-]?key)["']?\s*[:=]\s*)(?:["']?)(?:bearer\s+)?[^\s"',;}\]]+`)
+var authorizationRE = regexp.MustCompile(`(?i)(authorization\s*:\s*)(?:[A-Za-z]+\s+)?[^\s"',;}\]]+`)
 
 // CollectSource obtains a bounded git diff without changing repository state.
 func CollectSource(ctx context.Context, workspace, base, head string, includeUntracked bool, maxBytes int64) (Source, error) {
@@ -98,7 +98,7 @@ func CollectSource(ctx context.Context, workspace, base, head string, includeUnt
 func RedactDiff(diff string) string {
 	scrubbed := commandutil.Scrub(diff)
 	scrubbed = authorizationRE.ReplaceAllString(scrubbed, `${1}[REDACTED]`)
-	return diffSecretRE.ReplaceAllString(scrubbed, `${1}${2}[REDACTED]`)
+	return diffSecretRE.ReplaceAllString(scrubbed, `${1}[REDACTED]`)
 }
 
 func validateRef(ref string) error {

@@ -112,9 +112,19 @@ func mergeFindings(findings []Finding) []Finding {
 		if key == "||0" {
 			key = fmt.Sprintf("%s|%s", strings.ToLower(finding.Severity), finding.Evidence)
 		}
-		if old, ok := merged[key]; !ok || severityRank(finding.Severity) > severityRank(old.Severity) || severityRank(finding.Severity) == severityRank(old.Severity) && findingLess(finding, old) {
+		old, exists := merged[key]
+		if !exists {
 			finding.ID = stableFindingID(key)
 			merged[key] = finding
+			continue
+		}
+		finding.Role = mergeRoles(old.Role, finding.Role)
+		if severityRank(finding.Severity) > severityRank(old.Severity) || severityRank(finding.Severity) == severityRank(old.Severity) && findingLess(finding, old) {
+			finding.ID = stableFindingID(key)
+			merged[key] = finding
+		} else {
+			old.Role = finding.Role
+			merged[key] = old
 		}
 	}
 	out := make([]Finding, 0, len(merged))
@@ -133,6 +143,21 @@ func findingLess(left, right Finding) bool {
 	leftKey := strings.Join([]string{left.Category, left.File, fmt.Sprint(left.Line), left.Evidence, left.Recommendation}, "\x00")
 	rightKey := strings.Join([]string{right.Category, right.File, fmt.Sprint(right.Line), right.Evidence, right.Recommendation}, "\x00")
 	return leftKey < rightKey
+}
+func mergeRoles(left, right string) string {
+	seen := make(map[string]bool)
+	roles := make([]string, 0, 2)
+	for _, value := range []string{left, right} {
+		for _, role := range strings.Split(value, ",") {
+			role = strings.TrimSpace(role)
+			if role != "" && !seen[role] {
+				seen[role] = true
+				roles = append(roles, role)
+			}
+		}
+	}
+	sort.Strings(roles)
+	return strings.Join(roles, ", ")
 }
 
 func normalizeSeverity(value string) string {
@@ -179,10 +204,10 @@ func ParseFindings(text, role string) []Finding {
 		}
 		lineNumber := 0
 		_, _ = fmt.Sscanf(strings.TrimSpace(parts[3]), "%d", &lineNumber)
-		findings = append(findings, Finding{ID: commandutil.NewID("finding"), Severity: parts[1], File: parts[2], Line: lineNumber, Category: parts[4], Evidence: parts[5], Impact: parts[6], Recommendation: parts[7], Confidence: 0.7})
+		findings = append(findings, Finding{ID: commandutil.NewID("finding"), Role: role, Severity: parts[1], File: parts[2], Line: lineNumber, Category: parts[4], Evidence: parts[5], Impact: parts[6], Recommendation: parts[7], Confidence: 0.7})
 	}
 	if len(findings) == 0 && strings.TrimSpace(text) != "" {
-		findings = append(findings, Finding{ID: commandutil.NewID("review"), Severity: "low", Category: "unstructured-review", Evidence: fmt.Sprintf("%s reviewer returned no structured findings", role), Impact: "Review output cannot be merged into the risk matrix.", Recommendation: "Re-run the arena with a reviewer that follows the FINDING protocol.", Confidence: 0.2})
+		findings = append(findings, Finding{ID: commandutil.NewID("review"), Role: role, Severity: "low", Category: "unstructured-review", Evidence: fmt.Sprintf("%s reviewer returned no structured findings", role), Impact: "Review output cannot be merged into the risk matrix.", Recommendation: "Re-run the arena with a reviewer that follows the FINDING protocol.", Confidence: 0.2})
 	}
 	return findings
 }

@@ -19,7 +19,7 @@ func (r *fakeReviewer) Review(_ context.Context, _ Source, role string) ([]Findi
 	r.mu.Lock()
 	r.roles = append(r.roles, role)
 	r.mu.Unlock()
-	return []Finding{{Severity: "high", Category: "auth", File: "pkg/auth.go", Line: 3, Evidence: "same evidence", Impact: "risk", Recommendation: "fix"}}, nil
+	return []Finding{{Role: role, Severity: "high", Category: "auth", File: "pkg/auth.go", Line: 3, Evidence: "same evidence", Impact: "risk", Recommendation: "fix"}}, nil
 }
 
 func TestReviewMergesDuplicateFindings(t *testing.T) {
@@ -34,6 +34,11 @@ func TestReviewMergesDuplicateFindings(t *testing.T) {
 	}
 	if report.Verdict != "block" || len(report.Findings) != 1 {
 		t.Fatalf("unexpected report: %+v", report)
+	}
+	for _, role := range roles {
+		if !strings.Contains(report.Findings[0].Role, role) {
+			t.Fatalf("merged finding lost reviewer role %q: %q", role, report.Findings[0].Role)
+		}
 	}
 	if len(reviewer.roles) != len(roles) {
 		t.Fatalf("expected %d reviewer calls, got %d", len(roles), len(reviewer.roles))
@@ -74,6 +79,15 @@ func TestRedactDiffRemovesCredentialLikeAssignments(t *testing.T) {
 	scrubbed := RedactDiff(diff)
 	if strings.Contains(scrubbed, "AIzaSy") || strings.Contains(scrubbed, "private-token") {
 		t.Fatalf("credential leaked in diff: %s", scrubbed)
+	}
+}
+func TestRedactDiffRemovesJSONCredentialAssignments(t *testing.T) {
+	diff := `{"apiKey":"workspace-secret","credentials":"private-value","authorization":"Bearer live-value"}`
+	scrubbed := RedactDiff(diff)
+	for _, secret := range []string{"workspace-secret", "private-value", "live-value"} {
+		if strings.Contains(scrubbed, secret) {
+			t.Fatalf("credential leaked in JSON diff: %s", scrubbed)
+		}
 	}
 }
 func TestDiffFilesIgnoresPatchContentHeaders(t *testing.T) {
