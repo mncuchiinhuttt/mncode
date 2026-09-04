@@ -16,6 +16,7 @@
 - Rejected artifact and scratchpad URI traversal, special files, symlink scanner entries, and unbounded workspace reads.
 - Added an opt-out workspace configuration loader for Desktop so repository `.env` files cannot redirect provider traffic.
 - Fixed Service Hub process state races and send-after-close log channel panics under the race detector.
+- Rotated the release verification root key; private signing material remains outside the repository in GitHub Actions secrets.
 
 ### Changed
 - Bumped the CLI release to v0.1.6-beta.
