@@ -125,7 +125,7 @@ func ReadInlinePrompt(s *agent.Session) (string, bool) {
 			if renderedBefore {
 				fmt.Print("\033[1A\r\033[J")
 			}
-			fmt.Printf("\r\033[K%s %s\r\n", BoldCyan("❯❯ [📱 Remote]:"), Bold(trimmed))
+			fmt.Printf("\r\033[K%s %s\r\n", BoldCyan("❯❯ [[REMOTE] Remote]:"), Bold(trimmed))
 			return trimmed, true
 
 		case chunk := <-stdinReaderChan:

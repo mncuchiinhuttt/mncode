@@ -54,28 +54,28 @@ func HandleChangelogCommand(parts []string, s *agent.Session) {
 	sb.WriteString(fmt.Sprintf("## Release %s (%s)\n\n", config.CurrentVersion, today))
 
 	if len(feats) > 0 {
-		sb.WriteString("### 🚀 New Features\n")
+		sb.WriteString("### [LAUNCH] New Features\n")
 		for _, f := range feats {
 			sb.WriteString(fmt.Sprintf("- %s\n", f))
 		}
 		sb.WriteString("\n")
 	}
 	if len(fixes) > 0 {
-		sb.WriteString("### 🐛 Bug Fixes\n")
+		sb.WriteString("### [BUG] Bug Fixes\n")
 		for _, f := range fixes {
 			sb.WriteString(fmt.Sprintf("- %s\n", f))
 		}
 		sb.WriteString("\n")
 	}
 	if len(perfs) > 0 {
-		sb.WriteString("### ⚡ Performance & Refactoring\n")
+		sb.WriteString("### [ACTION] Performance & Refactoring\n")
 		for _, p := range perfs {
 			sb.WriteString(fmt.Sprintf("- %s\n", p))
 		}
 		sb.WriteString("\n")
 	}
 	if len(docs) > 0 {
-		sb.WriteString("### 📝 Documentation\n")
+		sb.WriteString("### [DOC] Documentation\n")
 		for _, d := range docs {
 			sb.WriteString(fmt.Sprintf("- %s\n", d))
 		}
@@ -91,7 +91,7 @@ func HandleChangelogCommand(parts []string, s *agent.Session) {
 	_ = os.WriteFile(changelogFile, []byte(newContent), 0644)
 
 	fmt.Println()
-	fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Changelog Synthesized and Appended to CHANGELOG.md!"))
+	fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Changelog Synthesized and Appended to CHANGELOG.md!"))
 	fmt.Println(GrayText(strings.Repeat("─", 55)))
 	fmt.Println(changelogMD)
 	_ = CopyToClipboard(changelogMD)

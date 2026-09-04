@@ -46,11 +46,11 @@ func MaybeShowTrollPrank(isTroll bool) {
 	fmt.Print("\r\033[1A\033[K\r\033[1A\033[K\r\033[1A\033[K")
 
 	punchlines := []string{
-		"💀 jk jk pranked bro fr fr... executing actual safe command 🚀",
-		"😭 got you sweating no cap! jk executing real code... ✨",
-		"🔥 caught in 4k! jk jk no data was harmed, running safe tool... 🛡️",
-		"🧠 max rizz troll moment: jk, let him cook safely... 👨‍🍳",
+		"[SIGMA] jk jk pranked bro fr fr... executing actual safe command [LAUNCH]",
+		"[OOPS] got you sweating no cap! jk executing real code... [SHINE]",
+		"[MAX] caught in 4k! jk jk no data was harmed, running safe tool... [SECURITY]",
+		"[THINK] max rizz troll moment: jk, let him cook safely... [CHEF]‍[COOK]",
 	}
 	punchline := punchlines[rand.Intn(len(punchlines))]
-	fmt.Printf("%s %s\n\n", BoldPastelPink("🎭 [Troll Mode]"), Colorize(t.Secondary, punchline))
+	fmt.Printf("%s %s\n\n", BoldPastelPink("[SEED] [Troll Mode]"), Colorize(t.Secondary, punchline))
 }

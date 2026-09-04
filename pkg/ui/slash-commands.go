@@ -52,6 +52,34 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		cmd = "/search"
 	} else if strings.HasPrefix("/export", cmd) && len(cmd) >= 3 {
 		cmd = "/export"
+	} else if strings.HasPrefix("/combo", cmd) && len(cmd) >= 3 {
+		cmd = "/combo"
+	} else if strings.HasPrefix("/debate", cmd) && len(cmd) >= 3 {
+		cmd = "/debate"
+	} else if strings.HasPrefix("/service", cmd) && len(cmd) >= 3 {
+		cmd = "/service"
+	} else if strings.HasPrefix("/budget", cmd) && len(cmd) >= 3 {
+		cmd = "/budget"
+	} else if strings.HasPrefix("/memory", cmd) && len(cmd) >= 3 {
+		cmd = "/memory"
+	} else if strings.HasPrefix("/voice", cmd) && len(cmd) >= 3 {
+		cmd = "/voice"
+	} else if strings.HasPrefix("/drift", cmd) && len(cmd) >= 3 {
+		cmd = "/drift"
+	} else if strings.HasPrefix("/sandbox", cmd) && len(cmd) >= 3 {
+		cmd = "/sandbox"
+	} else if strings.HasPrefix("/shadow", cmd) && len(cmd) >= 3 {
+		cmd = "/shadow"
+	} else if strings.HasPrefix("/index", cmd) && len(cmd) >= 3 {
+		cmd = "/index"
+	} else if strings.HasPrefix("/arena", cmd) && len(cmd) >= 3 {
+		cmd = "/arena"
+	} else if strings.HasPrefix("/replay", cmd) && len(cmd) >= 3 {
+		cmd = "/replay"
+	} else if strings.HasPrefix("/fork", cmd) && len(cmd) >= 3 {
+		cmd = "/fork"
+	} else if strings.HasPrefix("/spec", cmd) && len(cmd) >= 3 {
+		cmd = "/spec"
 	}
 	switch cmd {
 	case "/help", "/?":
@@ -139,9 +167,9 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		s.Config.SetSetting("troll_mode", newVal)
 		_ = config.SaveConfig(s.Config)
 		if newVal == "true" {
-			fmt.Printf("\n%s Brainrot & Troll Mode enabled! 🧠🔥 (Full Gen Z / Sigma Dev + Harmless Troll Pranks)\n\n", BoldPastelPink("[PRO MAX]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode enabled! [THINK][MAX] (Full Gen Z / Sigma Dev + Harmless Troll Pranks)\n\n", BoldPastelPink("[PRO MAX]"))
 		} else {
-			fmt.Printf("\n%s Brainrot & Troll Mode disabled. 💼 (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
+			fmt.Printf("\n%s Brainrot & Troll Mode disabled. [PRO] (Standard Professional Dev)\n\n", BoldCyan("[Config]"))
 		}
 	case "/diff":
 		HandleDiffCommand(parts, s)
@@ -162,9 +190,9 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		s.Config.SetSetting("troll_mode", newTroll)
 		_ = config.SaveConfig(s.Config)
 		if newTroll == "true" {
-			fmt.Printf("\n%s Troll Mode ENABLED! 💀 (Occasional harmless scare pranks before tools)\n\n", BoldPastelPink("[Troll Mode]"))
+			fmt.Printf("\n%s Troll Mode ENABLED! [SIGMA] (Occasional harmless scare pranks before tools)\n\n", BoldPastelPink("[Troll Mode]"))
 		} else {
-			fmt.Printf("\n%s Troll Mode disabled. 💼 (Strict serious dev mode)\n\n", BoldCyan("[Troll Mode]"))
+			fmt.Printf("\n%s Troll Mode disabled. [PRO] (Strict serious dev mode)\n\n", BoldCyan("[Troll Mode]"))
 		}
 	case "/scan":
 		HandleScanCommand(parts, s)
@@ -192,8 +220,12 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleCommitCommand(parts, s)
 	case "/test":
 		HandleTestCommand(parts, s)
-	case "/heal":
-		HandleTestCommand([]string{"/test", "--heal"}, s)
+	case "/heal", "/self-heal", "/fix-test":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleHealCommand(args, s)
 	case "/review":
 		HandleReviewCommand(parts, s)
 	case "/share":
@@ -228,8 +260,59 @@ func HandleSlashCommand(input string, s *agent.Session) bool {
 		HandleSecurityCommand(parts, s)
 	case "/seed", "/mock", "/mockdata":
 		HandleSeedCommand(parts, s)
+	case "/combo", "/combos", "/swarm", "/pipeline":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleComboCommand(args, s)
+	case "/debate":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleDebateCommand(args, s)
+	case "/arena":
+		HandleArenaCommand(parts, s)
+	case "/drift":
+		HandleDriftCommand(parts, s)
+	case "/sandbox":
+		HandleSandboxCommand(parts, s)
+	case "/shadow":
+		fmt.Println(BoldYellow("[Rename] /shadow was renamed to /sandbox; no action taken."))
+	case "/index":
+		HandleIndexCommand(parts, s)
+	case "/replay":
+		HandleReplayCommand(parts, s)
+	case "/fork":
+		HandleForkCommand(parts, s)
+	case "/spec":
+		HandleSpecCommand(parts, s)
+	case "/service", "/svc", "/daemon":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleServiceCommand(args, s)
+	case "/budget", "/limit":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleBudgetCommand(args, s)
+	case "/memory", "/mem":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleMemoryCommand(args, s)
+	case "/voice", "/speech", "/stt":
+		args := ""
+		if len(parts) > 1 {
+			args = strings.Join(parts[1:], " ")
+		}
+		handleVoiceCommand(args, s)
 	default:
-		fmt.Printf("Unknown command '%s'.\n", cmd)
 		ShowSlashPalette()
 	}
 	return true

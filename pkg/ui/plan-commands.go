@@ -48,7 +48,7 @@ func HandlePlanCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	showResearchBanner("📋 Autonomous Implementation Planner", task, "Scout Codebase ➔ Plan Overview ➔ Phase Breakdown ➔ Save ./plans/")
+	showResearchBanner("[PLAN] Autonomous Implementation Planner", task, "Scout Codebase -> Plan Overview -> Phase Breakdown -> Save ./plans/")
 
 	startTime := time.Now()
 	ctx := context.Background()
@@ -90,7 +90,7 @@ func listPlans(s *agent.Session) {
 		return
 	}
 
-	fmt.Printf("\n%s Plans in %s:\n", BoldPastelPink("📋"), Bold(plansDir))
+	fmt.Printf("\n%s Plans in %s:\n", BoldPastelPink("[PLAN]"), Bold(plansDir))
 	for _, entry := range entries {
 		if entry.IsDir() {
 			fmt.Printf("  • %s\n", BoldCyan(entry.Name()))
@@ -114,15 +114,15 @@ func showPlanSummaryCard(planDir string, elapsed time.Duration) {
 	title := "Implementation Plan Ready"
 	topBorder := fmt.Sprintf("%s %s %s",
 		BoldPastelPink("╭── ["),
-		BoldGreen(fmt.Sprintf("✓ %s", title)),
+		BoldGreen(fmt.Sprintf("[OK] %s", title)),
 		BoldPastelPink("] "+strings.Repeat("─", cardWidth-visualLen(title)-12)+"╮"))
 
 	fmt.Println()
 	fmt.Println(topBorder)
 	printMCPRow("", cardWidth)
-	printMCPRow(fmt.Sprintf("  📁 %s %s", BoldCyan("Plan Dir: "), Bold(relPath)), cardWidth)
-	printMCPRow(fmt.Sprintf("  📄 %s %s", GrayText("Overview: "), GrayText(filepath.Join(relPath, "plan.md"))), cardWidth)
-	printMCPRow(fmt.Sprintf("  ⏱️  %s %s", GrayText("Duration: "), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [DIR] %s %s", BoldCyan("Plan Dir: "), Bold(relPath)), cardWidth)
+	printMCPRow(fmt.Sprintf("  [FILE] %s %s", GrayText("Overview: "), GrayText(filepath.Join(relPath, "plan.md"))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [TIME]  %s %s", GrayText("Duration: "), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
 	printMCPRow("", cardWidth)
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()

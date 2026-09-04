@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"mncode/pkg/hooks"
 )
 
 // EditTool replaces specific content in a file
@@ -125,6 +127,7 @@ func (e *EditTool) Execute(ctx context.Context, args map[string]interface{}) (st
 	if err := atomicEditWrite(path, data, []byte(newContent), info.Mode()); err != nil {
 		return "", fmt.Errorf("failed to write updated file %s: %w", path, err)
 	}
+	hooks.OnPostEdit(ctx, e.BaseDir, path)
 	return fmt.Sprintf("Successfully replaced %d occurrence(s) in %s. FileHash: %s", count, path, fileFingerprint([]byte(newContent))), nil
 }
 

@@ -87,6 +87,12 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 | `/doctor` | **Workspace Health Audit** — Diagnostic scorecard, runtimes, and file size limits |
 | `/commit [-p]` | **AI Semantic Commit** — Conventional commit generation, auto-stage & push |
 | `/review` | **Pre-Commit Code Auditor** — Scan uncommitted diffs for secrets, SQLi, and smells |
+| `/drift [init|check]` | **Architectural Drift Sentinel** — Compare AST, exported symbols, imports, cycles, and optional policy rules to a private baseline |
+| `/sandbox [init|run|test]` | **Fixture Harness** — Run allowlisted argv cases in a bounded temporary copy; `/shadow` is intentionally rejected |
+| `/index [build|query]` | **Local Code Index** — Search normalized source terms and AST symbols with BM25 ranking and stale-index checks |
+| `/arena [review]` | **Red-Team PR Arena** — Fan out bounded diff review to security, correctness, and maintainability adversaries |
+| `/replay [start|show|export]` / `/fork` | **Flight Recorder** — Record scrubbed lifecycle events and fork conversation context without replaying tool effects |
+| `/spec [new|check|matrix]` | **Spec-First Contracts** — Define deterministic invariants/cases and verify them without mutating the workspace |
 | `/symbol <name>` | **AST Symbol Search** — Find functions, structs, interfaces, and classes instantly |
 | `/scratch [ext]` | **Code Sandbox** — Open, evaluate, and test temporary code snippets |
 | `/undo` / `/rewind` | **Checkpoint Rollback** — Revert last agent turn and restore workspace files |
@@ -114,6 +120,8 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 | `/clear` | Clear conversation history and reset screen |
 | `/help` | Display command palette and keybinding cheat sheet |
 | `/exit` | Gracefully exit mncode |
+
+The six new command families are local-first and bounded: `/sandbox` uses a temporary copy rather than a kernel container, `/index` is lexical BM25 plus AST ranking rather than embedding search, `/arena` is advisory and never posts or edits a PR, `/replay` never re-executes tools, and `/spec` is a deterministic contract matrix rather than a formal proof.
 
 ---
 
@@ -172,6 +180,12 @@ Configure keys in the CLI with `/search setup` or in Desktop → Settings → Ge
 
 ## 🧠 Advanced Agent Tools
 
+- `/drift`: compare AST and dependency boundaries against a stored baseline.
+- `/sandbox`: run allowlisted fixtures in bounded temporary workspace copies.
+- `/index`: query a persisted BM25 and AST-aware local code index.
+- `/arena`: run bounded security, correctness, and maintainability reviews against a diff.
+- `/replay` and `/fork`: record scrubbed lifecycle traces and branch conversation history without replaying tool effects.
+- `/spec`: define deterministic command, file, and invariant contracts.
 - `lsp_tool`: semantic Go/TypeScript definition, references, hover, diagnostics, and project-wide rename through installed language servers.
 - `debugger`: persistent Delve DAP sessions for breakpoints, stack traces, scopes, variables, and expression evaluation.
 - `persistent_kernel`: bounded persistent Python or Node namespaces for calculations and data analysis.

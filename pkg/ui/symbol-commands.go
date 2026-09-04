@@ -27,7 +27,7 @@ func HandleSymbolCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	fmt.Printf("\n%s (%d matches for '%s'):\n", BoldPastelPink("🔍 AST Symbols Found"), len(symbols), query)
+	fmt.Printf("\n%s (%d matches for '%s'):\n", BoldPastelPink("[SEARCH] AST Symbols Found"), len(symbols), query)
 	for _, sym := range symbols {
 		var kindBadge string
 		switch sym.Kind {

@@ -42,7 +42,7 @@ func ShowQuotaDashboard(s *agent.Session) {
 			statusTag = GrayText("[STANDBY]")
 		}
 		if !info.IsHealthy {
-			dot = BoldRed("✕")
+			dot = BoldRed("[FAIL]")
 			statusTag = BoldRed("[" + info.Status + "]")
 		}
 

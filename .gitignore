@@ -19,6 +19,9 @@ dist/
 .env.*
 *.local
 credentials.json
+*.pem
+*.key
+*.crt
 
 # Local mncode session data
 .mncode/

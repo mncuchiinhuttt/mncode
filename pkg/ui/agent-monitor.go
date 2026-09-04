@@ -103,7 +103,7 @@ func OpenSubagentMonitorView(s *agent.Session) {
 					dot = BoldYellow("◯")
 					tag = BoldYellow("[RUNNING]")
 				} else if ag.Status == "error" {
-					dot = BoldRed("✕")
+					dot = BoldRed("[FAIL]")
 					tag = BoldRed("[ERROR]")
 				}
 

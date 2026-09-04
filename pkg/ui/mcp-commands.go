@@ -70,7 +70,7 @@ func HandleMCPCommand(parts []string, s *agent.Session) {
 
 	case "remove", "rm", "delete":
 		if len(parts) < 3 {
-			fmt.Printf("\n%s Usage: /mcp remove <github|notion>\n\n", BoldCyan("💡"))
+			fmt.Printf("\n%s Usage: /mcp remove <github|notion>\n\n", BoldCyan("[INFO]"))
 			return
 		}
 		name := strings.ToLower(parts[2])
@@ -78,16 +78,16 @@ func HandleMCPCommand(parts []string, s *agent.Session) {
 			fmt.Printf("%s Failed to remove '%s': %v\n\n", BoldRed("[Error]"), name, err)
 			return
 		}
-		fmt.Printf("\n%s MCP server '%s' disconnected and removed.\n\n", BoldGreen("✓"), name)
+		fmt.Printf("\n%s MCP server '%s' disconnected and removed.\n\n", BoldGreen("[OK]"), name)
 
 	case "restart", "reload":
 		ctx := context.Background()
 		s.MCP.Close()
 		s.MCP.LoadConfig()
-		fmt.Printf("\n%s Restarting MCP servers...\n", BoldCyan("🔌 [MCP]"))
+		fmt.Printf("\n%s Restarting MCP servers...\n", BoldCyan("[MCP] [MCP]"))
 		s.MCP.StartAll(ctx)
 		count := tools.RegisterMCPTools(s.Tools, s.MCP, ctx)
-		fmt.Printf("%s MCP reloaded. %d tools active.\n\n", BoldGreen("✓"), count)
+		fmt.Printf("%s MCP reloaded. %d tools active.\n\n", BoldGreen("[OK]"), count)
 
 	default:
 		showMCPStatus(s)
@@ -99,7 +99,7 @@ func configureAndConnectMCP(s *agent.Session, name string, cfg mcp.ServerConfig)
 	defer cancel()
 
 	fmt.Printf("\n%s Connecting to %s MCP server (npx @modelcontextprotocol/server-%s)...\n",
-		BoldCyan("🔌 [MCP]"), Bold(name), name)
+		BoldCyan("[MCP] [MCP]"), Bold(name), name)
 
 	if err := s.MCP.AddServer(ctx, name, cfg); err != nil {
 		fmt.Printf("%s Connection failed: %v\n", BoldRed("[Error]"), err)
@@ -109,7 +109,7 @@ func configureAndConnectMCP(s *agent.Session, name string, cfg mcp.ServerConfig)
 
 	added := tools.RegisterMCPTools(s.Tools, s.MCP, ctx)
 	fmt.Printf("%s %s MCP connected successfully! %s tools loaded.\n\n",
-		BoldGreen("✓"), Bold(name), BoldGreen(fmt.Sprintf("%d", added)))
+		BoldGreen("[OK]"), Bold(name), BoldGreen(fmt.Sprintf("%d", added)))
 }
 
 func promptForToken(promptStr string) string {
@@ -156,7 +156,7 @@ func showMCPStatus(s *agent.Session) {
 	// 1. GitHub MCP
 	gh, ghConfigured := statusMap["github"]
 	if ghConfigured && gh.Connected {
-		printMCPRow(fmt.Sprintf("  🐙 %-14s %s (%d tools)", BoldCyan("GitHub MCP"), BoldGreen("🟢 Connected"), len(gh.Tools)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s (%d tools)", BoldCyan("GitHub MCP"), BoldGreen("[ACTIVE] Connected"), len(gh.Tools)), cardWidth)
 		if len(gh.Tools) > 0 {
 			var names []string
 			for _, t := range gh.Tools {
@@ -165,9 +165,9 @@ func showMCPStatus(s *agent.Session) {
 			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
 		}
 	} else if ghConfigured {
-		printMCPRow(fmt.Sprintf("  🐙 %-14s %s", BoldCyan("GitHub MCP"), BoldRed("🔴 "+gh.Error)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s", BoldCyan("GitHub MCP"), BoldRed("[ERR] "+gh.Error)), cardWidth)
 	} else {
-		printMCPRow(fmt.Sprintf("  🐙 %-14s %s · Run: %s", BoldCyan("GitHub MCP"), GrayText("⚪ Not Configured"), BoldCyan("/mcp github <token>")), cardWidth)
+		printMCPRow(fmt.Sprintf("  [GIT] %-14s %s · Run: %s", BoldCyan("GitHub MCP"), GrayText("[DISABLED] Not Configured"), BoldCyan("/mcp github <token>")), cardWidth)
 	}
 
 	printMCPRow("", cardWidth)
@@ -175,7 +175,7 @@ func showMCPStatus(s *agent.Session) {
 	// 2. Notion MCP
 	notion, notionConfigured := statusMap["notion"]
 	if notionConfigured && notion.Connected {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s (%d tools)", BoldCyan("Notion MCP"), BoldGreen("🟢 Connected"), len(notion.Tools)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s (%d tools)", BoldCyan("Notion MCP"), BoldGreen("[ACTIVE] Connected"), len(notion.Tools)), cardWidth)
 		if len(notion.Tools) > 0 {
 			var names []string
 			for _, t := range notion.Tools {
@@ -184,9 +184,9 @@ func showMCPStatus(s *agent.Session) {
 			printMCPRow(fmt.Sprintf("     %s %s", GrayText("Tools:"), GrayText(truncateText(strings.Join(names, ", "), cardWidth-16))), cardWidth)
 		}
 	} else if notionConfigured {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s", BoldCyan("Notion MCP"), BoldRed("🔴 "+notion.Error)), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s", BoldCyan("Notion MCP"), BoldRed("[ERR] "+notion.Error)), cardWidth)
 	} else {
-		printMCPRow(fmt.Sprintf("  📝 %-14s %s · Run: %s", BoldCyan("Notion MCP"), GrayText("⚪ Not Configured"), BoldCyan("/mcp notion <token>")), cardWidth)
+		printMCPRow(fmt.Sprintf("  [DOC] %-14s %s · Run: %s", BoldCyan("Notion MCP"), GrayText("[DISABLED] Not Configured"), BoldCyan("/mcp notion <token>")), cardWidth)
 	}
 
 	printMCPRow("", cardWidth)

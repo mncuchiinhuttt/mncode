@@ -93,13 +93,6 @@ var curatedModels = []ModelChoice{
 		Description: "Stealth 1M context unlimited reasoning model for coding & agentic workflows (100% Free)",
 	},
 	{
-		ID:          "stealth/ox-alpha",
-		Name:        "Ox Alpha (OpenRouter 1M)",
-		Provider:    config.ProviderOpenRouter,
-		Tag:         "[OpenRouter Free]",
-		Description: "Stealth Ox Alpha 1M context reasoning model via OpenRouter (100% Free)",
-	},
-	{
 		// Slug is correct (confirmed against OpenCode Zen docs) and returns a
 		// distinct "model is unavailable" server_error via the anonymous public
 		// key — not an auth/not-found error — so this looks like a temporarily

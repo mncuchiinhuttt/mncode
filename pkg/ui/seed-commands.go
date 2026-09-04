@@ -13,7 +13,7 @@ import (
 func HandleSeedCommand(parts []string, s *agent.Session) {
 	fmt.Println()
 	fmt.Println(BoldPastelPink("╭── [ mncode Smart Database & Mock Data Seeder ] ───────────────────────────╮"))
-	fmt.Println("│ 🎭 Autonomous relational mock data generator with localized dataset support │")
+	fmt.Println("│ [SEED] Autonomous relational mock data generator with localized dataset support │")
 	fmt.Println(BoldPastelPink("╰────────────────────────────────────────────────────────────────────────────╯"))
 	fmt.Println()
 
@@ -42,8 +42,8 @@ func HandleSeedCommand(parts []string, s *agent.Session) {
 
 	fmt.Println()
 	fmt.Println(BoldYellow("Select Mock Data Locale:"))
-	fmt.Println("  1. 🇻🇳  Tiếng Việt (Realistic Vietnamese names, phones, provinces, addresses)")
-	fmt.Println("  2. 🌐  Global / English (International realistic data)")
+	fmt.Println("  1. [VN]  Tiếng Việt (Realistic Vietnamese names, phones, provinces, addresses)")
+	fmt.Println("  2. [HTTP]  Global / English (International realistic data)")
 	fmt.Print(BoldYellow("Enter choice [1-2] (default 1): "))
 	lAns, _ := reader.ReadString('\n')
 	lAns = strings.TrimSpace(lAns)

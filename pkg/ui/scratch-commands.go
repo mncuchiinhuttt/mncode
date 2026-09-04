@@ -38,7 +38,7 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 
 	case "clear", "reset":
 		_ = os.Remove(scratchFile)
-		fmt.Printf("\n%s Scratchpad reset.\n\n", BoldGreen("✓"))
+		fmt.Printf("\n%s Scratchpad reset.\n\n", BoldGreen("[OK]"))
 		return
 
 	case "view", "cat":
@@ -47,7 +47,7 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s Scratchpad is empty.\n\n", GrayText("[Scratchpad]"))
 			return
 		}
-		fmt.Printf("\n%s (%s):\n", BoldCyan("📝 Scratchpad Contents"), scratchFile)
+		fmt.Printf("\n%s (%s):\n", BoldCyan("[DOC] Scratchpad Contents"), scratchFile)
 		lines := strings.Split(string(data), "\n")
 		for i, l := range lines {
 			fmt.Printf("  %3d │ %s\n", i+1, l)
@@ -63,7 +63,7 @@ func HandleScratchCommand(parts []string, s *agent.Session) {
 	}
 
 	fmt.Println()
-	fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Scratchpad Ready:"))
+	fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Scratchpad Ready:"))
 	fmt.Printf("    %s %s\n", BoldCyan("File:"), Bold(scratchFile))
 	fmt.Printf("    %s %s\n\n", GrayText("Commands:"), GrayText("/scratch run, /scratch view, /scratch clear"))
 }
@@ -123,7 +123,7 @@ func runScratchFile(scratchDir, reqExt string) {
 		return
 	}
 
-	fmt.Printf("\n%s Running %s...\n\n", BoldCyan("▶ [Evaluating Scratchpad]"), filepath.Base(target))
+	fmt.Printf("\n%s Running %s...\n\n", BoldCyan("> [Evaluating Scratchpad]"), filepath.Base(target))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("%s %s\n\n", BoldRed("[Execution Error]:"), string(out))

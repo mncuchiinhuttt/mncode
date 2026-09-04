@@ -94,3 +94,19 @@ func TestWriteToolRejectsPathOutsideWorkspace(t *testing.T) {
 		t.Fatalf("outside file exists after rejected write: %v", statErr)
 	}
 }
+func TestViewToolRejectsVirtualURIEscape(t *testing.T) {
+	parent := t.TempDir()
+	root := filepath.Join(parent, "workspace")
+	if err := os.MkdirAll(filepath.Join(root, ".mncode", "scratchpad"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(parent, "outside.txt")
+	if err := os.WriteFile(outside, []byte("outside"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	tool := &ViewTool{BaseDir: root}
+	_, err := tool.Execute(context.Background(), map[string]interface{}{"AbsolutePath": "local://../outside.txt"})
+	if err == nil {
+		t.Fatal("ViewTool allowed local URI traversal")
+	}
+}

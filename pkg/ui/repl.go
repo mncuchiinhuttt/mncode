@@ -52,7 +52,7 @@ func RunREPL(s *agent.Session) {
 
 		resolvedPrompt, attachedBadges := ResolveAtContext(s.WorkspaceDir, trimmed)
 		if len(attachedBadges) > 0 {
-			fmt.Printf("%s %s\n", BoldCyan("📎 Attached Context:"), BoldPastelPink(strings.Join(attachedBadges, ", ")))
+			fmt.Printf("%s %s\n", BoldCyan("[ATTACH] Attached Context:"), BoldPastelPink(strings.Join(attachedBadges, ", ")))
 		}
 
 		fmt.Println()
@@ -79,10 +79,10 @@ func RunREPL(s *agent.Session) {
 				qCtx, qCancel := context.WithCancel(context.Background())
 				qStopSteer := StartExecutionSteerWatcher(s, qCancel)
 
-				fmt.Printf("%s %s\n\n", BoldCyan("📥 [Running Queued Prompt]:"), Bold(qMsg))
+				fmt.Printf("%s %s\n\n", BoldCyan("[INBOX] [Running Queued Prompt]:"), Bold(qMsg))
 				qResolved, qBadges := ResolveAtContext(s.WorkspaceDir, qMsg)
 				if len(qBadges) > 0 {
-					fmt.Printf("%s %s\n", BoldCyan("📎 Attached Context:"), BoldPastelPink(strings.Join(qBadges, ", ")))
+					fmt.Printf("%s %s\n", BoldCyan("[ATTACH] Attached Context:"), BoldPastelPink(strings.Join(qBadges, ", ")))
 				}
 				err := s.ProcessUserInput(qCtx, qResolved)
 				qStopSteer()

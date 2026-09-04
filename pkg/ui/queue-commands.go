@@ -30,7 +30,7 @@ func HandleSteerCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s No pending steer directives.\n\n", GrayText("[Steer Queue]"))
 			return
 		}
-		fmt.Printf("\n%s (%d items):\n", BoldPastelPink("🎯 Pending Steer Directives"), len(steers))
+		fmt.Printf("\n%s (%d items):\n", BoldPastelPink("[STEER] Pending Steer Directives"), len(steers))
 		for i, st := range steers {
 			fmt.Printf("  %d. %s\n", i+1, Colorize(GetCurrentTheme().Text, st))
 		}
@@ -42,7 +42,7 @@ func HandleSteerCommand(parts []string, s *agent.Session) {
 		guidance := strings.TrimSpace(strings.Join(parts[1:], " "))
 		s.EnqueueSteer(guidance)
 		fmt.Printf("\n%s \"%s\"\n%s\n\n",
-			BoldPastelPink("🎯 [Steer Directive Enqueued]"),
+			BoldPastelPink("[STEER] [Steer Directive Enqueued]"),
 			Bold(guidance),
 			GrayText("Will be injected with top priority into the agent's upcoming thought loop."))
 	}
@@ -77,7 +77,7 @@ func HandleQueueCommand(parts []string, s *agent.Session) {
 			fmt.Printf("\n%s Message queue is currently empty.\n\n", GrayText("[Message Queue]"))
 			return
 		}
-		fmt.Printf("\n%s (%d messages):\n", BoldCyan("📥 Enqueued Messages"), len(msgs))
+		fmt.Printf("\n%s (%d messages):\n", BoldCyan("[INBOX] Enqueued Messages"), len(msgs))
 		for i, m := range msgs {
 			fmt.Printf("  %d. %s\n", i+1, Colorize(GetCurrentTheme().Text, m))
 		}
@@ -89,7 +89,7 @@ func HandleQueueCommand(parts []string, s *agent.Session) {
 		prompt := strings.TrimSpace(strings.Join(parts[1:], " "))
 		s.EnqueueMessage(prompt)
 		fmt.Printf("\n%s \"%s\"\n%s\n\n",
-			BoldCyan("📥 [Message Enqueued]"),
+			BoldCyan("[INBOX] [Message Enqueued]"),
 			Bold(prompt),
 			GrayText("Will run automatically right after the active turn completes."))
 	}

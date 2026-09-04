@@ -7,14 +7,175 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+
+const maxRemoteBodyBytes = 1 << 20
+
+// RemotePolicy validates the configured companion endpoint before any secret
+// is sent. Local endpoints are opt-in for development only.
+type RemotePolicy struct {
+	AllowLocalDevelopment bool
+	LocalHosts            map[string]bool
+}
+
+func (p RemotePolicy) allowsLocal(host string) bool {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	if !p.AllowLocalDevelopment {
+		return false
+	}
+	if len(p.LocalHosts) == 0 {
+		return host == "localhost" || strings.HasPrefix(host, "127.") || host == "::1"
+	}
+	return p.LocalHosts[host]
+}
+
+func (p RemotePolicy) resolve(raw string) (*url.URL, []net.IP, error) {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid remote URL: %w", err)
+	}
+	if u.Scheme != "https" && !(u.Scheme == "http" && p.allowsLocal(u.Hostname())) {
+		return nil, nil, fmt.Errorf("remote URL must use HTTPS (HTTP is limited to explicit local development hosts)")
+	}
+	if u.User != nil || u.Hostname() == "" {
+		return nil, nil, fmt.Errorf("remote URL must not contain credentials and requires a host")
+	}
+
+	host := strings.TrimSuffix(u.Hostname(), ".")
+	ips, err := resolveRemoteHost(host)
+	if err != nil {
+		return nil, nil, fmt.Errorf("resolve remote host %q: %w", u.Hostname(), err)
+	}
+	for _, ip := range ips {
+		if isBlockedRemoteIP(ip) && !p.allowsLocal(host) {
+			return nil, nil, fmt.Errorf("private or metadata remote destination %q is not allowed", u.Hostname())
+		}
+	}
+	return u, ips, nil
+}
+
+func (p RemotePolicy) Validate(raw string) (*url.URL, error) {
+	u, _, err := p.resolve(raw)
+	return u, err
+}
+
+func resolveRemoteHost(host string) ([]net.IP, error) {
+	if ip := net.ParseIP(host); ip != nil {
+		return []net.IP{ip}, nil
+	}
+	// Parse the integer form accepted by URL clients (for example,
+	// 2130706433 == 127.0.0.1) before consulting DNS.
+	if n, err := strconv.ParseUint(host, 0, 32); err == nil {
+		return []net.IP{net.IPv4(byte(n>>24), byte(n>>16), byte(n>>8), byte(n))}, nil
+	}
+	return net.LookupIP(host)
+}
+
+func isBlockedRemoteIP(ip net.IP) bool {
+	if ip == nil {
+		return true
+	}
+	if v4 := ip.To4(); v4 != nil {
+		ip = v4
+	}
+	return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() ||
+		ip.IsLinkLocalMulticast() || ip.IsUnspecified() || ip.IsMulticast()
+}
+
+
+type remoteDestination struct {
+	host string
+	ips  []net.IP
+}
+
+type remoteDestinationKey struct{}
+
+// remoteTransport resolves the policy destination immediately before each
+// request, then dials only one of those resolved addresses. Proxy is disabled
+// explicitly so HTTP_PROXY/HTTPS_PROXY cannot move a secret-bearing request
+// to an ambient intermediary. Keep-alives are disabled so a later request
+// cannot reuse a connection established for an earlier DNS result.
+type remoteTransport struct {
+	policy *RemotePolicy
+	base   *http.Transport
+}
+
+func newRemoteTransport(policy *RemotePolicy) *remoteTransport {
+	t := &remoteTransport{policy: policy}
+	t.base = &http.Transport{
+		Proxy:           nil,
+		DisableKeepAlives: true,
+		DialContext:     t.dialContext,
+	}
+	return t
+}
+
+func (t *remoteTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req == nil || req.URL == nil {
+		return nil, fmt.Errorf("remote transport requires a request URL")
+	}
+	if t == nil || t.policy == nil {
+		return nil, fmt.Errorf("remote transport has no policy")
+	}
+	u, ips, err := t.policy.resolve(req.URL.String())
+	if err != nil {
+		return nil, err
+	}
+	destination := remoteDestination{
+		host: strings.ToLower(strings.TrimSuffix(u.Hostname(), ".")),
+		ips:  ips,
+	}
+	ctx := context.WithValue(req.Context(), remoteDestinationKey{}, destination)
+	return t.base.RoundTrip(req.Clone(ctx))
+}
+
+func (t *remoteTransport) dialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	destination, ok := ctx.Value(remoteDestinationKey{}).(remoteDestination)
+	if !ok || destination.host == "" || len(destination.ips) == 0 {
+		return nil, fmt.Errorf("remote destination was not resolved by policy")
+	}
+	host, port, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, fmt.Errorf("invalid remote dial address: %w", err)
+	}
+	if strings.ToLower(strings.TrimSuffix(host, ".")) != destination.host {
+		return nil, fmt.Errorf("remote dial host %q does not match policy destination %q", host, destination.host)
+	}
+
+	dialer := &net.Dialer{Timeout: 10 * time.Second}
+	var lastErr error
+	for _, ip := range destination.ips {
+		conn, dialErr := dialer.DialContext(ctx, network, net.JoinHostPort(ip.String(), port))
+		if dialErr == nil {
+			return conn, nil
+		}
+		lastErr = dialErr
+	}
+	return nil, fmt.Errorf("no permitted remote destination for %q: %w", destination.host, lastErr)
+}
+
+// RedactSecrets removes common credential forms before values cross logging
+// or error boundaries. It intentionally handles URL query values too.
+func RedactSecrets(s string) string {
+	bearer := regexp.MustCompile(`(?i)((?:authorization)["']?\s*[=:]\s*(?:bearer|basic)\s+)[^\s,}"]+`)
+	s = bearer.ReplaceAllString(s, `${1}[REDACTED]`)
+	for _, key := range []string{"apiKey", "api_key", "secretToken", "secret", "token", "authorization", "password"} {
+		re := regexp.MustCompile(`(?i)(["']?` + regexp.QuoteMeta(key) + `["']?\s*[=:]\s*["']?)[^&\s,}"']+`)
+		s = re.ReplaceAllString(s, `${1}[REDACTED]`)
+	}
+	return s
+}
 
 type RemoteSession struct {
 	SessionID   string `json:"sessionId"`
@@ -37,19 +198,19 @@ type pushTask struct {
 type RemoteManager struct {
 	ServerURL   string
 	APIKey      string
+	Policy      RemotePolicy
 	Session     *RemoteSession
 	HTTPClient  *http.Client
 	IsActive    bool
 	LastEventID int64
 	Mu          sync.RWMutex
-
-	// Event Callbacks
-	OnSteer  func(prompt string)
-	OnAction func(answer string)
-	OnCancel func()
-
-	pushChan chan pushTask
-	stopChan chan struct{}
+	OnSteer     func(prompt string)
+	OnAction    func(answer string)
+	OnCancel    func()
+	pushChan    chan pushTask
+	stopChan    chan struct{}
+	stopOnce    sync.Once
+	transport   *remoteTransport
 }
 
 var (
@@ -70,8 +231,6 @@ func SetGlobalRemote(rm *RemoteManager) {
 	defer globalMu.Unlock()
 	globalManager = rm
 }
-
-// NewRemoteManager initializes a new RemoteManager
 func NewRemoteManager(serverURL, apiKey string) *RemoteManager {
 	if serverURL == "" {
 		if env := os.Getenv("MNCODE_WEB_URL"); env != "" {
@@ -82,17 +241,70 @@ func NewRemoteManager(serverURL, apiKey string) *RemoteManager {
 	}
 	serverURL = strings.TrimRight(serverURL, "/")
 
-	return &RemoteManager{
-		ServerURL:  serverURL,
-		APIKey:     apiKey,
-		HTTPClient: &http.Client{Timeout: 10 * time.Second},
-		pushChan:   make(chan pushTask, 200),
-		stopChan:   make(chan struct{}),
+	rm := &RemoteManager{
+		ServerURL: serverURL,
+		APIKey:    apiKey,
+		Policy:    RemotePolicy{},
+		pushChan:  make(chan pushTask, 200),
+		stopChan:  make(chan struct{}),
 	}
+	rm.transport = newRemoteTransport(&rm.Policy)
+	rm.HTTPClient = &http.Client{
+		Timeout:       10 * time.Second,
+		Transport:     rm.transport,
+		CheckRedirect: rm.checkRedirect,
+	}
+	return rm
+}
+
+func (rm *RemoteManager) checkRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) == 0 {
+		return nil
+	}
+	origin := via[0].URL
+	if origin.Scheme != req.URL.Scheme ||
+		strings.ToLower(strings.TrimSuffix(origin.Hostname(), ".")) != strings.ToLower(strings.TrimSuffix(req.URL.Hostname(), ".")) ||
+		origin.Port() != req.URL.Port() {
+		return fmt.Errorf("remote redirect changes origin")
+	}
+	return nil
+}
+
+func (rm *RemoteManager) do(req *http.Request) (*http.Response, error) {
+	if req == nil {
+		return nil, fmt.Errorf("remote request is nil")
+	}
+	rm.Mu.RLock()
+	client := rm.HTTPClient
+	transport := rm.transport
+	rm.Mu.RUnlock()
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
+	}
+	if transport == nil {
+		transport = newRemoteTransport(&rm.Policy)
+	}
+	secured := *client
+	secured.Transport = transport
+	secured.CheckRedirect = rm.checkRedirect
+	return secured.Do(req)
+}
+
+func (rm *RemoteManager) endpoint(path string, query url.Values) (string, error) {
+	base, err := rm.Policy.Validate(rm.ServerURL)
+	if err != nil {
+		return "", err
+	}
+	base.Path = strings.TrimRight(base.Path, "/") + path
+	base.RawQuery = query.Encode()
+	return base.String(), nil
 }
 
 // InitSession requests a new remote pairing session from the server
 func (rm *RemoteManager) InitSession(ctx context.Context, workspaceName string) (*RemoteSession, error) {
+	if _, err := rm.Policy.Validate(rm.ServerURL); err != nil {
+		return nil, err
+	}
 	clientOS := fmt.Sprintf("%s (%s)", runtime.GOOS, runtime.GOARCH)
 
 	bodyData := map[string]interface{}{
@@ -104,25 +316,26 @@ func (rm *RemoteManager) InitSession(ctx context.Context, workspaceName string) 
 	if err != nil {
 		return nil, err
 	}
-
-	url := fmt.Sprintf("%s/api/remote/session", rm.ServerURL)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonBody))
+	url, err := rm.endpoint("/api/remote/session", nil)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := rm.HTTPClient.Do(req)
+	resp, err := rm.do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to remote server: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("remote server error (%d): %s", resp.StatusCode, string(respBytes))
+		respBytes, _ := io.ReadAll(io.LimitReader(resp.Body, maxRemoteBodyBytes))
+		return nil, fmt.Errorf("remote server error (%d): %s", resp.StatusCode, RedactSecrets(string(respBytes)))
 	}
-
 	var res struct {
 		Success     bool   `json:"success"`
 		SessionID   string `json:"sessionId"`
@@ -131,18 +344,20 @@ func (rm *RemoteManager) InitSession(ctx context.Context, workspaceName string) 
 		Error       string `json:"error,omitempty"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxRemoteBodyBytes)).Decode(&res); err != nil {
 		return nil, fmt.Errorf("failed to parse remote session response: %w", err)
 	}
 	if !res.Success {
-		return nil, fmt.Errorf("failed to create session: %s", res.Error)
+		return nil, fmt.Errorf("failed to create session: %s", RedactSecrets(res.Error))
 	}
-
 	cleanURL := res.PairingURL
-	if strings.Contains(cleanURL, "?") {
-		cleanURL = strings.Split(cleanURL, "?")[0]
+	if idx := strings.Index(cleanURL, "?"); idx >= 0 {
+		cleanURL = cleanURL[:idx]
 	}
 	if cleanURL == "" {
+		cleanURL = fmt.Sprintf("%s/remote/%s", rm.ServerURL, res.SessionID)
+	}
+	if _, err := rm.Policy.Validate(cleanURL); err != nil {
 		cleanURL = fmt.Sprintf("%s/remote/%s", rm.ServerURL, res.SessionID)
 	}
 
@@ -262,14 +477,19 @@ func (rm *RemoteManager) sendPush(task pushTask) {
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/remote/push", rm.ServerURL)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
+	url, err := rm.endpoint("/api/remote/push", nil)
+	if err != nil {
+		return
+	}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewBuffer(data))
 	if err != nil {
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := rm.HTTPClient.Do(req)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req = req.WithContext(ctx)
+	resp, err := rm.do(req)
 	if err == nil {
 		_ = resp.Body.Close()
 	}
@@ -299,15 +519,21 @@ func (rm *RemoteManager) pollIncoming() {
 		return
 	}
 
-	url := fmt.Sprintf("%s/api/remote/poll?sessionId=%s&secretToken=%s&afterId=%d",
-		rm.ServerURL, session.SessionID, session.SecretToken, lastID)
-
-	req, err := http.NewRequest("GET", url, nil)
+	query := url.Values{}
+	query.Set("sessionId", session.SessionID)
+	query.Set("secretToken", session.SecretToken)
+	query.Set("afterId", fmt.Sprintf("%d", lastID))
+	url, err := rm.endpoint("/api/remote/poll", query)
 	if err != nil {
 		return
 	}
-
-	resp, err := rm.HTTPClient.Do(req)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return
+	}
+	resp, err := rm.do(req)
 	if err != nil {
 		return
 	}
@@ -326,7 +552,7 @@ func (rm *RemoteManager) pollIncoming() {
 		} `json:"events"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil || !res.Success {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, maxRemoteBodyBytes)).Decode(&res); err != nil || !res.Success {
 		return
 	}
 
@@ -348,7 +574,7 @@ func (rm *RemoteManager) pollIncoming() {
 					} else {
 						prompt = fmt.Sprintf("%s\n\n[Image: %s]", prompt, savedPath)
 					}
-					fmt.Printf("\r\n\033[1;38;5;212m📸 [Mobile Image Received]\033[0m Saved to %s\r\n", savedPath)
+					fmt.Printf("\r\n\033[1;38;5;212m[PHOTO] [Mobile Image Received]\033[0m Saved to %s\r\n", savedPath)
 				}
 			}
 
@@ -385,17 +611,24 @@ func saveRemoteImage(imgBase64 string) (string, error) {
 		raw = imgBase64[idx+1:]
 	}
 
+	if len(raw) > (maxRemoteBodyBytes*4/3 + 4) {
+		return "", fmt.Errorf("remote image exceeds %d byte limit", maxRemoteBodyBytes)
+	}
 	data, err := base64.StdEncoding.DecodeString(raw)
 	if err != nil {
 		return "", err
 	}
+	if len(data) > maxRemoteBodyBytes {
+		return "", fmt.Errorf("remote image exceeds %d byte limit", maxRemoteBodyBytes)
+	}
 
 	dir := filepath.Join(".", ".mncode", "remote_images")
-	_ = os.MkdirAll(dir, 0755)
-
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
 	filename := fmt.Sprintf("remote_%d%s", time.Now().UnixNano()/1e6, ext)
 	targetPath := filepath.Join(dir, filename)
-	if err := os.WriteFile(targetPath, data, 0644); err != nil {
+	if err := os.WriteFile(targetPath, data, 0o600); err != nil {
 		return "", err
 	}
 	return targetPath, nil
@@ -410,7 +643,6 @@ func (rm *RemoteManager) Close() {
 	}
 	rm.IsActive = false
 	rm.Mu.Unlock()
-
-	close(rm.stopChan)
+	rm.stopOnce.Do(func() { close(rm.stopChan) })
 	SetGlobalRemote(nil)
 }

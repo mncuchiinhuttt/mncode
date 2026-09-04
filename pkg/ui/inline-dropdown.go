@@ -21,13 +21,13 @@ func GetActiveDropdownItems(s *agent.Session, input []rune, cursorPos int) ([]Dr
 		atOpts := GetMatchingAtOptions(s.WorkspaceDir, atToken)
 		var items []DropdownItem
 		for _, o := range atOpts {
-			icon := "📄"
+			icon := "[FILE]"
 			if o.Type == "folder" {
-				icon = "📁"
+				icon = "[DIR]"
 			} else if o.Type == "git" {
-				icon = "🌿"
+				icon = "[BRANCH]"
 			} else if o.Type == "special" {
-				icon = "🔍"
+				icon = "[SEARCH]"
 			}
 			items = append(items, DropdownItem{
 				Primary:   o.Tag,

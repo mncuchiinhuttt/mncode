@@ -31,9 +31,9 @@ func getWorkflowPhases(s *agent.Session, isBrainrot bool) []WorkflowPhase {
 		statusStr := rec.Status
 		if isBrainrot {
 			if statusStr == "running" {
-				statusStr = "cooking fr fr 🍳"
+				statusStr = "cooking fr fr [COOK]"
 			} else if statusStr == "completed" {
-				statusStr = "bussin W 🔥"
+				statusStr = "bussin W [MAX]"
 			}
 		}
 		item := fmt.Sprintf("%s (%s)", rec.Name, statusStr)
@@ -57,25 +57,25 @@ func getWorkflowPhases(s *agent.Session, isBrainrot bool) []WorkflowPhase {
 		p2Status = "⏳ In queue (delulu)"
 	}
 	if len(subMap["scout"]) > 0 {
-		p1Status = "🟢 In Progress"
+		p1Status = "[ACTIVE] In Progress"
 		if isBrainrot {
-			p1Status = "🟢 Rizzing / Cooking fr fr 🍳"
+			p1Status = "[ACTIVE] Rizzing / Cooking fr fr [COOK]"
 		}
 	}
 	if len(subMap["plan"]) > 0 {
-		p2Status = "🟢 In Progress"
+		p2Status = "[ACTIVE] In Progress"
 		if isBrainrot {
-			p2Status = "🟢 Rizzing / Cooking fr fr 🍳"
+			p2Status = "[ACTIVE] Rizzing / Cooking fr fr [COOK]"
 		}
 	}
 
 	if isBrainrot {
 		return []WorkflowPhase{
-			{ID: 1, Name: "1. Snooping Codebase 🕵️‍♂️", Role: "Scouting entrypoints (caught in 4k)", Status: p1Status, Subagents: subMap["scout"], Todos: []string{"Scan entrypoint & AST layout", "Find sus code & tech debt"}, Artifact: "./plans/reports/scout-report.md"},
-			{ID: 2, Name: "2. Big Brain Plan 🧠", Role: "Cooking 200 IQ architecture", Status: p2Status, Subagents: subMap["plan"], Todos: []string{"Write based plan.md (< 80 lines)", "Breakdown grind phases no cap"}, Artifact: "./plans/plan.md"},
-			{ID: 3, Name: "3. 10x Sigma Coding 💻", Role: "Dropping bussin code (< 200 LOC)", Status: "⏳ In queue", Subagents: subMap["code"], Todos: []string{"Implement real code (no fakes)", "Keep files clean and compilable"}, Artifact: "./docs/project-changelog.md"},
-			{ID: 4, Name: "4. Hunting Cringe Bugs 🐛", Role: "Gaslighting tests into 100% W", Status: "⏳ In queue", Subagents: subMap["test"], Todos: []string{"Run tests with zero cheating", "Verify everything is valid fr"}, Artifact: "./plans/reports/test-results.md"},
-			{ID: 5, Name: "5. Final Rizz Audit ✨", Role: "Verifying pure based energy", Status: "⏳ In queue", Subagents: subMap["review"], Todos: []string{"Sign off on ultimate sigma code", "Push updates with maximum aura"}, Artifact: "./docs/development-roadmap.md"},
+			{ID: 1, Name: "1. Snooping Codebase [SCOUT]", Role: "Scouting entrypoints (caught in 4k)", Status: p1Status, Subagents: subMap["scout"], Todos: []string{"Scan entrypoint & AST layout", "Find sus code & tech debt"}, Artifact: "./plans/reports/scout-report.md"},
+			{ID: 2, Name: "2. Big Brain Plan [THINK]", Role: "Cooking 200 IQ architecture", Status: p2Status, Subagents: subMap["plan"], Todos: []string{"Write based plan.md (< 80 lines)", "Breakdown grind phases no cap"}, Artifact: "./plans/plan.md"},
+			{ID: 3, Name: "3. 10x Sigma Coding [CODE]", Role: "Dropping bussin code (< 200 LOC)", Status: "⏳ In queue", Subagents: subMap["code"], Todos: []string{"Implement real code (no fakes)", "Keep files clean and compilable"}, Artifact: "./docs/project-changelog.md"},
+			{ID: 4, Name: "4. Hunting Cringe Bugs [BUG]", Role: "Gaslighting tests into 100% W", Status: "⏳ In queue", Subagents: subMap["test"], Todos: []string{"Run tests with zero cheating", "Verify everything is valid fr"}, Artifact: "./plans/reports/test-results.md"},
+			{ID: 5, Name: "5. Final Rizz Audit [SHINE]", Role: "Verifying pure based energy", Status: "⏳ In queue", Subagents: subMap["review"], Todos: []string{"Sign off on ultimate sigma code", "Push updates with maximum aura"}, Artifact: "./docs/development-roadmap.md"},
 		}
 	}
 
@@ -126,13 +126,13 @@ func OpenUltraWorkflowMonitorView(s *agent.Session) {
 		var lines []string
 		lines = append(lines, "")
 
-		title := "⚡ Ultra Workflow & Subagents Dashboard"
+		title := "[ACTION] Ultra Workflow & Subagents Dashboard"
 		leftHeader := "Major Workflow Tasks / Phases"
 		rightHeader := "Phase Details & Subagents"
 		if isBrainrot {
-			title = "⚡ Ultra Sigma Workflow & Minions Dashboard 🧠"
-			leftHeader = "📜 Sigma Grind Tasks (no cap)"
-			rightHeader = "🍳 Minions Cooking & Rizz"
+			title = "[ACTION] Ultra Sigma Workflow & Minions Dashboard [THINK]"
+			leftHeader = "[TASKS] Sigma Grind Tasks (no cap)"
+			rightHeader = "[COOK] Minions Cooking & Rizz"
 		}
 
 		dashesCount := cardWidth - DisplayCellWidth(title) - 8
@@ -288,7 +288,7 @@ func formatSubagentsCount(list []string, isBrainrot bool) string {
 		return GrayText("0 active")
 	}
 	if isBrainrot {
-		return BoldGreen(fmt.Sprintf("🔥 %d cooking", len(list)))
+		return BoldGreen(fmt.Sprintf("[MAX] %d cooking", len(list)))
 	}
 	return BoldGreen(fmt.Sprintf("%d spawned", len(list)))
 }

@@ -53,26 +53,26 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 		}
 	}
 
-	customLabel := "💬 Other / Type custom answer..."
-	chatLabel := "💭 Chat more about this / give extra context..."
-	title := "⚡ Need your action · Agent Decision"
+	customLabel := "[CUSTOM] Other / Type custom answer..."
+	chatLabel := "[THINKING] Chat more about this / give extra context..."
+	title := "[ACTION] Need your action · Agent Decision"
 	footer := "  [↑/↓] Navigate · [1-9] Quick Select · [Enter] Choose · [Esc] Skip"
 
 	if params.IsMultiSelect {
-		title = "⚡ Need your action · Select Options (Multi-choice)"
+		title = "[ACTION] Need your action · Select Options (Multi-choice)"
 		footer = "  [Space/1-9] Toggle · [↑/↓] Navigate · [Enter] Confirm · [Esc] Skip"
 	}
 
 	if params.IsBrainrot {
 		if params.IsMultiSelect {
-			title = "🔥 Yo Sigma! Pick all vibes that apply 🧠"
+			title = "[MAX] Yo Sigma! Pick all vibes that apply [THINK]"
 			footer = "  [Space/1-9] Toggle vibe · [↑/↓] Navigate · [Enter] Lock in all · [Esc] Nah skip"
 		} else {
-			title = "🔥 Yo Sigma! Lock in & pick a vibe 🧠"
+			title = "[MAX] Yo Sigma! Lock in & pick a vibe [THINK]"
 			footer = "  [↑/↓] Navigate · [1-9] Quick Rizz · [Enter] Lock in · [Esc] Nah skip"
 		}
-		customLabel = "💬 Other / Cook custom rizz response..."
-		chatLabel = "💭 Yap more about this / drop extra lore..."
+		customLabel = "[CUSTOM] Other / Cook custom rizz response..."
+		chatLabel = "[THINKING] Yap more about this / drop extra lore..."
 	}
 
 	// Always append Write-in & Chat options
@@ -203,9 +203,9 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 			if currentIdx == len(options) {
 				submitMarker = BoldPastelPink("❯ ")
 			}
-			submitLabel := fmt.Sprintf("🟢 [Enter] Confirm & Submit (%d selected)", countSelected())
+			submitLabel := fmt.Sprintf("[ACTIVE] [Enter] Confirm & Submit (%d selected)", countSelected())
 			if params.IsBrainrot {
-				submitLabel = fmt.Sprintf("🔥 [Enter] Lock in selection (%d vibes picked)", countSelected())
+				submitLabel = fmt.Sprintf("[MAX] [Enter] Lock in selection (%d vibes picked)", countSelected())
 			}
 			if currentIdx == len(options) {
 				submitLabel = BoldGreen(submitLabel)
@@ -372,7 +372,7 @@ func PromptAgentQuestion(params AskQuestionParams) string {
 }
 
 func readCustomInput(promptLabel string) string {
-	fmt.Printf("\n%s %s\n%s ", BoldCyan("✏️"), Bold(promptLabel), BoldPastelPink("❯❯"))
+	fmt.Printf("\n%s %s\n%s ", BoldCyan(">"), Bold(promptLabel), BoldPastelPink("❯❯"))
 	reader := bufio.NewReader(os.Stdin)
 	line, _ := reader.ReadString('\n')
 	line = strings.TrimSpace(line)

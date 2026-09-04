@@ -21,6 +21,6 @@ func HandleTrajectoryExportCommand(parts []string, s *agent.Session) {
 		fmt.Printf("\n%s %v\n\n", BoldRed("[Export Error]"), err)
 		return
 	}
-	fmt.Printf("\n%s ShareGPT trajectory exported.\n", BoldGreen("✓"))
+	fmt.Printf("\n%s ShareGPT trajectory exported.\n", BoldGreen("[OK]"))
 	fmt.Printf(" %s %s\n\n", GrayText("File:"), Bold(path))
 }

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"mncode/pkg/artifacts"
 	"mncode/pkg/tools"
 	"sync"
 	"time"
@@ -48,7 +49,7 @@ func (r *SubagentRegistry) Register(id, name, role, prompt string) *SubagentReco
 	defer r.mu.Unlock()
 
 	rec := &SubagentRecord{
-		ID: id, Name: name, Role: role, Prompt: prompt, Status: "running",
+		ID: id, Name: name, Role: role, Prompt: artifacts.ScrubSecrets(prompt), Status: "running",
 		StartTime: time.Now(), ToolCalls: make([]string, 0), Logs: make([]string, 0),
 	}
 	r.records = append(r.records, rec)
@@ -77,7 +78,7 @@ func (r *SubagentRegistry) AddLog(id, logLine string) {
 	defer r.mu.Unlock()
 	for _, rec := range r.records {
 		if rec.ID == id {
-			rec.Logs = append(rec.Logs, logLine)
+			rec.Logs = append(rec.Logs, artifacts.ScrubSecrets(logLine))
 			break
 		}
 	}
@@ -104,7 +105,7 @@ func (r *SubagentRegistry) Complete(id, result string, isError bool) {
 		if rec.ID == id {
 			rec.EndTime = time.Now()
 			rec.Duration = rec.EndTime.Sub(rec.StartTime)
-			rec.Result = result
+			rec.Result = artifacts.ScrubSecrets(result)
 			if isError {
 				rec.Status = "error"
 			} else {

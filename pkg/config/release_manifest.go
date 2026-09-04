@@ -24,7 +24,7 @@ const (
 	maxReleaseAssetSize          = 256 << 20
 	maxReleaseRedirects          = 3
 	pinnedReleaseRootKeyID       = "mncode-release-2026"
-	pinnedReleaseRootKeyBase64   = "Ln/WP/P6PGgmNpwoO0waNBGllXtafV6YLels+cj7yMQ="
+	pinnedReleaseRootKeyBase64   = "gGqlI3Zg/KkfZEKIRcg7jPUQGep1YOfWHzTs855M8LA="
 )
 
 type cliReleaseAsset struct {

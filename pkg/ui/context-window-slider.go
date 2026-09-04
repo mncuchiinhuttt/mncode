@@ -71,7 +71,7 @@ func OpenInteractiveContextWindowSlider(s *agent.Session) {
 		trackSb.WriteString("   ")
 		for i := 0; i < trackLen; i++ {
 			if i == targetCenter {
-				trackSb.WriteString(BoldPastelPink("▲"))
+				trackSb.WriteString(BoldPastelPink("^"))
 			} else if i == 55 {
 				trackSb.WriteString(GrayText("┆"))
 			} else {

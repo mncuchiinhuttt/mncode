@@ -12,13 +12,13 @@ import (
 // HandleResolveCommand automatically detects and resolves git merge conflicts
 func HandleResolveCommand(parts []string, s *agent.Session) {
 	fmt.Println()
-	fmt.Println(BoldPastelPink("⚔️  Autonomous Git Merge Conflict Resolver"))
+	fmt.Println(BoldPastelPink("[DEBATE]  Autonomous Git Merge Conflict Resolver"))
 	fmt.Println(GrayText(strings.Repeat("─", 65)))
 	fmt.Println()
 
 	conflictedFiles := findConflictedFiles(s.WorkspaceDir)
 	if len(conflictedFiles) == 0 {
-		fmt.Printf("  %s %s\n\n", BoldGreen("✓"), Bold("No git merge conflict markers found in workspace!"))
+		fmt.Printf("  %s %s\n\n", BoldGreen("[OK]"), Bold("No git merge conflict markers found in workspace!"))
 		return
 	}
 
@@ -32,30 +32,30 @@ func HandleResolveCommand(parts []string, s *agent.Session) {
 	ctx := context.Background()
 	for i, f := range conflictedFiles {
 		rel, _ := filepath.Rel(s.WorkspaceDir, f)
-		fmt.Printf("  %s Resolving [%d/%d] %s...\n", BoldCyan("🔧"), i+1, len(conflictedFiles), Bold(rel))
+		fmt.Printf("  %s Resolving [%d/%d] %s...\n", BoldCyan("[FIX]"), i+1, len(conflictedFiles), Bold(rel))
 
 		content, err := os.ReadFile(f)
 		if err != nil {
-			fmt.Printf("    %s Failed to read file: %v\n", BoldRed("✗"), err)
+			fmt.Printf("    %s Failed to read file: %v\n", BoldRed("[FAIL]"), err)
 			continue
 		}
 
 		resolvePrompt := fmt.Sprintf("Resolve all git merge conflict markers (<<<<<<<, =======, >>>>>>>) in file `%s`.\nHere is the full conflicted file content:\n```\n%s\n```\nAnalyze the intent of both branches, merge the logic cleanly without dropping essential changes, remove all conflict markers, and save the resolved file.", rel, string(content))
 
 		if rErr := s.ProcessUserInput(ctx, resolvePrompt); rErr != nil {
-			fmt.Printf("    %s Resolution error: %v\n", BoldRed("✗"), rErr)
+			fmt.Printf("    %s Resolution error: %v\n", BoldRed("[FAIL]"), rErr)
 		} else {
 			// Check if markers still remain
 			newContent, _ := os.ReadFile(f)
 			if strings.Contains(string(newContent), "<<<<<<<") {
 				fmt.Printf("    %s Markers still present in %s. Please inspect manually.\n", BoldYellow("!"), rel)
 			} else {
-				fmt.Printf("    %s %s resolved successfully!\n", BoldGreen("✓"), Bold(rel))
+				fmt.Printf("    %s %s resolved successfully!\n", BoldGreen("[OK]"), Bold(rel))
 			}
 		}
 	}
 	fmt.Println()
-	fmt.Printf("  %s %s\n\n", BoldGreen("✓ CONFLICT RESOLUTION COMPLETE"), GrayText("Run '/diff' or '/test' to verify changes before committing."))
+	fmt.Printf("  %s %s\n\n", BoldGreen("[OK] CONFLICT RESOLUTION COMPLETE"), GrayText("Run '/diff' or '/test' to verify changes before committing."))
 }
 
 func findConflictedFiles(wsDir string) []string {

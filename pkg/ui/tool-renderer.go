@@ -191,7 +191,7 @@ func RenderToolResultFormatted(name string, result string, isError bool) string 
 func formatDiffBlock(diff string, t Theme, fullLineBg bool) string {
 	lines := strings.Split(diff, "\n")
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("  %s %s\n", Colorize(AttrBold+t.Primary, "▼"), Colorize(AttrBold+t.Text, "Code Diff & Edits:")))
+	sb.WriteString(fmt.Sprintf("  %s %s\n", Colorize(AttrBold+t.Primary, "v"), Colorize(AttrBold+t.Text, "Code Diff & Edits:")))
 
 	maxLines := 15
 	shownCount := 0

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"mncode/pkg/artifacts"
 )
 
 // ViewTool reads files with line numbering and range slicing
@@ -48,15 +50,32 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return "", fmt.Errorf("AbsolutePath is required")
 	}
 
+	if artifacts.IsVirtualURI(path) {
+		content, err := artifacts.ReadVirtualURI(path, v.BaseDir)
+		return artifacts.ScrubSecrets(content), err
+	}
+
 	resolvedPath, err := resolveWorkspacePath(v.BaseDir, path, false)
 	if err != nil {
 		return "", err
+	}
+	info, err := os.Stat(resolvedPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to stat file %s: %w", resolvedPath, err)
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("failed to view %s: not a regular file", resolvedPath)
 	}
 	path = resolvedPath
 
 	file, err := os.Open(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to open file %s: %w", path, err)
+	}
+	openedInfo, statErr := file.Stat()
+	if statErr != nil || !openedInfo.Mode().IsRegular() || !os.SameFile(info, openedInfo) {
+		_ = file.Close()
+		return "", fmt.Errorf("file changed during view")
 	}
 	defer file.Close()
 
@@ -88,5 +107,5 @@ func (v *ViewTool) Execute(ctx context.Context, args map[string]interface{}) (st
 		return fmt.Sprintf("File %s is empty or requested range [%d, %d] contains no lines.", path, startLine, endLine), nil
 	}
 
-	return fmt.Sprintf("File Path: %s\nTotal Lines: %d\n\n%s", path, lineNum-1, strings.Join(lines, "\n")), nil
+	return artifacts.ScrubSecrets(fmt.Sprintf("File Path: %s\nTotal Lines: %d\n\n%s", path, lineNum-1, strings.Join(lines, "\n"))), nil
 }

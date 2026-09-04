@@ -12,7 +12,7 @@ import (
 // HandleDoctorCommand diagnoses workspace health, toolchains, and rule compliance
 func HandleDoctorCommand(parts []string, s *agent.Session) {
 	fmt.Println()
-	fmt.Println(BoldPastelPink("🩺 mncode Workspace Doctor & Health Audit"))
+	fmt.Println(BoldPastelPink("[HEALTH] mncode Workspace Doctor & Health Audit"))
 	fmt.Println(GrayText(strings.Repeat("─", 65)))
 	fmt.Println()
 
@@ -27,7 +27,7 @@ func HandleDoctorCommand(parts []string, s *agent.Session) {
 			uncommitted = 0
 		}
 		fmt.Printf("  %s %-20s %s (%d uncommitted changes)\n",
-			BoldGreen("✓"), Bold("Git Repository:"), BoldGreen("Healthy"), uncommitted)
+			BoldGreen("[OK]"), Bold("Git Repository:"), BoldGreen("Healthy"), uncommitted)
 	} else {
 		score -= 15
 		fmt.Printf("  %s %-20s %s\n", BoldYellow("!"), Bold("Git Repository:"), BoldYellow("Not a git repository"))
@@ -49,7 +49,7 @@ func HandleDoctorCommand(parts []string, s *agent.Session) {
 	}
 	if len(toolchains) > 0 {
 		fmt.Printf("  %s %-20s %s\n",
-			BoldGreen("✓"), Bold("Runtimes Detected:"), BoldCyan(strings.Join(toolchains, ", ")))
+			BoldGreen("[OK]"), Bold("Runtimes Detected:"), BoldCyan(strings.Join(toolchains, ", ")))
 	} else {
 		fmt.Printf("  %s %-20s %s\n",
 			BoldYellow("!"), Bold("Runtimes:"), GrayText("No standard compiler found in PATH"))
@@ -61,13 +61,13 @@ func HandleDoctorCommand(parts []string, s *agent.Session) {
 		hasEnv = true
 	}
 	if _, err := os.Stat(filepath.Join(s.WorkspaceDir, ".gitignore")); err == nil {
-		fmt.Printf("  %s %-20s %s\n", BoldGreen("✓"), Bold(".gitignore:"), BoldGreen("Present"))
+		fmt.Printf("  %s %-20s %s\n", BoldGreen("[OK]"), Bold(".gitignore:"), BoldGreen("Present"))
 	} else {
 		score -= 10
 		fmt.Printf("  %s %-20s %s\n", BoldYellow("!"), Bold(".gitignore:"), BoldYellow("Missing (risk of secret leak)"))
 	}
 	if hasEnv {
-		fmt.Printf("  %s %-20s %s\n", BoldGreen("✓"), Bold(".env Config:"), BoldCyan("Configured"))
+		fmt.Printf("  %s %-20s %s\n", BoldGreen("[OK]"), Bold(".env Config:"), BoldCyan("Configured"))
 	}
 
 	// 4. File Size Rule Check (under 200 lines)
@@ -95,7 +95,7 @@ func HandleDoctorCommand(parts []string, s *agent.Session) {
 
 	if len(oversizedFiles) == 0 {
 		fmt.Printf("  %s %-20s %s\n",
-			BoldGreen("✓"), Bold("Code Modularity:"), BoldGreen("100% files under optimal size limits"))
+			BoldGreen("[OK]"), Bold("Code Modularity:"), BoldGreen("100% files under optimal size limits"))
 	} else {
 		score -= len(oversizedFiles) * 3
 		if score < 50 {
@@ -113,10 +113,10 @@ func HandleDoctorCommand(parts []string, s *agent.Session) {
 	// 5. Active LLM Provider
 	if s.Provider != nil {
 		fmt.Printf("  %s %-20s %s (%s)\n",
-			BoldGreen("✓"), Bold("AI Engine:"), BoldGreen("Ready"), s.Config.Model)
+			BoldGreen("[OK]"), Bold("AI Engine:"), BoldGreen("Ready"), s.Config.Model)
 	} else {
 		score -= 20
-		fmt.Printf("  %s %-20s %s\n", BoldRed("✗"), Bold("AI Engine:"), BoldRed("No provider configured"))
+		fmt.Printf("  %s %-20s %s\n", BoldRed("[FAIL]"), Bold("AI Engine:"), BoldRed("No provider configured"))
 	}
 
 	fmt.Println()

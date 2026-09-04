@@ -66,7 +66,7 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 		Label: BoldCyan("Enable Brainrot Mode? (Gen Z / Sigma 10x Developer Persona + Harmless Troll Pranks)"),
 		Items: []string{
 			"No  - Standard Professional Dev (Clean & Serious)",
-			"Yes - Gen Z / Max Rizz / Zero Cap fr fr 💀 (Includes harmless troll pranks)",
+			"Yes - Gen Z / Max Rizz / Zero Cap fr fr [SIGMA] (Includes harmless troll pranks)",
 		},
 		HideSelected: true,
 	}
@@ -75,11 +75,35 @@ func RunOnboardingIfNeeded(s *agent.Session) {
 	if err == nil && bIdx == 1 {
 		s.Config.SetSetting("brainrot_mode", "true")
 		s.Config.SetSetting("troll_mode", "true")
-		fmt.Printf("   %s %s\n", BoldGreen("✓"), BoldPastelPink("Brainrot & Troll Mode enabled! (Zero cap fr fr 💀)"))
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), BoldPastelPink("Brainrot & Troll Mode enabled! (Zero cap fr fr [SIGMA])"))
 	} else {
 		s.Config.SetSetting("brainrot_mode", "false")
 		s.Config.SetSetting("troll_mode", "false")
-		fmt.Printf("   %s %s\n", BoldGreen("✓"), GrayText("Standard Professional Dev mode set."))
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), GrayText("Standard Professional Dev mode set."))
+	}
+
+	// Shared Workspace Memory & Self-Evolving Reflection Onboarding
+	fmt.Println()
+	fmt.Println(Bold("Shared Workspace Memory & Self-Evolving Reflection"))
+	fmt.Println(GrayText("   Enables agents to learn from test/build mistakes, remember repository conventions,\n   and share evolving insights across all chat sessions in the same workspace (Hermes style)."))
+	memoryPrompt := promptui.Select{
+		Label: BoldCyan("Enable Shared Workspace Memory & Self-Reflection?"),
+		Items: []string{
+			"Yes - Enable Shared Workspace Memory & Self-Reflective Learning (Recommended)",
+			"No  - Ephemeral Sessions Only (Do not save or share lessons across chats)",
+		},
+		HideSelected: true,
+	}
+
+	mIdx, _, mErr := memoryPrompt.Run()
+	if mErr == nil && mIdx == 0 {
+		s.Config.SetSetting("shared_memory_enabled", "true")
+		s.Config.SetSetting("hermes_reflection_enabled", "true")
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), Bold("Shared Workspace Memory & Hermes Reflection active."))
+	} else {
+		s.Config.SetSetting("shared_memory_enabled", "false")
+		s.Config.SetSetting("hermes_reflection_enabled", "false")
+		fmt.Printf("   %s %s\n", BoldGreen("[OK]"), GrayText("Shared memory disabled (Ephemeral mode)."))
 	}
 
 	s.Config.SetSetting("onboarding_completed", "true")

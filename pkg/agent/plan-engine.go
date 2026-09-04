@@ -11,6 +11,9 @@ import (
 
 // ProcessPlanGeneration executes the autonomous plan creation pipeline in ./plans/
 func (s *Session) ProcessPlanGeneration(ctx context.Context, task string) (string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if err := s.EnsureProvider(); err != nil {
 		return "", err
 	}
@@ -44,6 +47,7 @@ Please research the codebase and create a production-grade multi-phase implement
 		Role:    provider.RoleUser,
 		Content: planPrompt,
 	})
+	s.recordEvent("prompt", 0, planPrompt)
 
 	maxTurns := 12
 	completed := false
@@ -61,8 +65,10 @@ Please research the codebase and create a production-grade multi-phase implement
 			ThinkingBudget: s.Config.ThinkingBudget,
 			Temperature:    0.2,
 		}
+		s.recordEvent("provider_request", turn+1, map[string]interface{}{"model": req.Model, "message_count": len(req.Messages), "tool_count": len(req.Tools)})
 
 		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
+			s.recordStreamEvent(turn+1, ev)
 			if s.UI == nil {
 				return nil
 			}
@@ -80,11 +86,13 @@ Please research the codebase and create a production-grade multi-phase implement
 		})
 
 		if err != nil {
+			s.recordEvent("error", turn+1, err.Error())
 			if s.UI != nil {
 				s.UI.OnError(err)
 			}
 			return planDir, err
 		}
+		s.recordEvent("provider_response", turn+1, map[string]interface{}{"content": resp.Content, "thinking": resp.Thinking, "tool_calls": resp.ToolCalls})
 		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
@@ -106,6 +114,7 @@ Please research the codebase and create a production-grade multi-phase implement
 		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			s.recordEvent("turn_end", turn+1, map[string]interface{}{"completed": true})
 			completed = true
 			break
 		}
@@ -121,6 +130,7 @@ Please research the codebase and create a production-grade multi-phase implement
 			ToolResults: results,
 		}
 		appendHistory(s, toolMsg)
+		s.recordEvent("tool_result", turn+1, results)
 	}
 
 	if !completed {

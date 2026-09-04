@@ -38,7 +38,7 @@ func HandleSkillCommand(parts []string, s *agent.Session) {
 
 // PrintCuratedMarketplace lists the curated marketplace catalog with install hints.
 func PrintCuratedMarketplace() {
-	fmt.Printf("\n%s Curated skills (install with %s):\n\n", BoldCyan("🛒 [Marketplace]"), Bold("/skills install <slug>"))
+	fmt.Printf("\n%s Curated skills (install with %s):\n\n", BoldCyan("[MARKET] [Marketplace]"), Bold("/skills install <slug>"))
 	market, err := skills.GetMarketplace()
 	if err != nil {
 		fmt.Printf("  %s Could not load the marketplace: %v\n\n", BoldRed("[Error]"), err)
@@ -61,7 +61,7 @@ func RemoveInstalledSkill(s *agent.Session, slug string) {
 		fmt.Printf("\n%s %v\n\n", BoldRed("[Error]"), err)
 		return
 	}
-	fmt.Printf("\n%s Removed '%s'.\n\n", BoldGreen("✓"), Bold(slug))
+	fmt.Printf("\n%s Removed '%s'.\n\n", BoldGreen("[OK]"), Bold(slug))
 	if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
 		s.Catalog = reloaded
 	}
@@ -71,14 +71,14 @@ func RemoveInstalledSkill(s *agent.Session, slug string) {
 // into ~/.mncode/skills; anything else falls back to the skills.sh CLI.
 func InstallSkillFromSkillsSh(s *agent.Session, skillPackage string) {
 	if installed, err := skills.InstallMarketplaceSkill(skillPackage); err == nil {
-		fmt.Printf("\n%s Installed curated skill '%s' (%s)\n", BoldCyan("📦 [Skill Installer]"), Bold(installed.Name), installed.Category)
-		fmt.Printf("  %s Saved to ~/.mncode/skills/%s — shared with the Desktop app.\n\n", BoldGreen("✓"), installed.Slug)
+		fmt.Printf("\n%s Installed curated skill '%s' (%s)\n", BoldCyan("[PACKAGE] [Skill Installer]"), Bold(installed.Name), installed.Category)
+		fmt.Printf("  %s Saved to ~/.mncode/skills/%s — shared with the Desktop app.\n\n", BoldGreen("[OK]"), installed.Slug)
 		if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
 			s.Catalog = reloaded
 		}
 		return
 	}
-	fmt.Printf("\n%s Installing skill '%s' from skills.sh repository...\n", BoldCyan("📦 [Skill Installer]"), Bold(skillPackage))
+	fmt.Printf("\n%s Installing skill '%s' from skills.sh repository...\n", BoldCyan("[PACKAGE] [Skill Installer]"), Bold(skillPackage))
 	cmd := exec.Command("npx", "-y", "skills", "add", skillPackage)
 	cmd.Dir = s.WorkspaceDir
 	out, err := cmd.CombinedOutput()
@@ -86,7 +86,7 @@ func InstallSkillFromSkillsSh(s *agent.Session, skillPackage string) {
 		fmt.Printf("  %s Failed to install via skills CLI: %v\n  %s\n\n", BoldRed("[Error]"), err, string(out))
 		return
 	}
-	fmt.Printf("  %s %s\n\n", BoldGreen("✓"), Bold(fmt.Sprintf("Skill '%s' installed successfully!", skillPackage)))
+	fmt.Printf("  %s %s\n\n", BoldGreen("[OK]"), Bold(fmt.Sprintf("Skill '%s' installed successfully!", skillPackage)))
 	// Reload catalog
 	if reloaded, rErr := skills.LoadCatalog(s.WorkspaceDir); rErr == nil {
 		s.Catalog = reloaded

@@ -92,7 +92,7 @@ func PrintHeaderCard(s *agent.Session) {
 			"Type /mcp to connect and inspect Model Context Protocol external servers.",
 		}
 		selectedTip := tips[time.Now().Unix()%int64(len(tips))]
-		printBoxLine(fmt.Sprintf("%s %s", BoldYellow("💡 Tip:"), GrayText(selectedTip)), cardWidth)
+		printBoxLine(fmt.Sprintf("%s %s", BoldYellow("[INFO] Tip:"), GrayText(selectedTip)), cardWidth)
 	} else {
 		printBoxLine(GrayText("Type '/' for instant slash menu autocomplete, or enter your message."), cardWidth)
 	}

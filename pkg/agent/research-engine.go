@@ -13,6 +13,9 @@ import (
 
 // ProcessDeepResearch executes an autonomous multi-turn deep research or literature review pipeline
 func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitReview bool) (string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if err := s.EnsureProvider(); err != nil {
 		return "", err
 	}
@@ -41,6 +44,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 		Role:    provider.RoleUser,
 		Content: researchPrompt,
 	})
+	s.recordEvent("prompt", 0, researchPrompt)
 
 	maxTurns := 18
 	completed := false
@@ -58,8 +62,10 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			ThinkingBudget: s.Config.ThinkingBudget,
 			Temperature:    0.3,
 		}
+		s.recordEvent("provider_request", turn+1, map[string]interface{}{"model": req.Model, "message_count": len(req.Messages), "tool_count": len(req.Tools)})
 
 		resp, err := s.streamProvider(ctx, req, func(ev provider.StreamEvent) error {
+			s.recordStreamEvent(turn+1, ev)
 			if s.UI == nil {
 				return nil
 			}
@@ -75,13 +81,14 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			}
 			return nil
 		})
-
 		if err != nil {
+			s.recordEvent("error", turn+1, err.Error())
 			if s.UI != nil {
 				s.UI.OnError(err)
 			}
 			return targetFilePath, err
 		}
+		s.recordEvent("provider_response", turn+1, map[string]interface{}{"content": resp.Content, "thinking": resp.Thinking, "tool_calls": resp.ToolCalls})
 		notifyUsage(s.UI, resp.InputTokens, resp.OutputTokens, resp.ThinkingTokens)
 
 		if s.Tracker != nil {
@@ -103,6 +110,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 		appendHistory(s, assistantMsg)
 
 		if len(resp.ToolCalls) == 0 {
+			s.recordEvent("turn_end", turn+1, map[string]interface{}{"completed": true})
 			completed = true
 			break
 		}
@@ -118,6 +126,7 @@ func (s *Session) ProcessDeepResearch(ctx context.Context, topic string, isLitRe
 			ToolResults: results,
 		}
 		appendHistory(s, toolMsg)
+		s.recordEvent("tool_result", turn+1, results)
 	}
 
 	if !completed {

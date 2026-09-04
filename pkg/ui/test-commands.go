@@ -26,7 +26,7 @@ func HandleTestCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	fmt.Printf("\n%s Running test suite (%s %s)...\n\n", BoldCyan("🧪 [Test Runner]"), runner, strings.Join(args, " "))
+	fmt.Printf("\n%s Running test suite (%s %s)...\n\n", BoldCyan("[TEST] [Test Runner]"), runner, strings.Join(args, " "))
 
 	start := time.Now()
 	cmd := exec.Command(runner, args...)
@@ -37,14 +37,14 @@ func HandleTestCommand(parts []string, s *agent.Session) {
 	rawOut := string(out)
 	if err == nil {
 		fmt.Printf("  %s %s (%s)\n\n",
-			BoldGreen("✓ 100% Tests Passed!"),
+			BoldGreen("[OK] 100% Tests Passed!"),
 			Bold("All assertions green"),
 			GrayText(fmt.Sprintf("%.2fs", elapsed.Seconds())))
 		return
 	}
 
 	fmt.Printf("  %s %s (%s)\n",
-		BoldRed("✗ Tests Failed!"),
+		BoldRed("[FAIL] Tests Failed!"),
 		Bold("Failures detected in suite"),
 		GrayText(fmt.Sprintf("%.2fs", elapsed.Seconds())))
 
@@ -65,7 +65,7 @@ func HandleTestCommand(parts []string, s *agent.Session) {
 	}
 
 	// Auto-Heal Loop
-	fmt.Printf("%s %s\n\n", BoldPastelPink("🩺 [Auto-Heal]"), Bold("Deploying autonomous fix loop..."))
+	fmt.Printf("%s %s\n\n", BoldPastelPink("[HEALTH] [Auto-Heal]"), Bold("Deploying autonomous fix loop..."))
 	ctx := context.Background()
 	healPrompt := fmt.Sprintf("Fix the following failing tests in the workspace:\n```\n%s\n```\nAnalyze the root cause, modify the code files, and make sure all tests pass.", rawOut)
 
@@ -75,11 +75,11 @@ func HandleTestCommand(parts []string, s *agent.Session) {
 	}
 
 	// Re-run test to verify
-	fmt.Printf("\n%s Verifying auto-heal fix...\n", BoldCyan("🧪 [Re-Testing]"))
+	fmt.Printf("\n%s Verifying auto-heal fix...\n", BoldCyan("[TEST] [Re-Testing]"))
 	reCmd := exec.Command(runner, args...)
 	reCmd.Dir = s.WorkspaceDir
 	if reOut, reErr := reCmd.CombinedOutput(); reErr == nil {
-		fmt.Printf("  %s %s\n\n", BoldGreen("✓ AUTO-HEAL SUCCESSFUL!"), Bold("All tests are now passing!"))
+		fmt.Printf("  %s %s\n\n", BoldGreen("[OK] AUTO-HEAL SUCCESSFUL!"), Bold("All tests are now passing!"))
 	} else {
 		fmt.Printf("  %s %s\n\n", BoldYellow("! Tests still have errors:"), strings.TrimSpace(string(reOut)))
 	}

@@ -59,7 +59,7 @@ func resolveWorkspacePath(baseDir, rawPath string, allowMissing bool) (string, e
 	}
 
 	if !allowMissing {
-		return "", fmt.Errorf("path does not exist: %s", candidate)
+		return "", fmt.Errorf("path does not exist: %s: %w", candidate, os.ErrNotExist)
 	}
 
 	return resolveMissingWorkspacePath(root, candidate)

@@ -136,9 +136,9 @@ func buildPromptLines(s *agent.Session, input []rune, cursorPos int, selectedIdx
 		for _, sub := range s.Subagents.List() {
 			circle := BoldCyan("◯")
 			if sub.Status == "completed" {
-				circle = BoldGreen("✓")
+				circle = BoldGreen("[OK]")
 			} else if sub.Status == "error" {
-				circle = BoldRed("✗")
+				circle = BoldRed("[FAIL]")
 			}
 
 			elapsed := time.Since(sub.StartTime)

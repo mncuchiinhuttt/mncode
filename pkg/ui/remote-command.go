@@ -39,14 +39,14 @@ func HandleRemoteCommand(parts []string, s *agent.Session) {
 		rm.OnSteer = func(prompt string) {
 			if s.IsExecuting() {
 				s.EnqueueSteer(prompt)
-				fmt.Printf("\n%s %s\n", BoldYellow("⚡ [Remote Steer Received]:"), prompt)
+				fmt.Printf("\n%s %s\n", BoldYellow("[ACTION] [Remote Steer Received]:"), prompt)
 			} else {
 				InjectRemotePrompt(prompt)
 			}
 		}
 
 		rm.OnCancel = func() {
-			fmt.Printf("\n%s Remote cancel signal received.\n", BoldRed("🛑 [Remote Cancel]"))
+			fmt.Printf("\n%s Remote cancel signal received.\n", BoldRed("[STOP] [Remote Cancel]"))
 		}
 
 		s.Remote = rm
@@ -69,7 +69,7 @@ func displayRemoteCard(sess *remote.RemoteSession) {
 		termWidth = urlWidth + 6
 	}
 
-	headerTitle := " 📱 mncode Remote Companion "
+	headerTitle := " [REMOTE] mncode Remote Companion "
 	titleW := DisplayCellWidth(headerTitle)
 	headerDashes := termWidth - titleW - 6
 	if headerDashes < 2 {
@@ -94,7 +94,7 @@ func displayRemoteCard(sess *remote.RemoteSession) {
 
 	printBoxLine("")
 	printBoxLine(fmt.Sprintf("Session ID:   %s", BoldPastelPink(sess.SessionID)))
-	printBoxLine(fmt.Sprintf("Status:       %s", BoldGreen("🟢 Live Connected & Ready for Mobile")))
+	printBoxLine(fmt.Sprintf("Status:       %s", BoldGreen("[ACTIVE] Live Connected & Ready for Mobile")))
 	printBoxLine(fmt.Sprintf("Companion:    %s", Bold(sess.PairingURL)))
 	printBoxLine("")
 
@@ -128,7 +128,7 @@ func displayRemoteCard(sess *remote.RemoteSession) {
 	}
 
 	printBoxLine("")
-	printBoxLine("💡 Tip: Type steer directives or tap choices on mobile screen.")
+	printBoxLine("[INFO] Tip: Type steer directives or tap choices on mobile screen.")
 	printBoxLine("")
 
 	// 3. Bottom border

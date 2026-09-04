@@ -54,9 +54,9 @@ func HandleShareCommand(parts []string, s *agent.Session) {
 	for i, m := range s.History {
 		switch m.Role {
 		case "user":
-			sb.WriteString(fmt.Sprintf("### 👤 User (Turn %d)\n\n%s\n\n", (i/2)+1, m.Content))
+			sb.WriteString(fmt.Sprintf("### [USER] User (Turn %d)\n\n%s\n\n", (i/2)+1, m.Content))
 		case "assistant":
-			sb.WriteString("### 🤖 mncode Assistant\n\n")
+			sb.WriteString("### [AGENT] mncode Assistant\n\n")
 			if m.Thinking != "" {
 				sb.WriteString(fmt.Sprintf("<details><summary><b>Thinking Process</b></summary>\n\n%s\n\n</details>\n\n", m.Thinking))
 			}
@@ -113,13 +113,13 @@ func HandleShareCommand(parts []string, s *agent.Session) {
 	fmt.Println()
 	if shareResp.Success && shareResp.ShareURL != "" {
 		_ = CopyToClipboard(shareResp.ShareURL)
-		fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Session Published to mncode Web!"))
+		fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Session Published to mncode Web!"))
 		fmt.Printf("    %s %s\n", BoldCyan("Web URL:   "), BoldGreen(shareResp.ShareURL))
 		fmt.Printf("    %s %s\n", GrayText("Local File:"), GrayText(shareFile))
 		fmt.Printf("    %s %s\n\n", BoldYellow("Clipboard: "), Bold("Public Web Link copied to clipboard!"))
 	} else {
 		_ = CopyToClipboard(content)
-		fmt.Printf("  %s %s\n", BoldGreen("✓"), Bold("Session Exported Locally!"))
+		fmt.Printf("  %s %s\n", BoldGreen("[OK]"), Bold("Session Exported Locally!"))
 		fmt.Printf("    %s %s\n", GrayText("Local File:"), GrayText(shareFile))
 		fmt.Printf("    %s %s\n\n", BoldYellow("Clipboard: "), Bold("Full Markdown transcript copied to clipboard!"))
 	}

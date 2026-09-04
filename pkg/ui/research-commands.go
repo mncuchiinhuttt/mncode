@@ -30,7 +30,7 @@ func HandleResearchCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	showResearchBanner("🔬 Autonomous Deep Research Pipeline", topic, "Hypothesize ➔ Web Search ➔ Deep Digest ➔ Synthesize Report")
+	showResearchBanner("[RESEARCH] Autonomous Deep Research Pipeline", topic, "Hypothesize -> Web Search -> Deep Digest -> Synthesize Report")
 
 	startTime := time.Now()
 	ctx := context.Background()
@@ -62,7 +62,7 @@ func HandleLitRevCommand(parts []string, s *agent.Session) {
 		return
 	}
 
-	showResearchBanner("📚 Academic Literature Review Pipeline", topic, "Taxonomy ➔ Citation Graph ➔ Comparison Matrix ➔ Open Gaps")
+	showResearchBanner("[PAPERS] Academic Literature Review Pipeline", topic, "Taxonomy -> Citation Graph -> Comparison Matrix -> Open Gaps")
 
 	startTime := time.Now()
 	ctx := context.Background()
@@ -92,8 +92,8 @@ func showResearchBanner(title, topic, pipeline string) {
 	fmt.Println()
 	fmt.Println(topBorder)
 	printMCPRow("", cardWidth)
-	printMCPRow(fmt.Sprintf("  🎯 %s %s", BoldCyan("Topic:   "), Bold(truncateText(topic, cardWidth-16))), cardWidth)
-	printMCPRow(fmt.Sprintf("  🔬 %s %s", GrayText("Pipeline:"), GrayText(truncateText(pipeline, cardWidth-16))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [STEER] %s %s", BoldCyan("Topic:   "), Bold(truncateText(topic, cardWidth-16))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [RESEARCH] %s %s", GrayText("Pipeline:"), GrayText(truncateText(pipeline, cardWidth-16))), cardWidth)
 	printMCPRow("", cardWidth)
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()
@@ -120,14 +120,14 @@ func showResearchSummaryCard(title, filePath string, elapsed time.Duration) {
 
 	topBorder := fmt.Sprintf("%s %s %s",
 		BoldPastelPink("╭── ["),
-		BoldGreen(fmt.Sprintf("✓ %s", title)),
+		BoldGreen(fmt.Sprintf("[OK] %s", title)),
 		BoldPastelPink("] "+strings.Repeat("─", cardWidth-visualLen(title)-12)+"╮"))
 
 	fmt.Println()
 	fmt.Println(topBorder)
 	printMCPRow("", cardWidth)
-	printMCPRow(fmt.Sprintf("  📄 %s %s (%d lines · %.1f KB)", BoldCyan("Report:  "), Bold(relPath), linesCount, fileSizeKB), cardWidth)
-	printMCPRow(fmt.Sprintf("  ⏱️  %s %s", GrayText("Duration:"), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
+	printMCPRow(fmt.Sprintf("  [FILE] %s %s (%d lines · %.1f KB)", BoldCyan("Report:  "), Bold(relPath), linesCount, fileSizeKB), cardWidth)
+	printMCPRow(fmt.Sprintf("  [TIME]  %s %s", GrayText("Duration:"), GrayText(fmt.Sprintf("%.1fs", elapsed.Seconds()))), cardWidth)
 	printMCPRow("", cardWidth)
 	fmt.Println(GrayText("╰" + strings.Repeat("─", cardWidth-2) + "╯"))
 	fmt.Println()
