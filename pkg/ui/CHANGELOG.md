@@ -1,3 +1,16 @@
+## Release v0.1.6-beta (2026-09-04)
+
+### New Features
+- feat(drift): add Architectural Drift Sentinel for AST and dependency boundary baselines
+- feat(sandbox): add bounded allowlisted fixture execution in temporary workspace copies
+- feat(index): add persisted BM25 and AST-aware local code search
+- feat(arena): add independent security, correctness, and maintainability review lanes
+- feat(replay): add scrubbed lifecycle recording and conversation forking
+- feat(spec): add deterministic command, file, and invariant contract matrices
+
+### Security & correctness
+- Harden virtual URI boundaries, workspace scanning, file preview, credential redaction, and supervised process lifecycle state
+
 ## Release v0.1.5-beta (2026-08-29)
 
 ### 🚀 New Features

@@ -1,5 +1,7 @@
 ## Unreleased
 
+## Release v0.1.6-beta (2026-09-04)
+
 ### New Features
 - **Architectural Drift Sentinel (`/drift`)**: Capture and compare AST/import/export baselines, with optional layer and cycle policy checks.
 - **Sandbox Fixture Harness (`/sandbox`)**: Run allowlisted argv fixtures in bounded temporary workspace copies; `/shadow` now returns a rename notice.
@@ -7,6 +9,7 @@
 - **Red-Team Arena (`/arena`)**: Review bounded git diffs with independent security, correctness, and maintainability adversaries; `/debate` remains unchanged.
 - **Flight Recorder (`/replay`, `/fork`)**: Explicitly record scrubbed agent lifecycle traces and fork conversation history without replaying tool effects.
 - **Spec Contracts (`/spec`)**: Store versioned deterministic contracts and run bounded command/file/invariant matrices without modifying source.
+
 ### Security & correctness
 - Fixed workspace-relative missing-path error wrapping so Desktop first-use bindings can initialize empty stores deterministically.
 - Added role metadata to Arena findings and hardened quoted/generic credential redaction before reviewer prompts.
@@ -14,6 +17,8 @@
 - Added an opt-out workspace configuration loader for Desktop so repository `.env` files cannot redirect provider traffic.
 - Fixed Service Hub process state races and send-after-close log channel panics under the race detector.
 
+### Changed
+- Bumped the CLI release to v0.1.6-beta.
 
 ## Release v0.1.5-beta (2026-08-29)
 

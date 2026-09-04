@@ -180,6 +180,12 @@ Configure keys in the CLI with `/search setup` or in Desktop → Settings → Ge
 
 ## 🧠 Advanced Agent Tools
 
+- `/drift`: compare AST and dependency boundaries against a stored baseline.
+- `/sandbox`: run allowlisted fixtures in bounded temporary workspace copies.
+- `/index`: query a persisted BM25 and AST-aware local code index.
+- `/arena`: run bounded security, correctness, and maintainability reviews against a diff.
+- `/replay` and `/fork`: record scrubbed lifecycle traces and branch conversation history without replaying tool effects.
+- `/spec`: define deterministic command, file, and invariant contracts.
 - `lsp_tool`: semantic Go/TypeScript definition, references, hover, diagnostics, and project-wide rename through installed language servers.
 - `debugger`: persistent Delve DAP sessions for breakpoints, stack traces, scopes, variables, and expression evaluation.
 - `persistent_kernel`: bounded persistent Python or Node namespaces for calculations and data analysis.

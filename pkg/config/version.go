@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	CurrentVersion = "v0.1.5-beta"
+	CurrentVersion = "v0.1.6-beta"
 	GithubRepo     = "mncuchiinhuttt/mncode"
 )
 
