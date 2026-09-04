@@ -78,35 +78,35 @@ go build -ldflags="-s -w" -o bin/mncode ./cmd/mncode
 
 | Command | Description |
 | :--- | :--- |
-| `/resolve` | **Autonomous Git Merge Conflict Resolver** — Merges conflicting branches cleanly |
-| `/db` | **Database Explorer & SQL Query** — Inspect tables, schemas, and run queries |
-| `/api` | **In-Terminal REST / HTTP Tester** — Send requests with syntax JSON & latency meter |
-| `/tree` | **Interactive ASCII File Tree** — Visualize codebase structure and file sizes |
-| `/share` | **Web Session Share** — Export & publish public transcripts to `mncode.dev/share/[id]` |
-| `/export [path]` | **ShareGPT Trajectory** — Export frozen session history as private `0600` JSON |
-| `/doctor` | **Workspace Health Audit** — Diagnostic scorecard, runtimes, and file size limits |
-| `/commit [-p]` | **AI Semantic Commit** — Conventional commit generation, auto-stage & push |
-| `/review` | **Pre-Commit Code Auditor** — Scan uncommitted diffs for secrets, SQLi, and smells |
-| `/drift [init|check]` | **Architectural Drift Sentinel** — Compare AST, exported symbols, imports, cycles, and optional policy rules to a private baseline |
-| `/sandbox [init|run|test]` | **Fixture Harness** — Run allowlisted argv cases in a bounded temporary copy; `/shadow` is intentionally rejected |
-| `/index [build|query]` | **Local Code Index** — Search normalized source terms and AST symbols with BM25 ranking and stale-index checks |
-| `/arena [review]` | **Red-Team PR Arena** — Fan out bounded diff review to security, correctness, and maintainability adversaries |
-| `/replay [start|show|export]` / `/fork` | **Flight Recorder** — Record scrubbed lifecycle events and fork conversation context without replaying tool effects |
-| `/spec [new|check|matrix]` | **Spec-First Contracts** — Define deterministic invariants/cases and verify them without mutating the workspace |
-| `/symbol <name>` | **AST Symbol Search** — Find functions, structs, interfaces, and classes instantly |
-| `/scratch [ext]` | **Code Sandbox** — Open, evaluate, and test temporary code snippets |
-| `/undo` / `/rewind` | **Checkpoint Rollback** — Revert last agent turn and restore workspace files |
-| `/diff` | **Diff Inspector** — View syntax-highlighted uncommitted workspace changes |
-| `/steer <msg>` | **Real-Time Steering** — Inject high-priority course corrections into thought loop |
-| `/queue <msg>` | **Prompt Queue** — Enqueue prompts for hands-free sequential execution |
-| `/changelog` | **Release Notes Generator** — Synthesize categorized notes from git commits |
+| `/resolve` | **Autonomous Git Merge Conflict Resolver**: Merges conflicting branches cleanly |
+| `/db` | **Database Explorer & SQL Query**: Inspect tables, schemas, and run queries |
+| `/api` | **In-Terminal REST / HTTP Tester**: Send requests with syntax JSON & latency meter |
+| `/tree` | **Interactive ASCII File Tree**: Visualize codebase structure and file sizes |
+| `/share` | **Web Session Share**: Export & publish public transcripts to `mncode.dev/share/[id]` |
+| `/export [path]` | **ShareGPT Trajectory**: Export frozen session history as private `0600` JSON |
+| `/doctor` | **Workspace Health Audit**: Diagnostic scorecard, runtimes, and file size limits |
+| `/commit [-p]` | **AI Semantic Commit**: Conventional commit generation, auto-stage & push |
+| `/review` | **Pre-Commit Code Auditor**: Scan uncommitted diffs for secrets, SQLi, and smells |
+| `/drift [init\|check]` | **Architectural Drift Sentinel**: Compare AST, exported symbols, imports, cycles, and optional policy rules to a private baseline |
+| `/sandbox [init\|run\|test]` | **Fixture Harness**: Run allowlisted argv cases in a bounded temporary copy; `/shadow` is intentionally rejected |
+| `/index [build\|query]` | **Local Code Index**: Search normalized source terms and AST symbols with BM25 ranking and stale-index checks |
+| `/arena [review]` | **Red-Team PR Arena**: Fan out bounded diff review to security, correctness, and maintainability adversaries |
+| `/replay [start\|show\|export]` / `/fork` | **Flight Recorder**: Record scrubbed lifecycle events and fork conversation context without replaying tool effects |
+| `/spec [new\|check\|matrix]` | **Spec-First Contracts**: Define deterministic invariants/cases and verify them without mutating the workspace |
+| `/symbol <name>` | **AST Symbol Search**: Find functions, structs, interfaces, and classes instantly |
+| `/scratch [ext]` | **Code Sandbox**: Open, evaluate, and test temporary code snippets |
+| `/undo` / `/rewind` | **Checkpoint Rollback**: Revert last agent turn and restore workspace files |
+| `/diff` | **Diff Inspector**: View syntax-highlighted uncommitted workspace changes |
+| `/steer <msg>` | **Real-Time Steering**: Inject high-priority course corrections into thought loop |
+| `/queue <msg>` | **Prompt Queue**: Enqueue prompts for hands-free sequential execution |
+| `/changelog` | **Release Notes Generator**: Synthesize categorized notes from git commits |
 | `/skills [install]` | Browse, activate, or install skills directly from `skills.sh` |
 | `/status` | Open interactive session status overlay (`Esc` / `q` to dismiss) |
 | `/model [name]` | Interactive model catalog selector (`ox-alpha`, `claude-3.7-sonnet`, `gemini-3.7-flash`, `o3-mini`, etc.) |
 | `/effort [level]` | Configure thinking token budget (`None`, `Low`, `Medium`, `High`, `Max`, `PRO MAX`) |
 | `/workflow [mode]` | Switch orchestration mode (`auto`, `ultra-workflow`, `plan-first`, `direct`) |
 | `/mcp` | Model Context Protocol (MCP) server manager and tool inspector |
-| `/search [engine]` | **Configuration only** — choose the backend or run `/search setup`; prompts trigger `search_web` automatically |
+| `/search [engine]` | **Configuration only**: choose the backend or run `/search setup`; prompts trigger `search_web` automatically |
 | `/agents` | Inspect active subagents and multi-agent execution pipeline |
 | `/account` | Manage multi-account pool, health checks, and cooldown status |
 | `/quota` | Check real-time rate limit headroom and remaining token quotas |
