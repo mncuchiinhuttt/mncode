@@ -12,7 +12,7 @@
 <p align="center">
   <a href="#-quick-install"><img src="https://img.shields.io/badge/Install-1--Line%20Script-brightgreen" alt="Install Script"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go" alt="Go Version"></a>
-  <a href="https://github.com/mncuchiinhuttt/mncode/releases"><img src="https://img.shields.io/github/v/release/mncuchiinhuttt/mncode?color=f472b6" alt="Release"></a>
+  <a href="https://github.com/mncuchiinhuttt/mncode/releases/tag/v0.1.6-beta"><img src="https://img.shields.io/badge/release-v0.1.6--beta-f472b6" alt="Release v0.1.6-beta"></a>
   <a href="https://github.com/mncuchiinhuttt/mncode-web"><img src="https://img.shields.io/badge/Web%20Hub-mncode--web-a855f7" alt="Web Platform"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
